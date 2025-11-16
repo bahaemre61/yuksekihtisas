@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server'; // <-- NextRequest'i import et
+import type { NextRequest } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { parse } from 'cookie'; // <-- Cookie'yi manuel parse etmek için
-
+import { parse } from 'cookie'; 
+import { UserRole } from '@/src/lib/models/User';
 interface JwtPayload {
   id: string;
   name: string;

@@ -1,15 +1,8 @@
-'use client'; // Veri çekme (useEffect) ve state (useState) için
+'use client'; 
 
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
-// --- ÇÖZÜM BURADA BAŞLIYOR ---
-
-// 1. HATALI IMPORT'U SİLİN:
-// import { RequestStatus } from '@/lib/models/VehicleRequest'; 
-
-// 2. TİPLERİ BURADA YEREL OLARAK TANIMLAYIN:
-// (Backend'den import edemeyiz, çünkü bu bir 'use client' dosyası)
 enum RequestStatus {
     PENDING = 'pending',
     ASSIGNED = 'assigned',
@@ -17,7 +10,6 @@ enum RequestStatus {
     CANCELLED = 'cancelled'
 }
 
-// Araç talebi arayüzü (API'den bu gelecek)
 interface IVehicleRequest {
     _id: string;
     purpose: string;
@@ -27,14 +19,12 @@ interface IVehicleRequest {
     startTime: string;
     endTime: string;
     createdAt: string;
+    willCarryItems: boolean;
     assignedDriver?: {
         name: string;
     };
 }
-// --- ÇÖZÜM BURADA BİTİYOR ---
 
-
-// Durum (status) için renkli etiket (badge) döndüren yardımcı fonksiyon
 const StatusBadge = ({ status }: { status: RequestStatus }) => {
   let colorClass = '';
   let text = status.toUpperCase();
@@ -64,12 +54,21 @@ const StatusBadge = ({ status }: { status: RequestStatus }) => {
   );
 };
 
+const formatTRDate = (dateString : string) =>{
+  return new Date(dateString).toLocaleString('tr-TR',{
+    day : '2-digit',
+    month : 'long',
+    hour : '2-digit',
+    minute : '2-digit'
+  } )
+}
+
 export default function MyRequestsPage() {
   const [requests, setRequests] = useState<IVehicleRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Sayfa yüklendiğinde API'den verileri çek
+
   useEffect(() => {
     const fetchRequests = async () => {
       setLoading(true);
@@ -85,9 +84,9 @@ export default function MyRequestsPage() {
     };
     
     fetchRequests();
-  }, []); // [] -> Sadece sayfa ilk yüklendiğinde 1 kez çalışır
+  }, []); 
 
-  // 1. Yükleniyor Durumu
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -99,7 +98,7 @@ export default function MyRequestsPage() {
     );
   }
 
-  // 2. Hata Durumu
+
   if (error) {
      return (
        <div className="rounded-md bg-red-100 p-4 border border-red-300">
@@ -112,49 +111,48 @@ export default function MyRequestsPage() {
     <div className="bg-white p-6 rounded-lg shadow-lg">
       <h2 className="text-2xl font-semibold text-gray-800 mb-6">Araç Taleplerim</h2>
       
-      {/* 3. Boş Durumu (Hiç talep yoksa) */}
+     
       {requests.length === 0 ? (
         <div className="text-center text-gray-500 py-10 border-2 border-dashed border-gray-300 rounded-lg">
           <p>Henüz oluşturulmuş bir talebiniz bulunmuyor.</p>
         </div>
       ) : (
         
-        // 4. Veri Varsa: Talepleri Listele
-        <div className="space-y-4">
+        
+        <div className="space-y-5">
           {requests.map((req) => (
-            <div key={req._id} className="border border-gray-200 rounded-lg p-4 shadow-sm">
-              <div className="flex justify-between items-start">
+            <div key={req._id} className="border border-gray-200 rounded-lg p-4 shadow-sm transition-shadow hover:shadow-md">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-start">
+                
                 {/* Sol Taraf: Talep Detayları */}
-                <div>
+                <div className="flex-1 mb-4 sm:mb-0">
                   <h3 className="text-lg font-semibold text-gray-900">{req.purpose}</h3>
-                  
-                  {/* --- DÜZELTME BURADA --- */}
                   <p className="text-sm text-gray-600 mt-1">
-                    {req.fromLocation} &rarr; {req.toLocation}
-                  </p> {/* <-- </Screen> değil, </p> olmalıydı */}
-                  
+                    <span className="font-bold">Güzergah:</span> {req.fromLocation} &rarr; {req.toLocation}
+                  </p>
                   <p className="text-sm text-gray-500 mt-2">
-                    <strong>Gidiş:</strong> {new Date(req.startTime).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    <span className="font-medium">Gidiş:</span> {formatTRDate(req.startTime)}
                     <br />
-                    <strong>Dönüş:</strong> {new Date(req.endTime).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                  </p> {/* <-- </Screen> değil, </p> olmalıydı */}
-                  
-                  <p className="text-sm text-gray-500 mt-1">
-                    <strong>Atanan Şoför:</strong> {req.assignedDriver ? req.assignedDriver.name : 'Henüz atanmadı'}
-                  </p> {/* <-- </Screen> değil, </p> olmalıydı */}
-                  {/* --- DÜZELTME SONA ERDİ --- */}
-
+                    <span className="font-medium">Dönüş:</span> {formatTRDate(req.endTime)}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    <strong>Eşyalı:</strong> {req.willCarryItems ? 'Evet' : 'Hayır'}
+                  </p>
                 </div>
                 
-                {/* Sağ Taraf: Durum Etiketi */}
-                <div className="shrink-0 ml-4">
+                {/* Sağ Taraf: Durum ve Ek Bilgiler */}
+                <div className="shrink-0 ml-0 sm:ml-4 sm:text-right space-y-2">
                   <StatusBadge status={req.status} />
+                  <p className="text-sm text-gray-500">
+                    <strong>Şoför:</strong> {req.assignedDriver ? req.assignedDriver.name : '—'}
+                  </p>
+                  
                 </div>
               </div>
             </div>
           ))}
         </div>
-   )}
+      )}
 
     </div>
   );

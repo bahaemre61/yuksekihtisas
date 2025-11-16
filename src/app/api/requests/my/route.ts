@@ -4,7 +4,6 @@ import {parse} from "cookie";
 import jwt from 'jsonwebtoken';
 import connectToDatabase from "@/src/lib/db";
 import VehicleRequest from "@/src/lib/models/VehicleRequest";
-import { Chokokutai } from "next/font/google";
 
 interface JwtPayload{
     id: string;
