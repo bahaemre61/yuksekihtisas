@@ -21,7 +21,7 @@ import unilogo from "@/src/components/yuksekihtisasuni-logo.png"
 
 const UserRole = {USER: 'user', DRIVER: 'driver', ADMIN: 'admin'} as const;
 type UserRole = typeof UserRole[keyof typeof UserRole];
-interface IUser {name: string; role: UserRole}
+interface IUser {name: string; role: UserRole; driverStatus?: 'available' | 'busy';}
 
 
 const handeLagout = async (router:any) => {
@@ -33,6 +33,7 @@ const handeLagout = async (router:any) => {
         router.push('/login');
     }
 };
+
 
 const fetchUser = async () : Promise<IUser | null> => {
     try{
@@ -63,6 +64,17 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: {
             }
         });
     },[]);
+
+    const handleStatusChange = async (newStatus: 'available' | 'busy') =>{
+      if(!user) return;
+
+      try{
+        const res = await axios.put('/api/driver/status', {status : newStatus});
+        setUser(res.data)
+      }catch(err){
+        console.error("Durum güncellenemedi" , err);
+      }
+    }
     
     const navLinks = [
     { name: 'Ana Sayfa', href: '/dashboard', icon: HomeIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN] },
@@ -124,6 +136,44 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: {
             </nav>
           </div>
         )}
+        {user && user.role === UserRole.DRIVER && (
+    <div className="border-t border-gray-200 p-4">
+      <div className="text-center mb-2">
+        <p className="text-sm font-medium text-gray-700">Durumunuz</p>
+        {user.driverStatus === 'available' ? (
+          <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">
+            <svg className="-ml-1 mr-1.5 h-2 w-2 text-green-400" fill="currentColor" viewBox="0 0 8 8">
+              <circle cx={4} cy={4} r={3} />
+            </svg>
+            Uygun
+          </span>
+        ) : (
+          <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800">
+            <svg className="-ml-1 mr-1.5 h-2 w-2 text-red-400" fill="currentColor" viewBox="0 0 8 8">
+              <circle cx={4} cy={4} r={3} />
+            </svg>
+            Meşgul
+          </span>
+        )}
+      </div>
+
+      {user.driverStatus === 'available' ? (
+        <button
+          onClick={() => handleStatusChange('busy')}
+          className="w-full rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500"
+        >
+          Meşgule Geç
+        </button>
+      ) : (
+        <button
+          onClick={() => handleStatusChange('available')}
+          className="w-full rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500"
+        >
+          Uyguna Geç
+        </button>
+      )}
+    </div>
+        )}
         <div className="border-t border-gray-200 p-4">
             <a href="#" onClick={() => handeLagout(router)} className="group shrink-0 w-full">
               <div className="flex items-center">
@@ -145,11 +195,9 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: {
   );
 return (
     <>
-      {/* --- 1. Mobil Menü (Açılır/Kapanır Dialog) --- */}
       <Transition.Root show={isMobileMenuOpen} as={Fragment}>
         <Dialog as="div" className="relative z-40 md:hidden" onClose={setIsMobileMenuOpen}>
           
-          {/* Arka plan gölgesi (overlay) */}
           <Transition.Child
             as={Fragment}
             enter="transition-opacity ease-linear duration-300"
@@ -162,45 +210,39 @@ return (
             <div className="fixed inset-0 bg-gray-600 bg-opacity-75" />
           </Transition.Child>
 
-          {/* Asıl menü paneli */}
           <div className="fixed inset-0 flex z-40">
             <Transition.Child
               as={Fragment}
               enter="transition ease-in-out duration-300 transform"
-              enterFrom="-translate-x-full" // Soldan gelsin
+              enterFrom="-translate-x-full" 
               enterTo="translate-x-0"
               leave="transition ease-in-out duration-300 transform"
               leaveFrom="translate-x-0"
-              leaveTo="-translate-x-full" // Sola gitsin
+              leaveTo="-translate-x-full"
             >
               <Dialog.Panel className="relative flex-1 flex flex-col max-w-xs w-full">
                 
-                {/* Kapatma Butonu (X) */}
                 <div className="absolute top-0 right-0 -mr-12 pt-2">
                   <button
                     type="button"
                     className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
-                    onClick={() => setIsMobileMenuOpen(false)} // State'i 'false' yap
+                    onClick={() => setIsMobileMenuOpen(false)} 
                   >
                     <XMarkIcon className="h-6 w-6 text-white" />
                   </button>
                 </div>
                 
-                {/* YUKARIDA TANIMLADIĞIMIZ SIDEBAR İÇERİĞİ */}
                 {sidebarContent} 
                 
               </Dialog.Panel>
             </Transition.Child>
             <div className="shrink-0 w-14" aria-hidden="true">
-              {/* Kapatma butonu için boş alan */}
             </div>
           </div>
         </Dialog>
       </Transition.Root>
 
-      {/* --- 2. Masaüstü Menüsü (Sabit) --- */}
       <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
-        {/* YUKARIDA TANIMLADIĞIMIZ SIDEBAR İÇERİĞİ */}
         {sidebarContent}
       </div>
     </>

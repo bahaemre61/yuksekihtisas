@@ -1,34 +1,30 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import jwt from 'jsonwebtoken';
-import { parse } from 'cookie'; 
-import { UserRole } from '@/src/lib/models/User';
-interface JwtPayload {
-  id: string;
-  name: string;
-  role: string;
-}
+import connectToDatabase from '@/src/lib/db';
+import User from '@/src/lib/models/User';
+import { getAuthenticatedUser } from '@/src/lib/auth';
+
 
 export async function GET(request: NextRequest) { 
-  try {
-    const cookieHeader = request.headers.get('cookie');  
-    if (!cookieHeader) {
-      return NextResponse.json({ msg: 'Yetkisiz: Cookie bulunamadı' }, { status: 401 });
-    }
-  
-    const allCookies = parse(cookieHeader);
-    const token = allCookies.token; 
 
-    if (!token) {
-      return NextResponse.json({ msg: 'Yetkisiz: Token bulunamadı' }, { status: 401 });
+  const {user, error} = getAuthenticatedUser(request);
+
+  if(error) return error;
+  try {
+
+    await connectToDatabase();
+
+    const dbUser = await User.findById(user.id).select('name role driverStatus');
+
+    if(!user){
+      return NextResponse.json({msg : 'Yetkisiz : Kullanıcı bulunamadı'}, {status : 401});
     }
-    
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
 
 
     return NextResponse.json({
-      name: decoded.name,
-      role: decoded.role
+      name: dbUser.name,
+      role: dbUser.role,
+      driverStatus : dbUser.driverStatus
     });
     
   } catch (error) {

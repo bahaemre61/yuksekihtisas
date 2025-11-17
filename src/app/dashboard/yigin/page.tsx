@@ -44,7 +44,6 @@ export default function pendingRequestPage(){
   const[loading, setLoading] = useState(true);
   const[error, setError] = useState<string | null>(null);
   const[assigningId, setAssigningId] = useState<string | null>(null);
-  const router = useRouter();
 
 
   const fetchPendingRequest = async () => {
@@ -67,15 +66,18 @@ export default function pendingRequestPage(){
   const handleAssignJob = async (requestId : string) =>{
     setAssigningId(requestId);
     setError(null);
-  
 
   try{
-    //await axios.put(`/api/requests/${requestId}/assign`);
-       await new Promise(resolve => setTimeout(resolve, 2000));
-      alert(`Test: ${requestId} ID'li işi kabul ettiniz!`);
+      await axios.put(`/api/requests/${requestId}/assign`);
+      setRequests((prevRequests) => prevRequests.filter(req => req._id !== requestId));
+      alert("İş başarıyla listenize eklendi.");
   }catch(err : any){
-    console.error("İş Kabul edilmedi")
-    setError(err.response?.data.msg || "İş Kabul edilirken bir hata oluştu");
+    console.error("İş Kabul edilmedi",err)
+    if(err.response && (err.response.status === 409 || err.response.status === 404)){
+      setError("Bu talep artık müsait değil (başka bir şoför almış olabilir).Liste yenileniyor...");
+      fetchPendingRequest();
+    }
+    setError(err.response?.data.msg || "İş Kabul edilirken b+ir hata oluştu");
   }finally{
     setAssigningId(null);
   }
@@ -84,7 +86,6 @@ if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
         <svg className="h-8 w-8 animate-spin text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            {/* ... spinner svg ... */}
         </svg>
       </div>
     );
@@ -112,7 +113,6 @@ if (loading) {
             <div key={req._id} className="border border-gray-200 rounded-lg p-4 shadow-sm">
               <div className="flex flex-col sm:flex-row justify-between">
                 
-                {/* Sol Taraf: Talep Detayları */}
                 <div className="flex-1 mb-4 sm:mb-0">
                   <h3 className="text-lg font-semibold text-gray-900">{req.purpose}</h3>
                   <p className="text-sm text-gray-600 mt-1">
@@ -138,7 +138,6 @@ if (loading) {
                   >
                     {assigningId === req._id ? (
                       <svg className="h-5 w-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        {/* ... spinner svg ... */}
                       </svg>
                     ) : (
                       'İşi Kabul Et'

@@ -5,7 +5,6 @@ export default function DashboardHome() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        {/* BÜYÜK ALAN: Ana Özellik */}
         <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow-lg">
           <h3 className="text-lg font-medium text-gray-900 mb-4">
             Aktif Araç Talepleri
@@ -17,7 +16,6 @@ export default function DashboardHome() {
           </div>
         </div>
 
-        {/* KÜÇÜK ALAN: Yer Tutucular (İstediğiniz gibi) */}
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-lg shadow-lg">
             <h3 className="text-lg font-medium text-gray-900 mb-4">
