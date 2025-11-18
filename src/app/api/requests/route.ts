@@ -5,9 +5,6 @@ import VehicleRequest from "@/src/lib/models/VehicleRequest";
 import { RequestStatus } from "@/src/lib/models/VehicleRequest";
 import { getAuthenticatedUser } from "@/src/lib/auth";
 
-
-
-
 export async function POST(request: NextRequest) {
 
   const {user, error} = getAuthenticatedUser(request);

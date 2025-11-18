@@ -1,4 +1,3 @@
-import { url } from "inspector";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
