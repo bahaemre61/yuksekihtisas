@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { request } from 'http';
+import { TrashIcon } from '@heroicons/react/24/outline';
 
 enum RequestStatus {
     PENDING = 'pending',
@@ -86,6 +88,21 @@ export default function MyRequestsPage() {
     fetchRequests();
   }, []); 
 
+  const handleCancel = async(requestsId: string) =>{
+    if(!confirm("Bu talebi iptal etmek istediğinize emin misiniz")) return;
+
+    try{
+      await axios.put(`/api/requests/${requestsId}/cancel`);
+
+      setRequests((prev) =>
+      prev.map((req)=>
+      req._id === requestsId ? {...req, status: RequestStatus.CANCELLED}: req
+    ));
+    }catch(err : any){
+      alert(err.response?.data?.msg || "İptal işlemi başarısız oldu.");
+    }
+  };
+
 
   if (loading) {
     return (
@@ -124,7 +141,6 @@ export default function MyRequestsPage() {
             <div key={req._id} className="border border-gray-200 rounded-lg p-4 shadow-sm transition-shadow hover:shadow-md">
               <div className="flex flex-col sm:flex-row justify-between sm:items-start">
                 
-                {/* Sol Taraf: Talep Detayları */}
                 <div className="flex-1 mb-4 sm:mb-0">
                   <h3 className="text-lg font-semibold text-gray-900">{req.purpose}</h3>
                   <p className="text-sm text-gray-600 mt-1">
@@ -138,15 +154,19 @@ export default function MyRequestsPage() {
                   <p className="text-sm text-gray-500">
                     <strong>Eşyalı:</strong> {req.willCarryItems ? 'Evet' : 'Hayır'}
                   </p>
-                </div>
-                
-                {/* Sağ Taraf: Durum ve Ek Bilgiler */}
+                </div>             
                 <div className="shrink-0 ml-0 sm:ml-4 sm:text-right space-y-2">
                   <StatusBadge status={req.status} />
                   <p className="text-sm text-gray-500">
                     <strong>Şoför:</strong> {req.assignedDriver ? req.assignedDriver.name : '—'}
                   </p>
-                  
+                  {req.status === RequestStatus.PENDING && (
+                  <button onClick={() => handleCancel(req._id)}
+                  className='mt-2 text-xs font-medium text-red-600 hover:text-red-800 hover:underline focus:outline-none'
+                  >
+                    <TrashIcon className='h-5 w-5'></TrashIcon>
+                  </button>
+                )}  
                 </div>
               </div>
             </div>

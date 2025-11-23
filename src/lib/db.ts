@@ -1,6 +1,4 @@
 import mongoose from 'mongoose';
-import { cache } from 'react';
-import { buffer } from 'stream/consumers';
 
 const MONGO_URI = process.env.MONGO_URI;
 

@@ -5,7 +5,7 @@ export const RequestStatus = {
     PENDING : 'pending',
     ASSIGNED: 'assigned',
     COMPLETED: 'completed',
-    CANCELLED: 'canceleed'
+    CANCELLED: 'cancelled'
 }as const
 
 

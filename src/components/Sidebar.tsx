@@ -17,6 +17,7 @@ import {
   PlusCircleIcon,
   XMarkIcon,
   ClipboardDocumentCheckIcon,
+  CommandLineIcon
 } from '@heroicons/react/24/outline';
 import unilogo from "@/src/components/yuksekihtisasuni-logo.png"
 
@@ -86,6 +87,7 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: {
     { name: 'Duyurular', href: '/dashboard/duyurular', icon: DocumentTextIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN] },
     { name: 'Yemek Menüsü', href: '/dashboard/yemek', icon: CalendarIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN] },
     { name: 'Görevlerim', href: '/dashboard/gorevlerim',icon : ClipboardDocumentCheckIcon,roles : [UserRole.DRIVER]},
+    { name: 'Yönetim Paneli', href: '/dashboard/yonetimpaneli',icon : CommandLineIcon,roles: [UserRole.ADMIN]},
     ];
 
     const sidebarContent =(
