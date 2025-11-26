@@ -20,7 +20,8 @@ export interface IVehicleRequest extends Document {
     toLocation: string;
     purpose: string; 
     startTime: Date; 
-    endTime: Date;   
+    endTime: Date;
+    priority : 'normal' | 'high'; 
 }
 
 const VehicleRequestSchema: Schema<IVehicleRequest> = new Schema({
@@ -62,6 +63,11 @@ const VehicleRequestSchema: Schema<IVehicleRequest> = new Schema({
     endTime: {
         type: Date,
         required: true
+    },
+    priority:{
+        type: String,
+        enum: ['normal', 'high'],
+        default : 'normal'
     }
 }, { 
     timestamps: true 

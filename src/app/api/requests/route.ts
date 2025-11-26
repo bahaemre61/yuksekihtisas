@@ -17,7 +17,8 @@ export async function POST(request: NextRequest) {
             toLocation,
             purpose,
             startTime,
-            endTime
+            endTime,
+            priority
         }= await request.json();
 
         if(!fromLocation || !toLocation || !purpose || willCarryItems === undefined || !startTime || !endTime){
@@ -37,6 +38,7 @@ export async function POST(request: NextRequest) {
         purpose,
         startTime,
         endTime,
+        priority: priority || 'normal',
         status: RequestStatus.PENDING
     });
     const savedRequest = await newRequest.save();

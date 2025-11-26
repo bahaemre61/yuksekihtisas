@@ -83,11 +83,11 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: {
     { name: 'Yeni Talep Oluştur', href: '/dashboard/talep-olustur', icon: PlusCircleIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN] },
     { name: 'Araç Taleplerim', href: '/dashboard/taleplerim', icon: TruckIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN] },
     { name: 'Talep Yığını', href: '/dashboard/yigin', icon: ArchiveBoxIcon, roles: [UserRole.DRIVER, UserRole.ADMIN] },
-    { name: 'Yapılcak Listem', href: '/dashboard/todo', icon: CheckBadgeIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN] },
+    { name: 'Yapılacak Listem', href: '/dashboard/todo', icon: CheckBadgeIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN] },
     { name: 'Duyurular', href: '/dashboard/duyurular', icon: DocumentTextIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN] },
     { name: 'Yemek Menüsü', href: '/dashboard/yemek', icon: CalendarIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN] },
     { name: 'Görevlerim', href: '/dashboard/gorevlerim',icon : ClipboardDocumentCheckIcon,roles : [UserRole.DRIVER]},
-    { name: 'Yönetim Paneli', href: '/dashboard/yonetimpaneli',icon : CommandLineIcon,roles: [UserRole.ADMIN]},
+    { name: 'Yönetim Paneli', href: '/dashboard/admin',icon : CommandLineIcon,roles: [UserRole.ADMIN]},
     ];
 
     const sidebarContent =(

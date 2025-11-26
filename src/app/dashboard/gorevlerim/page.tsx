@@ -13,7 +13,8 @@ interface IVehicleReuqest{
     toLocation : string;
     status : RequestStatus;
     startTime : string;
-    endTime : string
+    endTime : string;
+    priority : 'normal' | 'high';
     requestingUser: {name: string; email :string};
 }
 
@@ -64,7 +65,7 @@ export default function DriverTasksPage(){
     if(loading) return <div className='p-6 text-center'>Yükleniyor...</div>
     return(
         <div className='bg-white p-6 rounded-lg shadow-lg'>
-            <h2 className='text-2xl font-semibold text-gray-800 mb-6'>Aktif Görvlerim</h2>
+            <h2 className='text-2xl font-semibold text-gray-800 mb-6'>Aktif Görevlerim</h2>
             
             {tasks.length === 0 ? (
                 <div className='text-center text-gray-500 py-10 border-2 border-dashed border-gray-300 rounded-lg'>

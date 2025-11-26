@@ -1,34 +1,36 @@
-'use client'; // Bu dosyanın bir İstemci Bileşeni olduğunu belirtir (useState, onClick vb. için)
+'use client';
 
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useRouter } from 'next/navigation'; // Yönlendirme için
+import { useRouter } from 'next/navigation'; 
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
 export default function CreateRequestPage() {
-  // Form alanları için state'ler
+
   const [fromLocation, setFromLocation] = useState('');
   const [toLocation, setToLocation] = useState('');
   const [purpose, setPurpose] = useState('');
   const [willCarryItems, setWillCarryItems] = useState(false);
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
+  const [priority, setPriority] = useState<'normal' | 'high'>('normal');
 
-  // UI (Arayüz) durumları için state'ler
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Yönlendirme hook'u
+  
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); // Formun sayfayı yenilemesini engelle
+    e.preventDefault(); 
     setLoading(true);
     setError('');
     setSuccessMessage('');
 
     try {
-      // Backend'e göndereceğimiz veri paketi (payload)
+      
       const payload = {
         fromLocation,
         toLocation,
@@ -36,76 +38,111 @@ export default function CreateRequestPage() {
         willCarryItems,
         startTime,
         endTime,
+        priority,
       };
 
-      // Basit bir ön-doğrulama (Frontend tarafında)
+      
       if (new Date(endTime) <= new Date(startTime)) {
         setError('Dönüş saati, gidiş saatinden sonra olmalıdır.');
         setLoading(false);
         return;
       }
 
-      // Kendi API'mize (Next.js) POST isteği atıyoruz
-      // Tarayıcı, httpOnly cookie'mizi (token) bu isteğe otomatik olarak ekleyecektir.
+
       await axios.post('/api/requests', payload);
 
-      // Başarılı olursa...
+      
       setSuccessMessage('Araç talebiniz başarıyla oluşturuldu! Taleplerim sayfasına yönlendiriliyorsunuz...');
       
-      // Formu temizle
+      
       setFromLocation('');
       setToLocation('');
       setPurpose('');
       setWillCarryItems(false);
       setStartTime('');
       setEndTime('');
+      setPriority('normal');
 
-      // 2 saniye sonra kullanıcıyı "Taleplerim" sayfasına yönlendir
+      
       setTimeout(() => {
-        router.push('/dashboard/taleplerim'); // Bu sayfayı daha sonra oluşturacağız
+        router.push('/dashboard/taleplerim');
       }, 2000);
 
     } catch (err: any) {
-      // API'den bir hata dönerse (örn: 400, 401, 500)
-      if (axios.isAxiosError(err) && err.response) {
-        // Backend'de (`route.ts`) belirlediğimiz 'msg'yi göster
+      
+      if (axios.isAxiosError(err) && err.response) {       
         setError(err.response.data.msg || 'Talep oluşturulamadı. Bilinmeyen bir hata.');
       } else {
         setError('Bir hata oluştu. Lütfen tekrar deneyin.');
       }
     } finally {
-      // Hata da olsa, başarılı da olsa yüklenmeyi durdur
+      
       setLoading(false);
     }
   };
 
   return (
-    // Ana form konteyneri
+    
     <div className="max-w-3xl mx-auto">
-      {/* Tailwind ile stilize edilmiş form kartı */}
+      
       <div className="bg-white shadow-lg rounded-lg p-6 sm:p-8">
         <h2 className="text-2xl font-semibold text-gray-800 mb-6">
           Yeni Araç Talep Formu
         </h2>
         
-        {/* Hata Mesajı Alanı (Sadece hata varsa görünür) */}
+        
         {error && (
           <div className="mb-4 rounded-md bg-red-100 p-4 border border-red-300">
             <p className="text-sm font-medium text-red-700">{error}</p>
           </div>
         )}
         
-        {/* Başarı Mesajı Alanı (Sadece başarılıysa görünür) */}
+        
         {successMessage && (
           <div className="mb-4 rounded-md bg-green-100 p-4 border border-green-300">
             <p className="text-sm font-medium text-green-700">{successMessage}</p>
           </div>
         )}
 
-        {/* Form */}
+       
         <form onSubmit={handleSubmit} className="space-y-6">
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Aciliyet Durumu</label>
+            <div className="grid grid-cols-2 gap-4">
+                <button
+                    type="button"
+                    onClick={() => setPriority('normal')}
+                    className={`
+                        flex items-center justify-center px-4 py-3 border rounded-lg text-sm font-medium transition-all
+                        ${priority === 'normal' 
+                            ? 'border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-200' 
+                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'}
+                    `}
+                >
+                    Normal Talep
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => setPriority('high')}
+                    className={`
+                        flex items-center justify-center px-4 py-3 border rounded-lg text-sm font-medium transition-all
+                        ${priority === 'high' 
+                            ? 'border-red-500 bg-red-50 text-red-700 ring-2 ring-red-200' 
+                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'}
+                    `}
+                >
+                    <ExclamationTriangleIcon className="h-5 w-5 mr-2" />
+                    ACİL DURUM
+                </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+                * Acil durumlar şoförlerin rotasında önceliklendirilir.
+            </p>
+          </div>
           
-          {/* Nereden / Nereye (Aynı satırda) */}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="fromLocation" className="block text-sm font-medium text-gray-700">
@@ -117,7 +154,7 @@ export default function CreateRequestPage() {
                 value={fromLocation}
                 onChange={(e) => setFromLocation(e.target.value)}
                 required
-                disabled={loading} // Yüklenirken formu kilitle
+                disabled={loading} 
                 className="mt-1 block w-full appearance-none rounded-lg border border-gray-300 px-4 py-3 text-base text-gray-900 placeholder-gray-500 focus:z-10 focus:border-blue-500 focus:outline-none focus:ring-blue-500 disabled:bg-gray-50"
               />
             </div>
@@ -137,14 +174,14 @@ export default function CreateRequestPage() {
             </div>
           </div>
 
-          {/* Gidiş / Dönüş Saati (Aynı satırda) */}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="startTime" className="block text-sm font-medium text-gray-700">
                 Gidiş Tarihi ve Saati
               </label>
               <input
-                type="datetime-local" // Bu input hem tarih hem saat seçtirir
+                type="datetime-local"
                 id="startTime"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
@@ -169,7 +206,6 @@ export default function CreateRequestPage() {
             </div>
           </div>
 
-          {/* Amaç (Açıklama) */}
           <div>
             <label htmlFor="purpose" className="block text-sm font-medium text-gray-700">
               Talep Amacı (Açıklama)
@@ -185,7 +221,6 @@ export default function CreateRequestPage() {
             />
           </div>
 
-          {/* Eşya Taşınacak Mı? (Checkbox) */}
           <div className="flex items-center">
             <input
               id="willCarryItems"
@@ -200,7 +235,6 @@ export default function CreateRequestPage() {
             </label>
           </div>
 
-          {/* Gönder Butonu */}
           <div className="border-t pt-6">
             <button
               type="submit"
