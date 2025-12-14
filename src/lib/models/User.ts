@@ -6,6 +6,7 @@ export const UserRole= {
     USER: 'user',
     DRIVER : 'driver',
     ADMIN : 'admin',   
+    AMIR : 'amir',
 } as const;
 
 export type UserRole = typeof UserRole[keyof typeof UserRole];
@@ -16,6 +17,8 @@ export interface IUser extends Document {
     password:string;
     role: UserRole;
     driverStatus?: 'available' | 'busy';
+    resetPasswordToken?: string;
+    resetPasswordExpires?: Date;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -32,6 +35,8 @@ const UserSchema = new Schema<IUser>({
         enum: ['available', 'busy'],
         default : 'available',
     },
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
 });
    UserSchema.pre<IUser>('save', async function (next) {
     if (!this.isModified('password')) {

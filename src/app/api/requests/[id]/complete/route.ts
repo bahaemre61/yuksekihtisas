@@ -1,10 +1,8 @@
 import connectToDatabase from "@/src/lib/db";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import VehicleRequest from "@/src/lib/models/VehicleRequest";
-import { RequestStatus } from "@/src/lib/models/VehicleRequest";
-import { UserRole } from "@/src/lib/models/User";
-import mongoose from "mongoose";
+import VehicleRequest, { RequestStatus } from "@/src/lib/models/VehicleRequest";
+import User,{ UserRole } from "@/src/lib/models/User";
 import { getAuthenticatedUser } from "@/src/lib/auth";
 
 
@@ -22,28 +20,34 @@ export async function PUT(
     }
    try{
     const {id} = await params;
-    const requestId = id
+    await connectToDatabase();
 
-     if(!mongoose.Types.ObjectId.isValid(requestId))
-        return NextResponse.json({msg : 'Geçersiz ID'}, {status : 400});
 
-     await connectToDatabase();
+    const updatedRequest = await VehicleRequest.findByIdAndUpdate(
+      id,
+      {status : RequestStatus.COMPLETED},
+      {new : true}
+    );
 
-     const requestDoc = await VehicleRequest.findById(requestId);
-     if(!requestDoc)
-        return NextResponse.json({ msg :'Talep bulunamadı.'}, {status : 404});
+    if(!updatedRequest){
+        return NextResponse.json({msg : 'Talep bulunamadı.'}, {status : 404});
+    }
 
-     if(requestDoc.assignedDriver?.toString() !== user.id)
-        return NextResponse.json({msg : 'Size atanmamış bir işi tamamlayamazsınız.'}, {status : 403});
+    const activeJobsCount = await VehicleRequest.countDocuments({
+      assignedDriver : user.id,
+      status : RequestStatus.ASSIGNED
+    });
 
-     requestDoc.status = RequestStatus.COMPLETED;
-     await requestDoc.save();
-
-     return NextResponse.json({msg : 'İş başarıyla tamamlandı', request:requestDoc}, {status : 200});
-   }catch(error)
+    if(activeJobsCount === 0){
+      await User.findByIdAndUpdate(user.id, {driverStatus : 'available'});
+   }else
    {
-    console.error(error);
-    return NextResponse.json({msg : 'Sunucu Hatası'}, {status : 500});
+      await User.findByIdAndUpdate(user.id, {driverStatus : 'busy'});
    }
+   return NextResponse.json({msg : 'İşle başarıyla alındı.',updatedRequest} ,{status : 200});
+}catch (error)
+{
+   console.error("İş tamamlama hatası : ", error);
+   return NextResponse.json({msg : 'Sunucu Hatası'}, {status : 500});
 }
-
+}

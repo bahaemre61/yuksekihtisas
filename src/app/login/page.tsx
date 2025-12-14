@@ -1,18 +1,18 @@
-'use client'; // Bu satır, 'useState' gibi hook'ları kullanmamız için gereklidir.
+'use client'; 
 
 import { useState } from 'react';
-import Image from 'next/image'; // Next.js'in optimize edilmiş resim bileşeni
-import Link from 'next/link';   // Next.js'in sayfa yönlendirme bileşeni
+import Image from 'next/image';
+import Link from 'next/link';  
 import axios from 'axios';
-import { useRouter } from 'next/navigation'; // Yönlendirme için
-import uniLogo from '../login/yuksekihtisasuni-logo.png'; // Logo dosyasını içe aktar
+import { useRouter } from 'next/navigation'; 
+import uniLogo from '../login/yuksekihtisasuni-logo.png'; 
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const router = useRouter(); // Yönlendiriciyi tanımla
+  const router = useRouter(); 
 
   const signIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,15 +102,9 @@ export default function LoginPage() {
               )}
             </button>
           </div>
-          <div className="mt-4">
-            <Link href="/register" passHref>
-              <button
-                type="button" 
-                disabled={loading}
-                className="group relative flex w-full justify-center rounded-lg border border-blue-600 bg-transparent px-4 py-4 text-base font-bold text-blue-600 shadow-sm hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
-              >
-                Hesabın yok mu? Kayıt Ol
-              </button>
+          <div className="flex justify-between items-center mt-4 text-sm">
+            <Link href="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
+              Şifremi unuttum?
             </Link>
           </div>
         </form>

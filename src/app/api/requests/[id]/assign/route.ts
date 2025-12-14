@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import jwt from 'jsonwebtoken';
 import connectToDatabase from "@/src/lib/db";
 import VehicleRequest from "@/src/lib/models/VehicleRequest";
-import { UserRole } from "@/src/lib/models/User";
+import User, { UserRole } from "@/src/lib/models/User";
 import { RequestStatus } from "@/src/lib/models/VehicleRequest";
 import mongoose from "mongoose";
 import { getAuthenticatedUser } from "@/src/lib/auth";
@@ -40,6 +39,8 @@ export async function PUT(request:NextRequest, { params }: { params: Promise<{ i
     if (!updatedRequest) {
       return NextResponse.json({ msg: 'Bu talep artık mevcut değil (başka bir şoför tarafından alınmış olabilir).' }, { status: 400 });
     }
+
+    await User.findByIdAndUpdate(user.id, { driverStatus: 'busy' });
 
     return NextResponse.json({msg : 'İş başaryıla kabul edildi', request: updatedRequest}, {status : 200});
 

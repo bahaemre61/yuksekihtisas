@@ -22,7 +22,7 @@ export async function GET(request:NextRequest) {
             status  : RequestStatus.PENDING
         })
         .populate('requestingUser', 'name email')
-        .sort({ startTime: 1});
+        .sort({ startTime: -1});
 
         return NextResponse.json(pendingRequest, {status : 200});
     }catch(error)

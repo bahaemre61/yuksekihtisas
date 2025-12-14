@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation'; 
-import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { ExclamationTriangleIcon , SparklesIcon} from '@heroicons/react/24/outline';
 
 export default function CreateRequestPage() {
 
@@ -14,14 +14,64 @@ export default function CreateRequestPage() {
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [priority, setPriority] = useState<'normal' | 'high'>('normal');
+  
 
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [canSetPriority, setCanSetPriority] = useState(false);  
 
+  const [aiText, setAiText] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
   
   const router = useRouter();
+
+  useEffect(() => {
+    const checkRole = async () => {
+      try {
+        const res = await axios.get('/api/me');
+        const role = res.data.role;
+        if(role === 'amir' || role === 'admin') {
+          setCanSetPriority(true);
+        }
+      } catch (err) {
+        console.error('Kullanıcı rolü alınamadı:', err);
+      }
+    };
+    checkRole();
+  }, []);
+
+  const handleAiFill = async () => {
+    if (!aiText.trim()) return;
+    setAiLoading(true);
+    setError('');
+    try {
+        const res = await axios.post('/api/ai/parse-request', { text: aiText });
+        const data = res.data; 
+
+        if (data.fromLocation) setFromLocation(data.fromLocation);
+        if (data.toLocation) setToLocation(data.toLocation);
+        if (data.purpose) setPurpose(data.purpose);
+        if (data.willCarryItems !== undefined) setWillCarryItems(data.willCarryItems);
+        
+
+        if (data.startTime) setStartTime(data.startTime.slice(0, 16));
+        if (data.endTime) setEndTime(data.endTime.slice(0, 16));
+
+        if (data.priority === 'high' && canSetPriority) {
+            setPriority('high');
+        } else {
+            setPriority('normal');
+        }
+
+    } catch (err) {
+        console.error(err);
+        alert("Yapay zeka metni çözümleyemedi. Lütfen tekrar deneyin.");
+    } finally {
+        setAiLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); 
@@ -62,6 +112,7 @@ export default function CreateRequestPage() {
       setStartTime('');
       setEndTime('');
       setPriority('normal');
+      setAiText('');
 
       
       setTimeout(() => {
@@ -85,6 +136,38 @@ export default function CreateRequestPage() {
     
     <div className="max-w-3xl mx-auto">
       
+      <div className="bg-linear-to-r from-purple-50 to-indigo-50 border border-purple-200 p-5 rounded-xl mb-6 shadow-sm">
+        <div className="flex items-center mb-2">
+            <SparklesIcon className="h-5 w-5 text-purple-600 mr-2" />
+            <h3 className="font-bold text-purple-800">Yapay Zeka ile Hızlı Doldur</h3>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3">
+            <input 
+                type="text" 
+                value={aiText}
+                onChange={(e) => setAiText(e.target.value)}
+                placeholder='Örn: "Yarın 14:00te Rektörlükten Esenboğaya misafir götüreceğim, acil."'
+                className="flex-1 p-3 border border-purple-200 rounded-lg outline-none focus:ring-2 focus:ring-purple-400 text-sm"
+                onKeyDown={(e) => e.key === 'Enter' && handleAiFill()}
+            />
+            <button 
+                onClick={handleAiFill}
+                disabled={aiLoading || !aiText.trim()}
+                className="bg-purple-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 transition-all flex items-center justify-center min-w-[140px]"
+            >
+                {aiLoading ? (
+                    <span className="animate-pulse">Düşünüyor...</span>
+                ) : (
+                    <>
+                        <SparklesIcon className="h-4 w-4 mr-2 text-yellow-300" />
+                        Sihirli Doldur
+                    </>
+                )}
+            </button>
+        </div>
+        <p className="text-xs text-purple-500 mt-2 ml-1">* İsteğinizi doğal bir dille yazın, formu sizin için dolduralım.</p>
+      </div>
+
       <div className="bg-white shadow-lg rounded-lg p-6 sm:p-8">
         <h2 className="text-2xl font-semibold text-gray-800 mb-6">
           Yeni Araç Talep Formu
@@ -106,6 +189,7 @@ export default function CreateRequestPage() {
 
        
         <form onSubmit={handleSubmit} className="space-y-6">
+          {canSetPriority && (
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Aciliyet Durumu</label>
@@ -141,6 +225,7 @@ export default function CreateRequestPage() {
                 * Acil durumlar şoförlerin rotasında önceliklendirilir.
             </p>
           </div>
+          )}
           
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -88,6 +88,7 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: {
     { name: 'Yemek Menüsü', href: '/dashboard/yemek', icon: CalendarIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN] },
     { name: 'Görevlerim', href: '/dashboard/gorevlerim',icon : ClipboardDocumentCheckIcon,roles : [UserRole.DRIVER]},
     { name: 'Yönetim Paneli', href: '/dashboard/admin',icon : CommandLineIcon,roles: [UserRole.ADMIN]},
+    { name: 'Kullanıcılar', href: '/dashboard/kullanicilar', icon: UserIcon, roles: [UserRole.ADMIN]},
     ];
 
     const sidebarContent =(
@@ -160,22 +161,6 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: {
           </span>
         )}
       </div>
-
-      {user.driverStatus === 'available' ? (
-        <button
-          onClick={() => handleStatusChange('busy')}
-          className="w-full rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500"
-        >
-          Meşgule Geç
-        </button>
-      ) : (
-        <button
-          onClick={() => handleStatusChange('available')}
-          className="w-full rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500"
-        >
-          Uyguna Geç
-        </button>
-      )}
     </div>
         )}
         <div className="border-t border-gray-200 p-4">

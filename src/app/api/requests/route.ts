@@ -4,6 +4,7 @@ import connectToDatabase from "@/src/lib/db";
 import VehicleRequest from "@/src/lib/models/VehicleRequest";
 import { RequestStatus } from "@/src/lib/models/VehicleRequest";
 import { getAuthenticatedUser } from "@/src/lib/auth";
+import { UserRole } from "@/src/lib/models/User";
 
 export async function POST(request: NextRequest) {
 
@@ -20,6 +21,14 @@ export async function POST(request: NextRequest) {
             endTime,
             priority
         }= await request.json();
+
+        let finalPriority = priority || 'normal';
+
+        if(finalPriority === 'high'){
+            if(user.role !== UserRole.ADMIN && user.role !== UserRole.AMIR){
+                finalPriority = 'normal';
+            }
+        }
 
         if(!fromLocation || !toLocation || !purpose || willCarryItems === undefined || !startTime || !endTime){
             return NextResponse.json({msg : 'Lütfen tüm zorunlu alanları doldurun.'},{status : 400});
