@@ -8,15 +8,12 @@ const config = {
   theme: {
     extend: {},
   },
-  // --- KRİTİK KISIM BURASI ---
   plugins: [
     require("daisyui")
   ],
-  // DaisyUI Temaları
   daisyui: {
     themes: ["light", "dark", "corporate", "business"], 
   },
-  // ---------------------------
 };
 
 export default config;

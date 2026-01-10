@@ -29,9 +29,8 @@ export async function POST(request: Request) {
       },
     });
 
-    const resetUrl = `http://192.168.2.198:3000/reset-password/${resetToken}`;
+    const resetUrl = `http://192.168.3.90:3000/reset-password/${resetToken}`;
 
-    // 7. Mail İçeriği
     const mailOptions = {
       from: `"Yüksek İhtisas Üniversitesi İdari Portal" <${process.env.EMAIL_USER}>`,
       to: user.email,
@@ -53,7 +52,6 @@ export async function POST(request: Request) {
       `,
     };
 
-    // 8. Maili Gönder
     await transporter.sendMail(mailOptions);
 
     return NextResponse.json({ msg: 'Sıfırlama bağlantısı e-posta adresinize gönderildi.' }, { status: 200 });

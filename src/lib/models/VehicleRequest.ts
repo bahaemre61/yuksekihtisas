@@ -21,6 +21,7 @@ export interface IVehicleRequest extends Document {
     purpose: string; 
     startTime: Date; 
     endTime: Date;
+    district: string;
     priority : 'normal' | 'high'; 
 }
 
@@ -63,6 +64,10 @@ const VehicleRequestSchema: Schema<IVehicleRequest> = new Schema({
     endTime: {
         type: Date,
         required: true
+    },
+    district: {
+        type: String,
+        required: true,
     },
     priority:{
         type: String,

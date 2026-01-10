@@ -2,7 +2,7 @@
 
 import React, {useEffect, useState} from 'react';
 import axios from 'axios';
-import { MegaphoneIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
+import { MegaphoneIcon, ExclamationCircleIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 interface IAnnouncement{
   _id : string;
@@ -22,6 +22,8 @@ export default function AnnouncementsPage() {
     const [content, setContent] = useState('');
     const [priority, setPriority] = useState<'normal' | 'urgent'>('normal');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const [deletingId, setDeletingId] = useState<string | null>(null);
 
     useEffect(() => {
       const initData = async () => {
@@ -55,6 +57,22 @@ export default function AnnouncementsPage() {
      }finally{
       setIsSubmitting(false);
      }
+    };
+
+    const handleDeleteAnnouncement = async(id:string) => {
+      if(!confirm('Bu duyuruyu silmek istediğinize emin misiniz?')) return;
+      setDeletingId(id);
+
+      try{
+        await axios.delete(`/api/announcements/${id}`);
+        setAnnouncements((prev) => prev.filter((ann) => ann._id !== id));
+        alert('Duyuru silindi.');
+      }catch(err){
+        console.error(err);
+        alert('Silme işlemi sırasında hata oluştu.');
+      }finally{
+        setDeletingId(null);
+      }
     };
     if(loading) return <div className='p-6'>Yükleniyor...</div>
     return (
@@ -118,10 +136,25 @@ export default function AnnouncementsPage() {
                             </h3>
                             <p className="mt-2 text-gray-600 whitespace-pre-wrap">{ann.content}</p>
                         </div>
+                        <div className='flex flex-col items-end ml-4 space-y-2'>
                         <span className="text-xs text-gray-400 whitespace-nowrap ml-4">
                             {new Date(ann.createdAt).toLocaleDateString('tr-TR')}
                         </span>
+                        {isAdmin && (
+                          <button
+                          onClick={() => handleDeleteAnnouncement(ann._id)}
+                          className="text-red-500 hover:text-red-700 p-1 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+                          title='Duyuruyu Sil'
+                        >
+                          {deletingId === ann._id ?(
+                            <span className='text-xs'>Siliniyor...</span>
+                          ) : (
+                            <TrashIcon className="h-5 w-5" />
+                          )}
+                        </button>
+                        )}
                     </div>
+                </div>
                 </div>
             ))
         )}

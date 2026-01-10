@@ -16,7 +16,7 @@ export async function POST(request:Request) {
       
       Çıktı Formatı (JSON):
       {
-        "fromLocation": "string (Varsayılan: Merkez)",
+        "fromLocation": "string (Varsayılan: Yüksek İhtisas Üniversitesi Tıp Fakültesi)",
         "toLocation": "string",
         "purpose": "string",
         "startTime": "ISO String (Tahmin et)",
