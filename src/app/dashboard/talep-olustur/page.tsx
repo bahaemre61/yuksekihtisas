@@ -153,7 +153,7 @@ export default function CreateRequestPage() {
             <button 
                 onClick={handleAiFill}
                 disabled={aiLoading || !aiText.trim()}
-                className="bg-purple-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 transition-all flex items-center justify-center min-w-[140px]"
+                className="bg-purple-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 transition-all flex items-center justify-center min-w-140px"
             >
                 {aiLoading ? (
                     <span className="animate-pulse">Düşünüyor...</span>

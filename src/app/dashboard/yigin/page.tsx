@@ -125,7 +125,7 @@ export default function PendingGroupsPage() {
   if (loading) return <div className="p-6 text-center text-gray-500">Yükleniyor...</div>;
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-lg relative min-h-[500px]">
+    <div className="bg-white p-6 rounded-lg shadow-lg relative min-h-500px">
       
       {/* HEADER */}
       <div className="mb-6 border-b pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -214,7 +214,7 @@ export default function PendingGroupsPage() {
                         </div>
 
                         {/* YOLCU LİSTESİ (Scrollable) */}
-                        <div className="p-4 space-y-3 max-h-[200px] overflow-y-auto custom-scrollbar">
+                        <div className="p-4 space-y-3 max-h-200px overflow-y-auto custom-scrollbar">
                             {group.requests.map((req) => (
                                 <div key={req._id} className="text-sm border-b border-gray-100 last:border-0 pb-2 hover:bg-gray-50 rounded px-1 transition-colors">
                                     <div className="flex justify-between font-semibold text-gray-700">

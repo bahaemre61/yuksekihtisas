@@ -1,0 +1,54 @@
+import mongoose, { Schema,Document, Types, mongo } from "mongoose";
+import { IUser } from "./User";
+
+export interface ITechnicalRequest extends Document {
+    user: IUser['_id'];
+    technicalStaff?: IUser['_id'];
+    technicalIssue: string;
+    district: string;
+    title: string;
+    description: string;
+    screenshotUrl?: string;
+    priority : 'normal' | 'high';
+    status: 'PENDING' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+    completedAt?: Date;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+const TechnicalRequestSchema = new Schema<ITechnicalRequest>(
+   {
+    user: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+    technicalStaff: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null
+    },
+    district: { type: String, required: true, index: true },    
+    title: { type: String, required: true },
+    description: { type: String, required: true },
+    screenshotUrl: { type: String },
+    
+    priority: {
+      type: String,
+      enum: ['normal', 'high'],
+      default: 'normal'
+    },
+    status: {
+      type: String,
+      enum: ['PENDING', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'],
+      default: 'PENDING',
+      index: true
+    },
+    completedAt: { type: Date, default: null }
+  },
+  { timestamps: true, versionKey: false }
+);
+
+const TechnicalRequest = mongoose.models.TechnicalRequest || mongoose.model<ITechnicalRequest>('TechnicalRequest', TechnicalRequestSchema);
+
+export default TechnicalRequest;

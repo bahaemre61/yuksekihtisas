@@ -162,7 +162,7 @@ export default function PendingRequestsPage() {
   if (loading) return <div className="p-6 text-center">Yükleniyor...</div>;
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-lg relative min-h-[500px]">
+    <div className="bg-white p-6 rounded-lg shadow-lg relative min-h500px">
       
       <div className="mb-6 border-b pb-4">
         <h2 className="text-2xl font-semibold text-gray-800">Talep Yığını</h2>
@@ -254,19 +254,19 @@ export default function PendingRequestsPage() {
                             <h3 className="text-lg font-bold text-gray-900 leading-tight">{req.purpose}</h3>
                             <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4 text-sm text-gray-600">
                                 <div className="flex items-start">
-                                    <span className="font-semibold text-gray-800 min-w-[70px]">Nereden:</span>
+                                    <span className="font-semibold text-gray-800 min-w-70px">Nereden:</span>
                                     <span>{req.fromLocation}</span>
                                 </div>
                                 <div className="flex items-start">
-                                    <span className="font-semibold text-gray-800 min-w-[70px]">Nereye:</span>
+                                    <span className="font-semibold text-gray-800 min-w-70px">Nereye:</span>
                                     <span>{req.toLocation}</span>
                                 </div>
                                 <div className="flex items-center">
-                                    <span className="font-semibold text-gray-800 min-w-[70px]">Saat:</span>
+                                    <span className="font-semibold text-gray-800 min-w-70px">Saat:</span>
                                     <span>{formatTRDate(req.startTime)}</span>
                                 </div>
                                 <div className="flex items-center">
-                                    <span className="font-semibold text-gray-800 min-w-[70px]">Yolcu:</span>
+                                    <span className="font-semibold text-gray-800 min-w-70px">Yolcu:</span>
                                     <span>{req.requestingUser.name}</span>
                                 </div>
                             </div>
