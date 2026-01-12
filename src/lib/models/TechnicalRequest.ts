@@ -9,7 +9,7 @@ export interface ITechnicalRequest extends Document {
     title: string;
     description: string;
     screenshotUrl?: string;
-    priority : 'normal' | 'high';
+    priority : 'MEDIUM' | 'HIGH' | 'LOW';
     status: 'PENDING' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
     completedAt?: Date;
     createdAt: Date;
@@ -35,8 +35,8 @@ const TechnicalRequestSchema = new Schema<ITechnicalRequest>(
     
     priority: {
       type: String,
-      enum: ['normal', 'high'],
-      default: 'normal'
+      enum: ['LOW', 'MEDIUM', 'HIGH'],
+      default: 'MEDIUM'
     },
     status: {
       type: String,

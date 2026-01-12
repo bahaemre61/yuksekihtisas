@@ -1,343 +1,82 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useRouter } from 'next/navigation'; 
-import { ExclamationTriangleIcon , SparklesIcon} from '@heroicons/react/24/outline';
+import { useState } from 'react';
+import AracTalepForm from '@/src/components/forms/AracTalepForm'; // Mevcut formunuz
+import TeknikTalepForm from '@/src/components/forms/TeknikTalepForm'; // Yeni formunuz
 
-export default function CreateRequestPage() {
+export default function TalepOlusturPage() {
+  const [activeTab, setActiveTab] = useState<'selection' | 'vehicle' | 'technical'>('selection');
 
-  const [fromLocation, setFromLocation] = useState('');
-  const [toLocation, setToLocation] = useState('');
-  const [purpose, setPurpose] = useState('');
-  const [willCarryItems, setWillCarryItems] = useState(false);
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
-  const [priority, setPriority] = useState<'normal' | 'high'>('normal');
-  
+  const SelectionScreen = () => (
+    <div className="flex flex-col items-center justify-center min-h-[60vh]">
+      <div className="text-center mb-10">
+        <h1 className="text-3xl font-bold text-gray-800">Talep Oluştur</h1>
+        <p className="text-gray-500 mt-2">Lütfen oluşturmak istediğiniz talep türünü seçiniz.</p>
+      </div>
 
-  
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [canSetPriority, setCanSetPriority] = useState(false);  
-
-  const [aiText, setAiText] = useState('');
-  const [aiLoading, setAiLoading] = useState(false);
-  
-  const router = useRouter();
-
-  useEffect(() => {
-    const checkRole = async () => {
-      try {
-        const res = await axios.get('/api/me');
-        const role = res.data.role;
-        if(role === 'amir' || role === 'admin') {
-          setCanSetPriority(true);
-        }
-      } catch (err) {
-        console.error('Kullanıcı rolü alınamadı:', err);
-      }
-    };
-    checkRole();
-  }, []);
-
-  const handleAiFill = async () => {
-    if (!aiText.trim()) return;
-    setAiLoading(true);
-    setError('');
-    try {
-        const res = await axios.post('/api/ai/parse-request', { text: aiText });
-        const data = res.data; 
-
-        if (data.fromLocation) setFromLocation(data.fromLocation);
-        if (data.toLocation) setToLocation(data.toLocation);
-        if (data.purpose) setPurpose(data.purpose);
-        if (data.willCarryItems !== undefined) setWillCarryItems(data.willCarryItems);
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl px-4">
         
+        {/* 1. KUTU: ARAÇ TALEBİ */}
+        <div 
+          onClick={() => setActiveTab('vehicle')}
+          className="group relative bg-white p-8 rounded-2xl shadow-md border-2 border-transparent hover:border-blue-500 hover:shadow-xl cursor-pointer transition-all duration-300 flex flex-col items-center text-center"
+        >
+          <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-colors">
+            {/* Araba İkonu (SVG) */}
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-blue-600 group-hover:text-white">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">Araç Talebi</h2>
+          <p className="text-gray-500 text-sm">
+            Saha görevleri veya ulaşım için araç tahsis talebinde bulunun.
+          </p>
+        </div>
 
-        if (data.startTime) setStartTime(data.startTime.slice(0, 16));
-        if (data.endTime) setEndTime(data.endTime.slice(0, 16));
+        {/* 2. KUTU: TEKNİK TALEP */}
+        <div 
+          onClick={() => setActiveTab('technical')}
+          className="group relative bg-white p-8 rounded-2xl shadow-md border-2 border-transparent hover:border-orange-500 hover:shadow-xl cursor-pointer transition-all duration-300 flex flex-col items-center text-center"
+        >
+          <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mb-6 group-hover:bg-orange-600 transition-colors">
+            {/* Teknik/Tamir İkonu (SVG) */}
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-orange-600 group-hover:text-white">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 1 1-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 0 0 4.486-6.336l-3.276 3.277a3.004 3.004 0 0 1-2.25-2.25l3.276-3.276a4.5 4.5 0 0 0-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437 1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008Z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">Teknik Destek</h2>
+          <p className="text-gray-500 text-sm">
+            Bilgisayar, yazıcı veya donanım arızaları için teknik servis çağırın.
+          </p>
+        </div>
 
-        if (data.priority === 'high' && canSetPriority) {
-            setPriority('high');
-        } else {
-            setPriority('normal');
-        }
-
-    } catch (err) {
-        console.error(err);
-        alert("Yapay zeka metni çözümleyemedi. Lütfen tekrar deneyin.");
-    } finally {
-        setAiLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); 
-    setLoading(true);
-    setError('');
-    setSuccessMessage('');
-
-    try {
-      
-      const payload = {
-        fromLocation,
-        toLocation,
-        purpose,
-        willCarryItems,
-        startTime,
-        endTime,
-        priority,
-      };
-
-      
-      if (new Date(endTime) <= new Date(startTime)) {
-        setError('Dönüş saati, gidiş saatinden sonra olmalıdır.');
-        setLoading(false);
-        return;
-      }
-
-
-      await axios.post('/api/requests', payload);
-
-      
-      setSuccessMessage('Araç talebiniz başarıyla oluşturuldu! Taleplerim sayfasına yönlendiriliyorsunuz...');
-      
-      
-      setFromLocation('');
-      setToLocation('');
-      setPurpose('');
-      setWillCarryItems(false);
-      setStartTime('');
-      setEndTime('');
-      setPriority('normal');
-      setAiText('');
-
-      
-      setTimeout(() => {
-        router.push('/dashboard/taleplerim');
-      }, 2000);
-
-    } catch (err: any) {
-      
-      if (axios.isAxiosError(err) && err.response) {       
-        setError(err.response.data.msg || 'Talep oluşturulamadı. Bilinmeyen bir hata.');
-      } else {
-        setError('Bir hata oluştu. Lütfen tekrar deneyin.');
-      }
-    } finally {
-      
-      setLoading(false);
-    }
-  };
+      </div>
+    </div>
+  );
 
   return (
-    
-    <div className="max-w-3xl mx-auto">
+    <div className="p-6">
+      {/* Eğer bir seçim yapıldıysa "Geri Dön" butonu göster */}
+      {activeTab !== 'selection' && (
+        <button 
+          onClick={() => setActiveTab('selection')}
+          className="mb-6 flex items-center text-gray-600 hover:text-blue-600 transition-colors font-medium"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 mr-1">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+          </svg>
+          Geri Dön
+        </button>
+      )}
+
+      {/* --- EKRAN YÖNETİMİ --- */}
+      {activeTab === 'selection' && <SelectionScreen />}
       
-      <div className="bg-linear-to-r from-purple-50 to-indigo-50 border border-purple-200 p-5 rounded-xl mb-6 shadow-sm">
-        <div className="flex items-center mb-2">
-            <SparklesIcon className="h-5 w-5 text-purple-600 mr-2" />
-            <h3 className="font-bold text-purple-800">Yapay Zeka ile Hızlı Doldur</h3>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-3">
-            <input 
-                type="text" 
-                value={aiText}
-                onChange={(e) => setAiText(e.target.value)}
-                placeholder='Örn: "Yarın 14:00te Rektörlükten Esenboğaya misafir götüreceğim, acil."'
-                className="flex-1 p-3 border border-purple-200 rounded-lg outline-none focus:ring-2 focus:ring-purple-400 text-sm"
-                onKeyDown={(e) => e.key === 'Enter' && handleAiFill()}
-            />
-            <button 
-                onClick={handleAiFill}
-                disabled={aiLoading || !aiText.trim()}
-                className="bg-purple-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 transition-all flex items-center justify-center min-w-140px"
-            >
-                {aiLoading ? (
-                    <span className="animate-pulse">Düşünüyor...</span>
-                ) : (
-                    <>
-                        <SparklesIcon className="h-4 w-4 mr-2 text-yellow-300" />
-                        Sihirli Doldur
-                    </>
-                )}
-            </button>
-        </div>
-        <p className="text-xs text-purple-500 mt-2 ml-1">* İsteğinizi doğal bir dille yazın, formu sizin için dolduralım.</p>
-      </div>
+      {/* Mevcut Araç Formunuz Buraya Gelecek */}
+      {activeTab === 'vehicle' && <AracTalepForm />}
 
-      <div className="bg-white shadow-lg rounded-lg p-6 sm:p-8">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-          Yeni Araç Talep Formu
-        </h2>
-        
-        
-        {error && (
-          <div className="mb-4 rounded-md bg-red-100 p-4 border border-red-300">
-            <p className="text-sm font-medium text-red-700">{error}</p>
-          </div>
-        )}
-        
-        
-        {successMessage && (
-          <div className="mb-4 rounded-md bg-green-100 p-4 border border-green-300">
-            <p className="text-sm font-medium text-green-700">{successMessage}</p>
-          </div>
-        )}
-
-       
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {canSetPriority && (
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Aciliyet Durumu</label>
-            <div className="grid grid-cols-2 gap-4">
-                <button
-                    type="button"
-                    onClick={() => setPriority('normal')}
-                    className={`
-                        flex items-center justify-center px-4 py-3 border rounded-lg text-sm font-medium transition-all
-                        ${priority === 'normal' 
-                            ? 'border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-200' 
-                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'}
-                    `}
-                >
-                    Normal Talep
-                </button>
-
-                <button
-                    type="button"
-                    onClick={() => setPriority('high')}
-                    className={`
-                        flex items-center justify-center px-4 py-3 border rounded-lg text-sm font-medium transition-all
-                        ${priority === 'high' 
-                            ? 'border-red-500 bg-red-50 text-red-700 ring-2 ring-red-200' 
-                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'}
-                    `}
-                >
-                    <ExclamationTriangleIcon className="h-5 w-5 mr-2" />
-                    ACİL DURUM
-                </button>
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-                * Acil durumlar şoförlerin rotasında önceliklendirilir.
-            </p>
-          </div>
-          )}
-          
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="fromLocation" className="block text-sm font-medium text-gray-700">
-                Nereden?
-              </label>
-              <input
-                type="text"
-                id="fromLocation"
-                value={fromLocation}
-                onChange={(e) => setFromLocation(e.target.value)}
-                required
-                disabled={loading} 
-                className="mt-1 block w-full appearance-none rounded-lg border border-gray-300 px-4 py-3 text-base text-gray-900 placeholder-gray-500 focus:z-10 focus:border-blue-500 focus:outline-none focus:ring-blue-500 disabled:bg-gray-50"
-              />
-            </div>
-            <div>
-              <label htmlFor="toLocation" className="block text-sm font-medium text-gray-700">
-                Nereye?
-              </label>
-              <input
-                type="text"
-                id="toLocation"
-                value={toLocation}
-                onChange={(e) => setToLocation(e.target.value)}
-                required
-                disabled={loading}
-                className="mt-1 block w-full appearance-none rounded-lg border border-gray-300 px-4 py-3 text-base text-gray-900 placeholder-gray-500 focus:z-10 focus:border-blue-500 focus:outline-none focus:ring-blue-500 disabled:bg-gray-50"
-              />
-            </div>
-          </div>
-
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="startTime" className="block text-sm font-medium text-gray-700">
-                Gidiş Tarihi ve Saati
-              </label>
-              <input
-                type="datetime-local"
-                id="startTime"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                required
-                disabled={loading}
-                className="mt-1 block w-full appearance-none rounded-lg border border-gray-300 px-4 py-3 text-base text-gray-900 placeholder-gray-500 focus:z-10 focus:border-blue-500 focus:outline-none focus:ring-blue-500 disabled:bg-gray-50"
-              />
-            </div>
-            <div>
-              <label htmlFor="endTime" className="block text-sm font-medium text-gray-700">
-                Dönüş Tarihi ve Saati
-              </label>
-              <input
-                type="datetime-local"
-                id="endTime"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                required
-                disabled={loading}
-                className="mt-1 block w-full appearance-none rounded-lg border border-gray-300 px-4 py-3 text-base text-gray-900 placeholder-gray-500 focus:z-10 focus:border-blue-500 focus:outline-none focus:ring-blue-500 disabled:bg-gray-50"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="purpose" className="block text-sm font-medium text-gray-700">
-              Talep Amacı (Açıklama)
-            </label>
-            <textarea
-              id="purpose"
-              rows={4}
-              value={purpose}
-              onChange={(e) => setPurpose(e.target.value)}
-              required
-              disabled={loading}
-              className="mt-1 block w-full appearance-none rounded-lg border border-gray-300 px-4 py-3 text-base text-gray-900 placeholder-gray-500 focus:z-10 focus:border-blue-500 focus:outline-none focus:ring-blue-500 disabled:bg-gray-50"
-            />
-          </div>
-
-          <div className="flex items-center">
-            <input
-              id="willCarryItems"
-              type="checkbox"
-              checked={willCarryItems}
-              onChange={(e) => setWillCarryItems(e.target.checked)}
-              disabled={loading}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            <label htmlFor="willCarryItems" className="ml-2 block text-sm font-medium text-gray-800">
-              Eşya Taşınacak mı? (İşaretliyse: Evet)
-            </label>
-          </div>
-
-          <div className="border-t pt-6">
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative flex w-full justify-center rounded-lg border border-transparent bg-blue-600 px-4 py-3 text-lg font-bold text-white shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <svg className="h-5 w-5 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              ) : (
-                'Talep Gönder'
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
+      {/* Yeni Teknik Formunuz Buraya Gelecek */}
+      {activeTab === 'technical' && <TeknikTalepForm />}
     </div>
   );
 }

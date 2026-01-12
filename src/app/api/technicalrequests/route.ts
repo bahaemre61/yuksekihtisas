@@ -19,9 +19,7 @@ export async function POST(request: NextRequest) {
     const file = formData.get('screenshot') as File | null;
     const description = formData.get('description') as string;
     const title = formData.get('title') as string;
-    const city = formData.get('city') as string;
     const district = formData.get('district') as string;
-    const userId = formData.get('userId') as string; // Frontend'den user ID gelmeli
     const priority = formData.get('priority') as string || 'MEDIUM';
 
     let screenshotUrl = '';
@@ -41,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     const newRequest = new TechnicalRequest({
-        user: userId,
+        user: user.id,
         title,
         description,
         district,
