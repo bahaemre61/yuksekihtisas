@@ -52,7 +52,6 @@ export async function POST(request: Request) {
         }
       }
     );
-    // --- DEĞİŞİKLİK SONA ERDİ ---
 
   } catch (error) {
     console.error(error);

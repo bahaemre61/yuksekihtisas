@@ -5,7 +5,7 @@ export interface ITechnicalRequest extends Document {
     user: IUser['_id'];
     technicalStaff?: IUser['_id'];
     technicalIssue: string;
-    district: string;
+    location: string;
     title: string;
     description: string;
     screenshotUrl?: string;
@@ -28,7 +28,7 @@ const TechnicalRequestSchema = new Schema<ITechnicalRequest>(
       ref: 'User',
       default: null
     },
-    district: { type: String, required: true, index: true },    
+    location: { type: String, required: true, index: true },    
     title: { type: String, required: true },
     description: { type: String, required: true },
     screenshotUrl: { type: String },

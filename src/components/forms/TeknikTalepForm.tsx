@@ -8,22 +8,22 @@ export default function TeknikTalepForm() {
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   
   // --- YENİ EKLENEN KISIM: İLÇELER STATE'İ ---
-  const [districts, setDistricts] = useState<string[]>([]);
-  const [districtsLoading, setDistrictsLoading] = useState(true);
+  const [locations, setLocations] = useState<string[]>([]);
+  const [locationsLoading, setLocationsLoading] = useState(true);
 
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    district: '',
+    location: '',
     priority: 'MEDIUM',
   });
 
     const [file, setFile] = useState<File | null>(null);
 
    useEffect(() => {
-    const fetchDistricts = async () => {
+    const fetchLocations = async () => {
       try {
-        const res = await fetch('/api/districts');
+        const res = await fetch('/api/locations');
         
         if (!res.ok) {
            throw new Error('Veri çekilemedi.');
@@ -37,7 +37,7 @@ export default function TeknikTalepForm() {
         // Çünkü sizin API'niz 'success' değil 'msg' gönderiyor.
         
         if (Array.isArray(result.data)) {
-          setDistricts(result.data);
+          setLocations(result.data);
         } else {
           console.error('API formatı beklenildiği gibi değil:', result);
           setMessage({ type: 'error', text: 'İlçe listesi yüklenemedi.' });
@@ -46,11 +46,11 @@ export default function TeknikTalepForm() {
       } catch (error) {
         console.error('Fetch Hatası:', error);
       } finally {
-        setDistrictsLoading(false);
+        setLocationsLoading(false);
       }
     };
 
-    fetchDistricts();
+    fetchLocations();
   }, []);
 
     const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -72,7 +72,7 @@ export default function TeknikTalepForm() {
       
       dataToSend.append('title', formData.title);
       dataToSend.append('description', formData.description);
-      dataToSend.append('district', formData.district);
+      dataToSend.append('location', formData.location);
       dataToSend.append('priority', formData.priority);
       
       if (file) {
@@ -95,7 +95,7 @@ export default function TeknikTalepForm() {
       setFormData({
         title: '',
         description: '',
-        district: '',
+        location: '',
         priority: 'MEDIUM',
       });
       setFile(null);
@@ -138,18 +138,18 @@ export default function TeknikTalepForm() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Bölge / İlçe</label>
           <select
-            name="district"
+            name="location"
             required
-            value={formData.district}
+            value={formData.location}
             onChange={handleInputChange}
-            disabled={districtsLoading}
+            disabled={locationsLoading}
             className="w-full border border-gray-300 rounded-md p-2 bg-white disabled:bg-gray-100"
           >
-            <option value="">{districtsLoading ? 'Yükleniyor...' : 'Seçiniz'}</option>
+            <option value="">{locationsLoading ? 'Yükleniyor...' : 'Seçiniz'}</option>
             {/* Dinamik Listeleme */}
-            {!districtsLoading && districts.map((dist, index) => (
-              <option key={index} value={dist}>
-                {dist}
+            {!locationsLoading && locations.map((loc, index) => (
+              <option key={index} value={loc}>
+                {loc}
               </option>
             ))}
           </select>
