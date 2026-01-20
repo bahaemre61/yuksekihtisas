@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import City from "@/src/lib/City";
+import City from "@/src/lib/Location";
 import connectToDatabase from "@/src/lib/db";
 
 export async function GET() {

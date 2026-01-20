@@ -11,7 +11,7 @@ export async function  DELETE(request: NextRequest, {params}: {params: Promise<{
     if(error) return error;
 
     if(user.role !== 'admin')
-        return NextResponse.json({msg: 'Yasa: Yetkisiz giriş.'}, {status : 403});
+        return NextResponse.json({msg: 'Yasak: Yetkisiz giriş.'}, {status : 403});
 
     try{
         const {id} = await params;

@@ -1,15 +1,39 @@
 'use client';
 
 import { useState,FormEvent, ChangeEvent, useEffect } from "react";
+import { useRouter } from 'next/navigation'; 
+import { ExclamationTriangleIcon, CheckCircleIcon, ClockIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 
 export default function TeknikTalepForm() {
 
-    const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   
   // --- YENİ EKLENEN KISIM: İLÇELER STATE'İ ---
   const [locations, setLocations] = useState<string[]>([]);
   const [locationsLoading, setLocationsLoading] = useState(true);
+
+  const [canSelectHighPriority, setCanSelectHighPriority] = useState(false);
+  const router = useRouter();
+
+
+  useEffect(() => {
+  const checkUserRole = async () => {
+    try {
+      const res = await fetch('/api/me'); 
+      const data = await res.json();
+      
+
+      if (data.role === 'admin' || data.role === 'amir' || data.role === 'ADMIN') {
+        setCanSelectHighPriority(true);
+      }
+    } catch (error) {
+      console.error('Yetki kontrolü yapılamadı', error);
+    }
+  };
+
+  checkUserRole();
+}, []);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -100,6 +124,10 @@ export default function TeknikTalepForm() {
       });
       setFile(null);
       (document.getElementById('fileInput') as HTMLInputElement).value = '';
+      
+      setTimeout(() => {
+        router.push('/dashboard/tekniktaleplerim');
+      }, 2000);
 
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message });
@@ -156,7 +184,7 @@ export default function TeknikTalepForm() {
         </div>
 
         {/* Aciliyet Durumu */}
-        {/* <div>
+         {/* <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Aciliyet Durumu</label>
           <div className="flex gap-4 mt-2">
             {['LOW', 'MEDIUM', 'HIGH'].map((prio) => (
@@ -176,8 +204,82 @@ export default function TeknikTalepForm() {
                 </span>
               </label>
             ))}
+          </div> */}
+          <div>
+          <label className="block text-sm font-medium text-gray-700 mb-3">Aciliyet Durumu</label>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            
+            {/* DÜŞÜK ÖNCELİK */}
+            <button
+              type="button"
+              onClick={() => setFormData(prev => ({ ...prev, priority: 'LOW' }))}
+              className={`
+                flex items-center justify-center px-4 py-3 border rounded-lg text-sm font-medium transition-all
+                ${formData.priority === 'LOW'
+                  ? 'border-green-500 bg-green-50 text-green-700 ring-2 ring-green-200'
+                  : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                }
+              `}
+            >
+              <CheckCircleIcon className={`h-5 w-5 mr-2 ${formData.priority === 'LOW' ? 'text-green-600' : 'text-gray-400'}`} />
+              Düşük
+            </button>
+
+            {/* ORTA (NORMAL) ÖNCELİK */}
+            <button
+              type="button"
+              onClick={() => setFormData(prev => ({ ...prev, priority: 'MEDIUM' }))}
+              className={`
+                flex items-center justify-center px-4 py-3 border rounded-lg text-sm font-medium transition-all
+                ${formData.priority === 'MEDIUM'
+                  ? 'border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-200'
+                  : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                }
+              `}
+            >
+              <ClockIcon className={`h-5 w-5 mr-2 ${formData.priority === 'MEDIUM' ? 'text-blue-600' : 'text-gray-400'}`} />
+              Normal
+            </button>
+
+            <button
+              type="button"
+              disabled={!canSelectHighPriority}
+              onClick={() => canSelectHighPriority && setFormData(prev => ({ ...prev, priority: 'HIGH' }))}
+              className={`
+                relative flex items-center justify-center px-4 py-3 border rounded-lg text-sm font-medium transition-all
+                ${!canSelectHighPriority
+                  ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed opacity-70' // Pasif Durum
+                  : formData.priority === 'HIGH'
+                    ? 'border-red-500 bg-red-50 text-red-700 ring-2 ring-red-200 cursor-pointer' // Aktif ve Seçili
+                    : 'border-gray-300 text-gray-700 hover:bg-gray-50 cursor-pointer' // Aktif ama Seçili Değil
+                }
+              `}
+            >
+              {!canSelectHighPriority ? (
+                <LockClosedIcon className="h-5 w-5 mr-2 text-gray-400" />
+              ) : (
+                <ExclamationTriangleIcon className={`h-5 w-5 mr-2 ${formData.priority === 'HIGH' ? 'text-red-600' : 'text-gray-400'}`} />
+              )}
+              
+              ACİL DURUM
+              
+              {/* Sadece yetkisi olmayanlar görsün diye ufak bir "Sadece Amir" etiketi */}
+              {!canSelectHighPriority && (
+                 <span className="absolute -top-2 -right-2 bg-gray-500 text-white text-[9px] px-1.5 py-0.5 rounded-full">
+                    Sadece Amir
+                 </span>
+              )}
+            </button>
+
           </div>
-        </div> */}
+          
+          {/* Bilgilendirme Metni */}
+          <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+            <span className="text-red-500 font-bold">*</span>
+            Acil durumlar teknik ekip ekranında en üstte ve kırmızı olarak listelenir.
+          </p>
+        </div>
 
         {/* Açıklama */}
         <div>

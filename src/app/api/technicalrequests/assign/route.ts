@@ -28,7 +28,7 @@ export async function PUT(request:NextRequest) {
             requestId,
             {
                  technicalStaff: technicianId,
-                 status: 'ASSIGNED' },
+                 status: 'assigned' },
             { new: true }
         );
 

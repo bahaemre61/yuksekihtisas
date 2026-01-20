@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import bcrypt from 'bcryptjs';
 import path from 'path';
 
 dotenv.config({ path: path.resolve(__dirname, '../.env') });

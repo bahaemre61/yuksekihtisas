@@ -17,7 +17,9 @@ import {
   PlusCircleIcon,
   XMarkIcon,
   ClipboardDocumentCheckIcon,
-  CommandLineIcon
+  CommandLineIcon,
+  CpuChipIcon,
+  WrenchScrewdriverIcon
 } from '@heroicons/react/24/outline';
 import unilogo from "@/src/components/yuksekihtisasuni-logo.png"
 
@@ -81,8 +83,10 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: {
     const navLinks = [
     { name: 'Ana Sayfa', href: '/dashboard', icon: HomeIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN] },
     { name: 'Yeni Talep Oluştur', href: '/dashboard/talep-olustur', icon: PlusCircleIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN] },
-    { name: 'Araç Taleplerim', href: '/dashboard/taleplerim', icon: TruckIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN] },
-    { name: 'Talep Yığını', href: '/dashboard/yigin', icon: ArchiveBoxIcon, roles: [UserRole.DRIVER, UserRole.ADMIN] },
+    { name: 'Araç Taleplerim', href: '/dashboard/taleplerim', icon: TruckIcon, roles: [UserRole.USER, UserRole.ADMIN] },
+    { name: 'Teknik Taleplerim', href: '/dashboard/tekniktaleplerim', icon: WrenchScrewdriverIcon, roles: [UserRole.USER, UserRole.ADMIN] },
+    { name: 'Araç Talep Yığını', href: '/dashboard/yigin', icon: ArchiveBoxIcon, roles: [UserRole.DRIVER, UserRole.ADMIN] },
+    { name: 'Teknik Talepler', href: '/dashboard/teknikyigin', icon: CpuChipIcon, roles: [UserRole.ADMIN]},
     { name: 'Yapılacak Listem', href: '/dashboard/todo', icon: CheckBadgeIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN] },
     { name: 'Duyurular', href: '/dashboard/duyurular', icon: DocumentTextIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN] },
     { name: 'Yemek Menüsü', href: '/dashboard/yemek', icon: CalendarIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN] },

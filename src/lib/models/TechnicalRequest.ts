@@ -10,7 +10,7 @@ export interface ITechnicalRequest extends Document {
     description: string;
     screenshotUrl?: string;
     priority : 'MEDIUM' | 'HIGH' | 'LOW';
-    status: 'PENDING' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+    status: 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
     completedAt?: Date;
     createdAt: Date;
     updatedAt: Date;
@@ -40,8 +40,8 @@ const TechnicalRequestSchema = new Schema<ITechnicalRequest>(
     },
     status: {
       type: String,
-      enum: ['PENDING', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'],
-      default: 'PENDING',
+      enum: ['pending', 'assigned', 'in_progress', 'completed', 'cancelled'],
+      default: 'pending',
       index: true
     },
     completedAt: { type: Date, default: null }

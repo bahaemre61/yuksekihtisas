@@ -1,8 +1,7 @@
 'use client'; 
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { request } from 'http';
 import { TrashIcon } from '@heroicons/react/24/outline';
 
 enum RequestStatus {
