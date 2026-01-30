@@ -20,10 +20,7 @@ interface ITechnicalRequest {
   priority: 'LOW' | 'MEDIUM' | 'HIGH';
   status: RequestStatus;
   createdAt: string;
-  technicalStaff?: {
-    name: string;
-    title?: string;
-  };
+  technicalStaff?: { _id: string, name: string, title?: string }[];
 }
 
 const StatusBadge = ({ status }: { status: RequestStatus }) => {
@@ -138,9 +135,7 @@ export default function MyRequestsPage() {
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg max-w-5xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <h2 className="text-2xl font-semibold text-gray-800">Teknik Taleplerim</h2>
-      </div>
+      <h2 className="text-2xl font-semibold text-gray-800 mb-6">Teknik Taleplerim</h2>
       
       {requests.length === 0 ? (
         <div className="text-center text-gray-500 py-10 border-2 border-dashed border-gray-300 rounded-lg">
@@ -152,6 +147,7 @@ export default function MyRequestsPage() {
             <div key={req._id} className="border border-gray-200 rounded-lg p-4 shadow-sm transition-shadow hover:shadow-md bg-white">
               <div className="flex flex-col sm:flex-row justify-between sm:items-start">
                 
+                {/* SOL TARAFTAKİ DETAYLAR */}
                 <div className="flex-1 mb-4 sm:mb-0 pr-4">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="text-lg font-semibold text-gray-900">{req.title}</h3>
@@ -164,36 +160,38 @@ export default function MyRequestsPage() {
 
                   <div className="flex flex-wrap gap-4 text-sm text-gray-500 mt-3">
                     <div className="flex items-center gap-1">
-                        <span className="font-bold text-gray-700">Konum:</span> 
-                        {req.location}
+                        <span className="font-bold text-gray-700">Konum:</span> {req.location}
                     </div>
                     <div className="flex items-center gap-1">
-                        <span className="font-bold text-gray-700">Tarih:</span> 
-                        {formatTRDate(req.createdAt)}
+                        <span className="font-bold text-gray-700">Tarih:</span> {formatTRDate(req.createdAt)}
                     </div>
                   </div>
                 </div>             
 
+                {/* SAĞ TARAFTAKİ STATÜ VE PERSONEL LİSTESİ */}
                 <div className="shrink-0 ml-0 sm:ml-4 sm:text-right space-y-3 flex flex-col items-start sm:items-end">
                   <StatusBadge status={req.status} />
                   
-                  <div className="text-sm text-gray-500">
-                    <strong>Tekniker:</strong><br/>
-                    {req.technicalStaff ? (
-                        <span className="text-gray-800">{req.technicalStaff.name}</span>
+                  {/* 2. GÜNCELLEME BURADA: Personel Listesi */}
+                  <div className="text-sm text-gray-500 flex flex-col items-start sm:items-end">
+                    <strong className="mb-1">Teknik Ekip:</strong>
+                    
+                    {req.technicalStaff && req.technicalStaff.length > 0 ? (
+                        <div className="flex flex-col gap-1 sm:items-end">
+                            {req.technicalStaff.map((staff, idx) => (
+                                <span key={idx} className="bg-gray-100 text-gray-800 px-2 py-0.5 rounded text-xs font-medium border border-gray-200">
+                                    {staff.name}
+                                </span>
+                            ))}
+                        </div>
                     ) : (
-                        <span className="italic text-gray-400">—</span>
+                        <span className="italic text-gray-400"> Henüz Atanmadı </span>
                     )}
                   </div>
 
                   {req.status === RequestStatus.PENDING && (
-                    <button 
-                        onClick={() => handleCancel(req._id)}
-                        className='text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition-colors flex items-center gap-1 focus:outline-none'
-                        title="Talebi İptal Et"
-                    >
-                      <TrashIcon className='h-5 w-5' />
-                      <span>İptal Et</span>
+                    <button onClick={() => handleCancel(req._id)} className='text-xs font-medium text-red-500 hover:text-red-700 p-1 rounded transition-colors flex items-center gap-1'>
+                      <TrashIcon className='h-5 w-5' /> <span>İptal Et</span>
                     </button>
                   )}  
                 </div>
@@ -203,7 +201,6 @@ export default function MyRequestsPage() {
           ))}
         </div>
       )}
-
     </div>
   );
 }

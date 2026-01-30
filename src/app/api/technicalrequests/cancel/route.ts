@@ -27,11 +27,11 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({ msg: 'Bu işlem için yetkiniz yok' }, { status: 403 });
     }
 
-    if (requestDoc.status !== 'PENDING') {
+    if (requestDoc.status !== 'pending') {
         return NextResponse.json({ msg: 'Sadece beklemedeki talepler iptal edilebilir.' }, { status: 400 });
     }
 
-    requestDoc.status = 'CANCELLED';
+    requestDoc.status = 'cancelled';
     await requestDoc.save();
 
     return NextResponse.json({ success: true, msg: 'Talep iptal edildi' });

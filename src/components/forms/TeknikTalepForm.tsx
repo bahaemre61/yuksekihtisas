@@ -164,7 +164,7 @@ export default function TeknikTalepForm() {
 
         {/* İlçe Seçimi (API'den Gelen Data) */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Bölge / İlçe</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Yerleşke</label>
           <select
             name="location"
             required

@@ -18,23 +18,24 @@ export async function PUT(request:NextRequest) {
         await connectToDatabase();
 
         const body = await request.json();
-        const { requestId, technicianId } = body;
+        const { requestId, technicianIds } = body; 
 
-        if(!requestId ||! technicianId){
-            return NextResponse.json({success : false, msg : 'Eksik Veri'}, {status : 400});
-        }
-
-        const updatedRequest = await TechnicalRequest.findByIdAndUpdate(
-            requestId,
-            {
-                 technicalStaff: technicianId,
-                 status: 'assigned' },
-            { new: true }
-        );
-
-        return NextResponse.json({ success: true, msg: 'Teknik personel atandı.', data: updatedRequest }, { status: 200 });
-
-    }catch(err){
-        return NextResponse.json({ msg: 'Yetkisiz erişim.'}, {status : 403});
+    if (!requestId || !technicianIds || !Array.isArray(technicianIds)) {
+      return NextResponse.json({ success: false, message: 'Eksik veya hatalı veri.' }, { status: 400 });
     }
+
+    const updatedRequest = await TechnicalRequest.findByIdAndUpdate(
+      requestId,
+      { 
+        technicalStaff: technicianIds,
+        status: 'assigned'
+      },
+      { new: true }
+    );
+
+    return NextResponse.json({ success: true, data: updatedRequest });
+
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
 }

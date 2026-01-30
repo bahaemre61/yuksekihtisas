@@ -16,16 +16,16 @@ export async function GET(request : NextRequest) {
     const {user,error} = getAuthenticatedUser(request);
 if(error) return error
 
-    // if(user.role !== UserRole.DRIVER)
-    //     {
-    //         return NextResponse.json({msg : 'Sadece şoförler iş tamamlayabilir.'}, {status :403});
-    //     }
+     if(user.role !== UserRole.DRIVER)
+         {
+             return NextResponse.json({msg : 'Sadece şoförler iş tamamlayabilir.'}, {status :403});
+        }
     try{
         await connectToDatabase();
 
         const pendingRequests = await VehicleRequest.find({status : 'pending'})
         .populate('requestingUser','name')
-        .select('toLocation requestingUser priority purpose startTime')
+        .select('fromLocation toLocation requestingUser priority purpose startTime')
         .lean();
 
         if(pendingRequests.length === 0){

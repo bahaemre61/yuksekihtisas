@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/src/lib/auth";
 import connectToDatabase from "@/src/lib/db";
 import VehicleRequest, {RequestStatus} from "@/src/lib/models/VehicleRequest";
+import User from "@/src/lib/models/User";
 
 
 export async function POST(request: Request){
@@ -32,6 +33,9 @@ export async function POST(request: Request){
         if(result.modifiedCount === 0){
             return NextResponse.json({msg : 'Bu talepler zaten alınmış veya bulunamadı.'}, {status : 400});
         }
+        await User.findByIdAndUpdate(user.id, {
+        driverStatus: 'busy'
+    });
         return NextResponse.json({msg: `${result.modifiedCount} adet talep zimmetinize atandı.`, success : true},{status : 200});
     }catch(error)
     {

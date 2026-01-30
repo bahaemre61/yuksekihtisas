@@ -3,7 +3,7 @@ import { IUser } from "./User";
 
 export interface ITechnicalRequest extends Document {
     user: IUser['_id'];
-    technicalStaff?: IUser['_id'];
+    technicalStaff: mongoose.Types.ObjectId[];
     technicalIssue: string;
     location: string;
     title: string;
@@ -23,11 +23,11 @@ const TechnicalRequestSchema = new Schema<ITechnicalRequest>(
         ref: 'User',
         required: true
     },
-    technicalStaff: {
+    technicalStaff: [{
       type: Schema.Types.ObjectId,
       ref: 'User',
       default: null
-    },
+    }],
     location: { type: String, required: true, index: true },    
     title: { type: String, required: true },
     description: { type: String, required: true },

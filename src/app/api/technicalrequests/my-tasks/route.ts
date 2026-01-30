@@ -9,12 +9,11 @@ export async function GET(request:NextRequest) {
     const {user, error} = getAuthenticatedUser(request);
       if(error) return error
 
-    if(user.role !== 'admin')
+    if(user.role !== 'admin' && user.role !== 'tech')
         return NextResponse.json({msg: 'Yasak: Yetkisiz giriş.'}, {status : 403});
 
   await connectToDatabase();
   
-  // Personelin ID'sine göre ve henüz bitmemiş (ASSIGNED) olanları çek
   const tasks = await TechnicalRequest.find({ 
     technicalStaff: user.id,
     status: 'assigned' 

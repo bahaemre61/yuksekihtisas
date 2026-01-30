@@ -54,7 +54,7 @@ const StatusBadge = ({status}: {status: RequestStatus}) => {
     case RequestStatus.ASSIGNED: colorClass = 'bg-blue-100 text-blue-800'; text = 'Atandı'; break;
     case RequestStatus.COMPLETED: colorClass = 'bg-green-100 text-green-800'; text = 'Tamamlandı'; break;
     case RequestStatus.CANCELLED: colorClass = 'bg-red-100 text-red-800'; text = 'İptal'; break;
-    default: text = status; // Bilinmeyen durumlar için
+    default: text = status;
   }
   return <span className={`px-2 py-1 text-xs font-bold rounded ${colorClass}`}>{text}</span>
 }
@@ -73,11 +73,9 @@ export default function DashboardHome() {
     const fetchDashboardData = async () => {
       setLoading(true);
       try{
-        // 1. Kullanıcı Bilgisi
         const userRes = await axios.get('/api/me');
         setUserName(userRes.data.name);
 
-        // 2. Araç Talepleri
         const reqReq = await axios.get('/api/requests/my');
         setRecentRequests(reqReq.data.slice(0,5));
 

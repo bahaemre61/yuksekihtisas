@@ -8,7 +8,7 @@ export async function GET() {
   try {
         await connectToDatabase();
 
-    const requests = await TechnicalRequest.find({ status: 'PENDING' })
+    const requests = await TechnicalRequest.find({ status: 'pending' })
       .populate('user', 'name email') // User tablosundan isim ve emaili getir
       .sort({ createdAt: -1 });
 

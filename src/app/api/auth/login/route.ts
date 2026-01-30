@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     const token = jwt.sign(
       payload,
       process.env.JWT_SECRET!,
-      { expiresIn: '1h' } // 1 saat
+      { expiresIn: '6h' } // 6 saat
     );
 
     

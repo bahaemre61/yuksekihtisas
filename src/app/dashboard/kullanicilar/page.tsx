@@ -9,7 +9,7 @@ interface IUser{
     _id: string;
     name: string;
     email: string;
-    role: 'user' | 'driver' | 'admin' | 'amir';
+    role: 'user' | 'driver' | 'admin' | 'amir' | 'tech';
 }
 
 export default function UserPage() {
@@ -172,6 +172,7 @@ export default function UserPage() {
                                 ${user.role === 'admin' ? 'bg-purple-50 text-purple-700 border-purple-200' : 
                                   user.role === 'amir' ? 'bg-blue-50 text-blue-700 border-blue-200' :
                                   user.role === 'driver' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : 
+                                  user.role === 'tech' ? 'bg-green-50 text-green-700 border-green-200' :
                                   'bg-gray-50 text-gray-600 border-gray-200'}`}>
                                 {user.role.toUpperCase()}
                             </span>
@@ -254,6 +255,7 @@ export default function UserPage() {
                             <option value="driver">Şoför</option>
                             <option value="admin">Admin</option>
                             <option value="amir">Amir</option>
+                            <option value="tech">Teknik</option>
                         </select>
                     </div>
                 

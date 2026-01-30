@@ -5,10 +5,9 @@ import bcrypt from 'bcryptjs';
 export const UserRole= {
     USER: 'user',
     DRIVER : 'driver',
+    TECHNICAL : 'tech',
     ADMIN : 'admin',   
     AMIR : 'amir',
-    TECHNICAL : 'tech',
-
 } as const;
 
 export type UserRole = typeof UserRole[keyof typeof UserRole];
