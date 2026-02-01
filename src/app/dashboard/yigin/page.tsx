@@ -93,22 +93,24 @@ export default function PendingGroupsPage() {
         const requestIds = groupRequests.map(r => r._id);
 
         await axios.post('/api/driver/accept-group', { requestIds });
+        
+        const MAIN_HUB = "Yüksek İhtisas Üniversitesi - 100. Yıl Yerleşkesi (Tıp Fakültesi)";
 
-        const startPoint = groupRequests[0].fromLocation.trim(); // İlk yolcunun konumu başlangıç
-        let stops: string[] = [];
-
+        const uniqueStops = new Set<string>();
         groupRequests.forEach(task => {
-            const pickup = task.fromLocation.trim();
-            const dropoff = task.toLocation.trim();
-            if (!stops.includes(pickup)) stops.push(pickup);
-            if (!stops.includes(dropoff)) stops.push(dropoff);
+            if(task.toLocation) uniqueStops.add(task.toLocation.trim());
         });
 
-        const routeArray = [startPoint, ...stops]; 
-        const encodedRoute = routeArray.map(point => encodeURIComponent(point)).join('/');
+        const routeArray = [MAIN_HUB, ...Array.from(uniqueStops), MAIN_HUB];
+        
+        const encodedRoute = routeArray
+            .map(point => encodeURIComponent(point))
+            .join('/');
+
         const mapUrl = `https://www.google.com/maps/dir/${encodedRoute}`;
 
-        alert("Grup zimmetinize atandı! Rota açılıyor...");
+
+        alert("Grup zimmetinize atandı! Rota oluşturuluyor...");
         window.open(mapUrl, '_blank');
 
         setGroups(prev => prev.filter(g => g._id !== groupTitle));

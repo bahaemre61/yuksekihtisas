@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import OpenAI from 'openai';
 
+const MAIN_HUB = "Yüksek İhtisas Üniversitesi - 100. Yıl Yerleşkesi (Tıp Fakültesi)";
+
 const openai = new OpenAI({
     apiKey : process.env.OPENAI_API_KEY,
 });
@@ -11,21 +13,35 @@ export async function POST(request:Request) {
         const {text} = await request.json();
 
         const prompt = `
-      Sen bir araç talep asistanısın. Kullanıcının yazdığı metni analiz edip aşağıdaki JSON formatına çevireceksin.
-      Bugünün tarihi: ${new Date().toISOString()}
-      
-      Çıktı Formatı (JSON):
-      {
-        "fromLocation": "string (Varsayılan: Yüksek İhtisas Üniversitesi Tıp Fakültesi)",
-        "toLocation": "string",
-        "purpose": "string",
-        "startTime": "ISO String (Tahmin et)",
-        "endTime": "ISO String (Gidişten 1 saat sonra varsay)",
-        "willCarryItems": boolean,
-        "priority": "normal" veya "high" (Acil kelimesi geçerse high)
-      }
+    Sen uzman bir lojistik planlayıcısısın.
+    
+    SENARYO:
+    - Şirketin ana merkezi: "${MAIN_HUB}".
+    - Tüm araçlar "${MAIN_HUB}" noktasından yola çıkar.
+    - Yolcuları varış noktalarına (destination) bırakır.
+    - Görev bitince tekrar "${MAIN_HUB}" noktasına döner.
 
-      Kullanıcı Metni: "${text}"
+    GÖREV:
+    Aşağıdaki talep listesini analiz et ve coğrafi olarak aynı güzergahta olanları grupla.
+    Örneğin: Keçiören ve Etlik aynı rotadadır (Kuzey). Batıkent ve Eryaman aynı rotadadır (Batı). Bunları birbirine karıştırma.
+    
+    VERİ LİSTESİ:
+    ${JSON.stringify(text)}
+
+    KURALLAR:
+    1. Çıktı SADECE JSON formatında olmalı.
+    2. Gruplama yaparken "Sektörel Dağılım" mantığını kullan. (Kuzey hattı, Batı hattı vb.)
+    3. JSON yapısı:
+    {
+        "groups": [
+            {
+                "title": "Rota Başlığı (Örn: Kuzey Hattı - Keçiören/Bağlum)",
+                "reason": "Neden gruplandı (Örn: Bu semtler merkezin kuzeyinde ve birbirine 5km mesafede.)",
+                "ids": ["id1", "id2"]
+            }
+        ]
+    }
+    4. Her talep mutlaka bir gruba dahil edilmeli.
     `;
     const completion = await openai.chat.completions.create({
       messages: [{ role: "system", content: prompt }],

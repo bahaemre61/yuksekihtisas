@@ -1,41 +1,61 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import connectToDatabase from "@/src/lib/db";
-import VehicleRequest, {RequestStatus} from "@/src/lib/models/VehicleRequest";
-import { UserRole } from "@/src/lib/models/User";
+import VehicleRequest, { RequestStatus } from "@/src/lib/models/VehicleRequest";
+import User, { UserRole } from "@/src/lib/models/User";
 import { getAuthenticatedUser } from "@/src/lib/auth";
 
+export async function PUT(
+  requests: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const resolvedParams = await params;
+  const requestId = resolvedParams.id; 
 
-export async function PUT(requests:NextRequest,{params}: {params: Promise<{id:string}>}){
-    const {user,error}= getAuthenticatedUser(requests);
-    if(error) return error;
+  const { user, error } = getAuthenticatedUser(requests);
+  if (error) return error;
 
-    if(user.role !== UserRole.ADMIN)
-    {
-        return NextResponse.json({msg : "Yasak: Yetkisiz giriş."}, {status : 403});
+  if (user.role !== UserRole.ADMIN) {
+    return NextResponse.json({ msg: "Yasak: Yetkisiz giriş." }, { status: 403 });
+  }
+
+  try {
+    await connectToDatabase();
+
+    const requestDoc = await VehicleRequest.findById(requestId);
+    
+    if (!requestDoc) {
+      return NextResponse.json({ msg: 'Talep bulunamadı' }, { status: 404 });
     }
 
-    try{
-        const {id} = await params;
-        await connectToDatabase();
+    const driverId = requestDoc.assignedDriver;
 
-        const updatedRequest = await VehicleRequest.findByIdAndUpdate(
-            id,
-            {
-                status : RequestStatus.PENDING,
-                assignedDriver: null
-            },
-            {new : true}
-        );
+    await VehicleRequest.findByIdAndUpdate(
+      requestId,
+      {
+        status: RequestStatus.PENDING,
+        $unset: { assignedDriver: 1 } 
+      }
+    );
 
-        if(!updatedRequest)
-        {
-            return NextResponse.json({msg :'Talep bulunamadı'}, {status : 404});
-        }
+    if (driverId) {
+      const remainingJobsCount = await VehicleRequest.countDocuments({
+        assignedDriver: driverId,
+        status: RequestStatus.ASSIGNED
+      });
 
-        return NextResponse.json({msg : 'Talep boşa çıkarıldı.', requests : updatedRequest}, {status : 200});
-    }catch(error){
-        console.error(error);
-        return NextResponse.json({msg : 'Sunucu Hatası'}, {status : 500});
+      if (remainingJobsCount === 0) {
+        await User.findByIdAndUpdate(driverId, {
+          driverStatus: 'available'
+        });
+        console.log(`Şoför ${driverId} boşa çıktı, müsait durumuna getiriliyor.`);
+      }
     }
+
+    return NextResponse.json({ success: true, msg: 'İş havuzuna geri gönderildi.' }, { status: 200 });
+
+  } catch (error) {
+    console.error("Unassign Hatası:", error);
+    return NextResponse.json({ msg: 'Sunucu Hatası' }, { status: 500 });
+  }
 }
