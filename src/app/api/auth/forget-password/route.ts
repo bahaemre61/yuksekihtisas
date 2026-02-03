@@ -29,7 +29,9 @@ export async function POST(request: Request) {
       },
     });
 
-    const resetUrl = `http://192.168.3.90:3000/reset-password/${resetToken}`;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+
+    const resetUrl = `${baseUrl}/reset-password/${resetToken}`;
 
     const mailOptions = {
       from: `"Yüksek İhtisas Üniversitesi İdari Portal" <${process.env.EMAIL_USER}>`,

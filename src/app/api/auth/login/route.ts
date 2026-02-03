@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     const token = jwt.sign(
       payload,
       process.env.JWT_SECRET!,
-      { expiresIn: '6h' } // 6 saat
+      { expiresIn: '6h' } 
     );
 
     
@@ -42,7 +42,6 @@ export async function POST(request: Request) {
       path: '/', 
     });
 
-    // JSON cevabını oluştur ve 'Set-Cookie' başlığını ekle
     return NextResponse.json(
       { success: true, msg: 'Giriş başarılı' },
       {
