@@ -16,7 +16,9 @@ export const sendMail = async(to: string, subject: string, htmlContent: string) 
             subject: subject,
             html: htmlContent,
         });
-        console.log('Mail gönderildi: %s ' + info.messageId);
+        // console.log('Mail gönderildi: %s ' + info.messageId);
+        console.log('MAIL GÖNDERİLDİ! KONU:', subject); 
+        console.log('Alıcı:', to);
         return true;
     }catch(error)
     {
