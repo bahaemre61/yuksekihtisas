@@ -29,7 +29,7 @@ export default function AnnouncementsPage() {
       const initData = async () => {
         try{
           const userRes = await axios.get('/api/me');
-          if(userRes.data.role === 'admin') setIsAdmin(true);
+          if(userRes.data.role === 'admin' || userRes.data.role === 'amir') setIsAdmin(true);
 
           const annRes = await axios.get('/api/announcements');
           setAnnouncements(annRes.data);

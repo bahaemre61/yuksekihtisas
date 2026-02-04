@@ -15,7 +15,7 @@ export async function PUT(
   const { user, error } = getAuthenticatedUser(requests);
   if (error) return error;
 
-  if (user.role !== UserRole.ADMIN) {
+  if (user.role !== UserRole.ADMIN && user.role !== UserRole.AMIR) {
     return NextResponse.json({ msg: "Yasak: Yetkisiz giriş." }, { status: 403 });
   }
 

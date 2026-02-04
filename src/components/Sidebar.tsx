@@ -93,7 +93,7 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: {
     { name: 'Yemek Menüsü', href: '/dashboard/yemek', icon: CalendarIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.AMIR,UserRole.TECHNICAL] },
     { name: 'Görevlerim', href: '/dashboard/gorevlerim',icon : ClipboardDocumentCheckIcon,roles : [UserRole.DRIVER,]},
     { name: 'Teknik Görevlerim', href: '/dashboard/teknikgorevlerim',icon : ServerStackIcon,roles : [UserRole.TECHNICAL, UserRole.ADMIN]},
-    { name: 'Yönetim Paneli', href: '/dashboard/admin',icon : CommandLineIcon,roles: [UserRole.ADMIN]},
+    { name: 'Yönetim Paneli', href: '/dashboard/admin',icon : CommandLineIcon,roles: [UserRole.ADMIN, UserRole.AMIR]},
     { name: 'Kullanıcılar', href: '/dashboard/kullanicilar', icon: UserIcon, roles: [UserRole.ADMIN]},
     ];
 

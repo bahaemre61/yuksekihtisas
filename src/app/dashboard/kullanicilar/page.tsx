@@ -141,7 +141,7 @@ export default function UserPage() {
                         <option value="driver">Şoför</option>
                         <option value="admin">Admin</option>
                         <option value="amir">Amir</option>
-                        <option value="amir">Teknik</option>
+                        <option value="tech">Teknik</option>
                     </select>
                 </div>
                 <div className="w-full md:w-auto">

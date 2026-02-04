@@ -12,9 +12,9 @@ export async function GET(request:NextRequest) {
     if(error) return error;
 
 
-    if(user.role !== UserRole.ADMIN)
+    if(user.role !== UserRole.ADMIN && user.role !== UserRole.AMIR)
     {
-        return NextResponse.json({msg : 'Yasak: Sadece adminler erişebilir'}, {status : 403});
+        return NextResponse.json({msg : 'Yasak: Sadece adminler ve amirler erişebilir'}, {status : 403});
     }
 
     try{

@@ -15,8 +15,8 @@ export async function DELETE(
     const {user, error} = getAuthenticatedUser(request);
     if(error) return error;
 
-    if(user.role !== UserRole.ADMIN)
-        return NextResponse.json({msg : 'Sadece adminler duyuru silebilir.'}, {status : 403});
+    if(user.role !== UserRole.ADMIN && user.role !== UserRole.AMIR) 
+        return NextResponse.json({msg : 'Sadece adminler ve amirler duyuru silebilir.'}, {status : 403});
 
     try{
         await connectToDatabase();

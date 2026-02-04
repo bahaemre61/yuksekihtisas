@@ -24,9 +24,9 @@ export async function POST(request:NextRequest) {
     const {user, error} = getAuthenticatedUser(request);
     if(error) return error;
 
-    if(user.role !== UserRole.ADMIN)
+    if(user.role !== UserRole.ADMIN && user.role !== UserRole.AMIR)
     {
-        return NextResponse.json({msg : "Sadece adminler duyuru yayınlayabilir."}, {status : 403});
+        return NextResponse.json({msg : "Sadece adminler ve amirler duyuru yayınlayabilir."}, {status : 403});
     }
 
     try{
