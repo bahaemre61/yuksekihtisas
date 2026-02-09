@@ -6,52 +6,68 @@ import { getAuthenticatedUser } from "@/src/lib/auth";
 import path from "path";
 import { writeFile } from 'fs/promises';
 
+const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; 
+
 export async function POST(request: NextRequest) {
 
-    const {user,error} = getAuthenticatedUser(request);
-    if(error) return error;
+    const { user, error } = getAuthenticatedUser(request);
+    if (error) return error;
 
-    try{
-
+    try {
         await connectToDatabase();
         const formData = await request.formData();
 
-    const file = formData.get('screenshot') as File | null;
-    const description = formData.get('description') as string;
-    const title = formData.get('title') as string;
-    const location = formData.get('location') as string;
-    const priority = formData.get('priority') as string || 'MEDIUM';
+        const file = formData.get('screenshot') as File | null;
+        const description = formData.get('description') as string;
+        const title = formData.get('title') as string;
+        const location = formData.get('location') as string;
+        const priority = formData.get('priority') as string || 'MEDIUM';
 
-    let screenshotUrl = '';
+        let screenshotUrl = '';
 
-    if(file){
-        const bytes = await file.arrayBuffer();
-        const buffer = Buffer.from(bytes);
+        if (file) {
+            
+            if (file.size > MAX_FILE_SIZE) {
+                return NextResponse.json({ error: 'Dosya boyutu 5MB\'dan büyük olamaz.' }, { status: 400 });
+            }
 
-        const filename = `${Date.now()}-${file.name.replaceAll(' ', '_')}`;
+            if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+                return NextResponse.json({ error: 'Sadece resim dosyaları (JPG, PNG, WEBP) yüklenebilir.' }, { status: 400 });
+            }
 
-        const uploadDir = path.join(process.cwd(), 'public/uploads');
-        const filePath = path.join(uploadDir, filename)
+            const ext = path.extname(file.name).toLowerCase();
+            if (!['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) {
+                return NextResponse.json({ error: 'Geçersiz dosya uzantısı.' }, { status: 400 });
+            }
 
-        await writeFile(filePath, buffer);
+            const bytes = await file.arrayBuffer();
+            const buffer = Buffer.from(bytes);
 
-        screenshotUrl = `/uploads/${filename}`;
+            const safeFilename = `${Date.now()}-${path.basename(file.name).replaceAll(/[^a-zA-Z0-9._-]/g, '')}`;
+
+            const uploadDir = path.join(process.cwd(), 'public/uploads');
+            const filePath = path.join(uploadDir, safeFilename);
+
+            await writeFile(filePath, buffer);
+
+            screenshotUrl = `/uploads/${safeFilename}`;
+        }
+
+        const newRequest = new TechnicalRequest({
+            user: user.id,
+            title,
+            description,
+            location,
+            priority,
+            screenshotUrl: screenshotUrl || null,
+        });
+
+        await newRequest.save();
+
+        return NextResponse.json({ msg: 'Teknik talep oluşturuldu' }, { status: 201 });
+    } catch (err) {
+        console.error('Teknik talep oluşturulurken hata oluştu:', err);
+        return NextResponse.json({ error: 'Teknik talep oluşturulurken hata oluştu' }, { status: 500 });
     }
-
-    const newRequest = new TechnicalRequest({
-        user: user.id,
-        title,
-        description,
-        location,
-        priority,
-        screenshotUrl: screenshotUrl || null,
-    });
-
-    await newRequest.save();
-
-    return NextResponse.json({ msg: 'Teknik talep oluşturuldu'}, { status: 201 });
-}catch(err){
-    console.error('Teknik talep oluşturulurken hata oluştu:', err);
-    return NextResponse.json({ error: 'Teknik talep oluşturulurken hata oluştu' }, { status: 500 });
-}
 }
