@@ -84,7 +84,27 @@ export default function TeknikTalepForm() {
 
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+      if (!allowedTypes.includes(selectedFile.type)) {
+        setMessage({ type: 'error', text: 'Sadece JPG, PNG veya WEBP formatında resim yükleyebilirsiniz.' });
+        e.target.value = ''; 
+        setFile(null);
+        return;
+      }
+
+      const maxSize = 5 * 1024 * 1024;
+      if (selectedFile.size > maxSize) {
+        setMessage({ type: 'error', text: 'Dosya boyutu 5MB\'dan büyük olamaz.' });
+        e.target.value = ''; 
+        setFile(null);
+        return;
+      }
+
+    
+      setFile(selectedFile);
+      setMessage(null); 
     }
   };
   const handleSubmit = async (e: FormEvent) => {
