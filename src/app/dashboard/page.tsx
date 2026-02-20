@@ -142,7 +142,7 @@ return (
                         <TruckIcon className="h-5 w-5 mr-2 text-blue-500" />
                         Son Araç Taleplerim
                     </h3>
-                    <Link href="/dashboard/arac-taleplerim" className="text-sm text-blue-600 hover:underline flex items-center">
+                    <Link href="/dashboard/taleplerim" className="text-sm text-blue-600 hover:underline flex items-center">
                         Tümü <ArrowRightIcon className="h-4 w-4 ml-1"/>
                     </Link>
                 </div>

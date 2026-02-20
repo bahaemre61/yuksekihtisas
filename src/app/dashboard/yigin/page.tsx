@@ -3,34 +3,23 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { 
-  MapPinIcon, 
   ExclamationTriangleIcon, 
   UserGroupIcon,
-  ClockIcon,
-  SparklesIcon
+  SparklesIcon,
+  CalendarDaysIcon,
+  ArrowPathIcon,
+  LockClosedIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline';
 import { CheckBadgeIcon } from '@heroicons/react/24/solid';
-
-
-enum RequestStatus { PENDING = 'pending' }
-
-interface IRequestingUser {
-    _id: string;
-    name: string;
-    email: string;
-}
 
 interface IVehicleRequest {
     _id: string;
     purpose: string;
-    fromLocation: string;
     toLocation: string;
-    status: RequestStatus;
     startTime: string;
-    endTime: string;
     priority: 'normal' | 'high';
-    requestingUser: IRequestingUser; 
-    willCarryItems?: boolean;
+    requestingUser: { name: string; email: string };
 }
 
 interface IGroupedRequest {
@@ -39,234 +28,202 @@ interface IGroupedRequest {
     totalRequests: number;
     highPriorityCount: number;
     requests: IVehicleRequest[];
+    canAccept: boolean;
 }
 
-const formatTRDate = (dateString: string) => {
-  return new Date(dateString).toLocaleTimeString('tr-TR', {
-    hour: '2-digit', minute: '2-digit'
-  });
-};
+interface IDriver {
+    _id: string;
+    name: string;
+    driverStatus: string; // Şoförün anlık durumu
+}
 
 export default function PendingGroupsPage() {
   const [groups, setGroups] = useState<IGroupedRequest[]>([]);
+  const [drivers, setDrivers] = useState<IDriver[]>([]); 
+  const [selectedDrivers, setSelectedDrivers] = useState<{[key: string]: string}>({}); 
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false); 
   const [myDriverStatus, setMyDriverStatus] = useState<string>('available');
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'today' | 'future'>('today');
 
-  const fetchGroupedRequests = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
-      const meRes = await axios.get('/api/me');
-      setMyDriverStatus(meRes.data.driverStatus || 'available');
-
-      const res = await axios.get('/api/ai/smart-group');
+      const [meRes, groupsRes, driversRes] = await Promise.all([
+        axios.get('/api/me'),
+        axios.get('/api/ai/smart-group'),
+        axios.get('/api/admin/all-drivers') // Tüm şoförleri getiren yeni uç
+      ]);
       
-      if(Array.isArray(res.data)) {
-        setGroups(res.data);
-      } else {
-        setGroups([]);
-      }
-
-    } catch (err: any) {
-      console.error("Veri çekme hatası", err);
+      setMyDriverStatus(meRes.data.driverStatus || 'available');
+      setIsAdmin(['admin', 'amir', 'ADMIN'].includes(meRes.data.role));
+      setGroups(Array.isArray(groupsRes.data) ? groupsRes.data : []);
+      setDrivers(Array.isArray(driversRes.data) ? driversRes.data : []);
+    } catch (err) {
+      console.error("Hata:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchGroupedRequests();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
-  const handleAcceptGroup = async (groupTitle: string, groupRequests: IVehicleRequest[]) => {
-    if (myDriverStatus === 'busy') {
-        alert("Şu an meşgulsünüz. Yeni görev alamazsınız.");
-        return;
-    }
+  const handleAdminAssign = async (groupTitle: string, groupRequests: IVehicleRequest[]) => {
+    const driverId = selectedDrivers[groupTitle];
+    if (!driverId) return alert("Lütfen önce bir şoför seçin!");
 
-    const confirmMsg = `${groupTitle} bölgesindeki ${groupRequests.length} yolcuyu almak istiyor musunuz?`;
-    if (!confirm(confirmMsg)) return;
+    if (!window.confirm(`${groupTitle} rotasını seçili şoföre atamak istiyor musunuz?`)) return;
 
     setProcessingId(groupTitle);
-
     try {
         const requestIds = groupRequests.map(r => r._id);
-
-        await axios.post('/api/driver/accept-group', { requestIds });
+        await axios.post('/api/admin/assign-group', { requestIds, driverId });
         
-        const MAIN_HUB = "Yüksek İhtisas Üniversitesi - 100. Yıl Yerleşkesi (Tıp Fakültesi)";
-
-        const uniqueStops = new Set<string>();
-        groupRequests.forEach(task => {
-            if(task.toLocation) uniqueStops.add(task.toLocation.trim());
-        });
-
-        const routeArray = [MAIN_HUB, ...Array.from(uniqueStops), MAIN_HUB];
-        
-        const encodedRoute = routeArray
-            .map(point => encodeURIComponent(point))
-            .join('/');
-
-        const mapUrl = `https://www.google.com/maps/dir/${encodedRoute}`;
-
-
-        alert("Grup zimmetinize atandı! Rota oluşturuluyor...");
-        window.open(mapUrl, '_blank');
-
+        alert("Görev başarıyla şoföre atandı!");
         setGroups(prev => prev.filter(g => g._id !== groupTitle));
-        setMyDriverStatus('busy');
-
     } catch (err: any) {
-        console.error(err);
-        alert(err.response?.data?.msg || "Grubu alırken hata oluştu.");
+        alert(err.response?.data?.msg || "Atama yapılamadı.");
     } finally {
         setProcessingId(null);
     }
   };
 
-  if (loading) return <div className="p-6 text-center text-gray-500">Yükleniyor...</div>;
+  const handleAcceptGroup = async (groupTitle: string, groupRequests: IVehicleRequest[]) => {
+    if (myDriverStatus === 'busy') return alert("Şu an meşgulsünüz.");
+    if (!window.confirm("Bu görevi üstlenmek istiyor musunuz?")) return;
+
+    setProcessingId(groupTitle);
+    try {
+        const requestIds = groupRequests.map(r => r._id);
+        await axios.post('/api/driver/accept-group', { requestIds });
+        
+        alert("Görev zimmetinize atandı!");
+        setGroups(prev => prev.filter(g => g._id !== groupTitle));
+        setMyDriverStatus('busy');
+    } catch (err: any) {
+        alert(err.response?.data?.msg || "Hata oluştu.");
+    } finally {
+        setProcessingId(null);
+    }
+  };
+
+  const filteredGroups = groups.filter(group => {
+    if (activeTab === 'today') return group.canAccept === true;
+    if (activeTab === 'future') return group.canAccept === false;
+    return true;
+  });
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-lg relative min-h-500px">
+    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
       
-      {/* HEADER */}
-      <div className="mb-6 border-b pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-            <h2 className="text-2xl font-semibold text-gray-800 flex items-center">
-                <SparklesIcon className="h-6 w-6 text-purple-600 mr-2" />
-                Akıllı Talep Yığını
-            </h2>
-            <p className="text-sm text-gray-500 mt-1">
-                Talepler konumlarına göre AI tarafından otomatik gruplandı.
-            </p>
-        </div>
-        <button onClick={fetchGroupedRequests} className="text-blue-600 text-sm font-semibold hover:bg-blue-50 px-3 py-2 rounded transition-colors">
-            🔄 Listeyi Yenile
+      {/* BAŞLIK VE YENİLE */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-extrabold text-gray-900 flex items-center gap-2 uppercase tracking-tighter">
+            <SparklesIcon className="h-7 w-7 text-purple-600" />
+            Operasyon Havuzu
+        </h1>
+        <button onClick={fetchData} className="p-2 hover:bg-gray-100 rounded-full transition-all">
+            <ArrowPathIcon className={`h-6 w-6 text-gray-500 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
-      {/* SÜRÜCÜ MEŞGUL UYARISI */}
-      {myDriverStatus === 'busy' && (
-        <div className="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r shadow-sm">
-          <div className="flex">
-            <ExclamationTriangleIcon className="h-6 w-6 text-yellow-600 mr-3" />
-            <div>
-              <p className="text-sm text-yellow-700 font-bold">Şu an MEŞGUL durumdasınız.</p>
-              <p className="text-sm text-yellow-600 mt-1">
-                Yeni grup alabilmek için mevcut görevleri tamamlamalısınız.
-              </p>
-            </div>
-          </div>
+      {/* TABS */}
+      <div className="flex bg-gray-100 p-1.5 rounded-2xl w-full md:w-fit shadow-inner">
+        <button onClick={() => setActiveTab('today')} className={`flex-1 md:flex-none px-8 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'today' ? 'bg-white shadow-md text-blue-600' : 'text-gray-500'}`}>Bugünün İşleri</button>
+        <button onClick={() => setActiveTab('future')} className={`flex-1 md:flex-none px-8 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'future' ? 'bg-white shadow-md text-purple-600' : 'text-gray-500'}`}>Gelecek Planlar</button>
+      </div>
+
+      {!isAdmin && myDriverStatus === 'busy' && (
+        <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-xl flex items-center gap-3">
+            <ExclamationTriangleIcon className="h-6 w-6 text-amber-600" />
+            <p className="text-amber-800 text-sm font-medium">Aktif bir görevdesiniz. Yeni iş alamazsınız.</p>
         </div>
       )}
-      
-      {/* BOŞ STATE */}
-      {groups.length === 0 ? (
-        <div className="text-center text-gray-500 py-16 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
-          <MapPinIcon className="h-12 w-12 mx-auto text-gray-300 mb-3"/>
-          <p className="text-lg">Şu anda bekleyen bir grup veya talep bulunmuyor.</p>
+
+      {loading ? (
+        <div className="py-20 text-center text-gray-400 italic font-bold animate-pulse">Yükleniyor...</div>
+      ) : filteredGroups.length === 0 ? (
+        <div className="py-20 text-center border-2 border-dashed rounded-[2.5rem] bg-gray-50 text-gray-400">
+            <CalendarDaysIcon className="h-12 w-12 mx-auto mb-2 opacity-10" />
+            <p className="font-bold">Görev bulunmuyor.</p>
         </div>
       ) : (
-        /* GRUP KARTLARI */
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-10">
-          {groups.map((group, index) => {
-            const isUrgentGroup = group.highPriorityCount > 0;
-            const isProcessing = processingId === group._id;
-            const isBusy = myDriverStatus === 'busy';
-
-            return (
-                <div 
-                    key={index} 
-                    className={`
-                        flex flex-col justify-between
-                        relative border rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300
-                        ${isUrgentGroup ? 'border-red-300 bg-white' : 'border-gray-200 bg-white'}
-                        ${isBusy ? 'opacity-60 grayscale-[0.5]' : ''}
-                    `}
-                >
-                    <div>
-                        {/* KART BAŞLIĞI */}
-                        <div className={`p-4 border-b flex justify-between items-start ${isUrgentGroup ? 'bg-red-50' : 'bg-gray-50'}`}>
-                            <div className="flex-1">
-                                <h3 className="text-lg font-bold text-gray-800 uppercase flex items-center">
-                                    <MapPinIcon className="h-5 w-5 mr-2 text-blue-500"/>
-                                    {group._id || 'Özel Rota'}
-                                </h3>
-                                {/* AI AÇIKLAMASI */}
-                                {group.description && (
-                                    <p className="text-xs text-gray-600 mt-2 bg-white/50 p-1.5 rounded border border-gray-200 italic flex items-start">
-                                        <SparklesIcon className="h-3 w-3 mr-1 mt-0.5 text-purple-500 shrink-0"/>
-                                        {group.description}
-                                    </p>
-                                )}
-                            </div>
-                            
-                            {isUrgentGroup && (
-                                <span className="ml-2 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded animate-pulse flex items-center shrink-0">
-                                    <ExclamationTriangleIcon className="h-3 w-3 mr-1"/>
-                                    ACİL
-                                </span>
-                            )}
-                        </div>
-
-                        {/* YOLCU SAYISI BİLGİSİ */}
-                        <div className="px-4 py-2 bg-gray-50/50 border-b border-gray-100 flex items-center text-xs font-semibold text-gray-500">
-                             <UserGroupIcon className="h-4 w-4 mr-1"/>
-                             Toplam {group.totalRequests} Yolcu
-                        </div>
-
-                        {/* YOLCU LİSTESİ (Scrollable) */}
-                        <div className="p-4 space-y-3 max-h-200px overflow-y-auto custom-scrollbar">
-                            {group.requests.map((req) => (
-                                <div key={req._id} className="text-sm border-b border-gray-100 last:border-0 pb-2 hover:bg-gray-50 rounded px-1 transition-colors">
-                                    <div className="flex justify-between font-semibold text-gray-700">
-                                        <span>{req.requestingUser?.name || "Misafir"}</span>
-                                        <span className="text-gray-400 flex items-center text-xs">
-                                            <ClockIcon className="h-3 w-3 mr-1"/>
-                                            {formatTRDate(req.startTime)}
-                                        </span>
-                                    </div>
-                                    <div className="text-gray-500 text-xs mt-1">
-                                        <span className="font-medium text-gray-700">Hedef:</span> {req.toLocation}
-                                    </div>
-                                    {req.priority === 'high' && <span className="text-[10px] text-red-500 font-bold block mt-1">! Acil</span>}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* AKSİYON BUTONU */}
-                    <div className="p-4 bg-gray-50 border-t mt-auto">
-                        <button
-                            onClick={() => handleAcceptGroup(group._id, group.requests)}
-                            disabled={isProcessing || isBusy}
-                            className={`
-                                w-full py-3 rounded-lg font-bold text-white shadow transition-all flex justify-center items-center transform active:scale-95
-                                ${isUrgentGroup 
-                                    ? 'bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800' 
-                                    : 'bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800'}
-                                ${isBusy || isProcessing ? 'opacity-50 cursor-not-allowed transform-none' : ''}
-                            `}
-                        >
-                            {isProcessing ? (
-                                <span className="flex items-center">
-                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    İşleniyor...
-                                </span>
-                            ) : (
-                                <>
-                                    <CheckBadgeIcon className="h-5 w-5 mr-2" />
-                                    BU ROTAYI AL
-                                </>
-                            )}
-                        </button>
-                    </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredGroups.map((group) => (
+            <div key={group._id} className={`flex flex-col bg-white rounded-4xl border-2 transition-all shadow-sm ${group.canAccept ? 'border-blue-50' : 'border-gray-100 opacity-80'}`}>
+              
+              <div className={`p-5 rounded-4xl ${group.canAccept ? 'bg-blue-50/30' : 'bg-gray-100/50'}`}>
+                <div className="flex justify-between items-start mb-3">
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg uppercase ${group.highPriorityCount > 0 ? 'bg-red-500 text-white animate-pulse' : 'bg-gray-200 text-gray-600'}`}>
+                    {group.highPriorityCount > 0 ? 'ACİL' : 'NORMAL'}
+                  </span>
+                  <div className="text-[10px] font-bold text-gray-400 flex items-center gap-1 uppercase">
+                    <UserGroupIcon className="h-3.5 w-3.5" /> {group.totalRequests} KİŞİ
+                  </div>
                 </div>
-            );
-          })}
+                <h2 className="text-lg font-black text-gray-900 leading-tight uppercase">{group._id}</h2>
+              </div>
+
+              <div className="p-5 space-y-3 grow overflow-y-auto max-h-[180px]">
+                {group.requests.map((req) => (
+                    <div key={req._id} className="flex justify-between items-center bg-gray-50 p-3 rounded-2xl border border-gray-100">
+                        <div className="max-w-[70%] text-xs">
+                            <p className="font-bold text-gray-800 truncate">{req.requestingUser?.name}</p>
+                            <p className="text-[10px] text-gray-500 truncate italic">{req.toLocation}</p>
+                        </div>
+                        <span className="text-[10px] font-black text-blue-600">{new Date(req.startTime).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                ))}
+              </div>
+
+              {/* AKSİYON ALANI */}
+              <div className="p-5 pt-0 mt-auto">
+                {group.canAccept ? (
+                  isAdmin ? (
+                    <div className="space-y-3 p-3 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Tüm Şoförler</label>
+                        <div className="flex gap-2">
+                            <select 
+                                value={selectedDrivers[group._id] || ""}
+                                onChange={(e) => setSelectedDrivers(prev => ({...prev, [group._id]: e.target.value}))}
+                                className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-[11px] font-bold outline-none focus:border-blue-500"
+                            >
+                                <option value="">Şoför Seç...</option>
+                                {drivers.map(d => (
+                                    <option key={d._id} value={d._id}>
+                                        {d.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <button 
+                                onClick={() => handleAdminAssign(group._id, group.requests)}
+                                disabled={processingId === group._id}
+                                className="bg-gray-900 text-white p-2 rounded-xl hover:bg-black transition-all"
+                            >
+                                {processingId === group._id ? <ArrowPathIcon className="h-4 w-4 animate-spin" /> : <ChevronRightIcon className="h-4 w-4" />}
+                            </button>
+                        </div>
+                    </div>
+                  ) : (
+                    <button
+                        onClick={() => handleAcceptGroup(group._id, group.requests)}
+                        disabled={myDriverStatus === 'busy' || processingId === group._id}
+                        className={`w-full py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 transition-all active:scale-95
+                        ${(myDriverStatus === 'busy' || processingId === group._id) ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100'}
+                        `}
+                    >
+                        {processingId === group._id ? <ArrowPathIcon className="h-5 w-5 animate-spin" /> : <><CheckBadgeIcon className="h-5 w-5" /> GÖREVİ ÜSTLEN</>}
+                    </button>
+                  )
+                ) : (
+                  <div className="w-full py-4 rounded-2xl bg-gray-100 text-gray-400 font-bold text-sm flex items-center justify-center gap-2 cursor-not-allowed">
+                    <LockClosedIcon className="h-5 w-5" /> GÜNÜNÜ BEKLEYİN
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

@@ -15,8 +15,29 @@ export async function GET(request:NextRequest) {
 
     try{
         await connectToDatabase();
-        const users = await User.find({}).select('-password').sort({createdAt: -1});
-        return NextResponse.json(users, {status : 200});
+
+        const {searchParams} = new URL(request.url);
+        const search = searchParams.get('search');
+
+        let query = {};
+
+        if(search)
+        {
+            query= {
+                $or : [
+                    {name : {$regex : search, $options : 'i'}},
+                    {email: {$regex: search, $options : 'i'}}
+                ]
+            };
+        }
+
+        const user = await User.find(query)
+        .select('-password')
+        .sort({createdAt: -1});
+        return NextResponse.json(user, {status : 200});
+
+        // const users = await User.find({}).select('-password').sort({createdAt: -1});
+        // return NextResponse.json(users, {status : 200});
     }catch(err){
         return NextResponse.json({msg : 'Sunucu Hatası'}, {status : 500});
     }

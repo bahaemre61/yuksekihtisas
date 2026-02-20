@@ -20,7 +20,8 @@ import {
   CommandLineIcon,
   CpuChipIcon,
   WrenchScrewdriverIcon,
-  ServerStackIcon
+  ServerStackIcon,
+  Cog6ToothIcon
 } from '@heroicons/react/24/outline';
 import unilogo from "@/src/components/yuksekihtisasuni-logo.png"
 
@@ -86,7 +87,7 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: {
     { name: 'Yeni Talep Oluştur', href: '/dashboard/talep-olustur', icon: PlusCircleIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.AMIR,UserRole.TECHNICAL] },
     { name: 'Araç Taleplerim', href: '/dashboard/taleplerim', icon: TruckIcon, roles: [UserRole.USER, UserRole.ADMIN,UserRole.TECHNICAL] },
     { name: 'Teknik Taleplerim', href: '/dashboard/tekniktaleplerim', icon: WrenchScrewdriverIcon, roles: [UserRole.USER, UserRole.ADMIN,UserRole.DRIVER, UserRole.AMIR] },
-    { name: 'Araç Talep Yığını', href: '/dashboard/yigin', icon: ArchiveBoxIcon, roles: [UserRole.DRIVER] },
+    { name: 'Araç Talep Yığını', href: '/dashboard/yigin', icon: ArchiveBoxIcon, roles: [UserRole.ADMIN, UserRole.AMIR] },
     { name: 'Teknik Talepler', href: '/dashboard/teknikyigin', icon: CpuChipIcon, roles: [UserRole.ADMIN, UserRole.AMIR]},
     { name: 'Yapılacak Listem', href: '/dashboard/todo', icon: CheckBadgeIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.AMIR,UserRole.TECHNICAL] },
     { name: 'Duyurular', href: '/dashboard/duyurular', icon: DocumentTextIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.AMIR,UserRole.TECHNICAL] },
@@ -95,6 +96,7 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: {
     { name: 'Teknik Görevlerim', href: '/dashboard/teknikgorevlerim',icon : ServerStackIcon,roles : [UserRole.TECHNICAL, UserRole.ADMIN]},
     { name: 'Yönetim Paneli', href: '/dashboard/admin',icon : CommandLineIcon,roles: [UserRole.ADMIN, UserRole.AMIR]},
     { name: 'Kullanıcılar', href: '/dashboard/kullanicilar', icon: UserIcon, roles: [UserRole.ADMIN]},
+    { name: 'Ayarlar', href: '/dashboard/ayarlar', icon: Cog6ToothIcon, roles: [UserRole.USER, UserRole.AMIR, UserRole.TECHNICAL, UserRole.DRIVER, UserRole.ADMIN]},
     ];
 
     const sidebarContent =(
