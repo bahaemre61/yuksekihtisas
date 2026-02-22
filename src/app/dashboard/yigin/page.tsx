@@ -3,229 +3,186 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { 
-  ExclamationTriangleIcon, 
-  UserGroupIcon,
-  SparklesIcon,
-  CalendarDaysIcon,
-  ArrowPathIcon,
-  LockClosedIcon,
-  ChevronRightIcon
-} from '@heroicons/react/24/outline';
-import { CheckBadgeIcon } from '@heroicons/react/24/solid';
+  MapPinIcon, ClockIcon, UsersIcon, BoltIcon, 
+  CalendarDaysIcon, ArrowRightCircleIcon, EllipsisVerticalIcon 
+} from '@heroicons/react/24/solid';
 
-interface IVehicleRequest {
-    _id: string;
-    purpose: string;
-    toLocation: string;
-    startTime: string;
-    priority: 'normal' | 'high';
-    requestingUser: { name: string; email: string };
-}
-
-interface IGroupedRequest {
-    _id: string; 
-    description?: string;
-    totalRequests: number;
-    highPriorityCount: number;
-    requests: IVehicleRequest[];
-    canAccept: boolean;
-}
-
-interface IDriver {
-    _id: string;
-    name: string;
-    driverStatus: string; // Şoförün anlık durumu
-}
-
-export default function PendingGroupsPage() {
-  const [groups, setGroups] = useState<IGroupedRequest[]>([]);
-  const [drivers, setDrivers] = useState<IDriver[]>([]); 
-  const [selectedDrivers, setSelectedDrivers] = useState<{[key: string]: string}>({}); 
+export default function SmartGroupPage() {
+  const [groups, setGroups] = useState<any[]>([]);
+  const [drivers, setDrivers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false); 
-  const [myDriverStatus, setMyDriverStatus] = useState<string>('available');
-  const [processingId, setProcessingId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'today' | 'future'>('today');
+  
+  const [selectedDrivers, setSelectedDrivers] = useState<{ [key: number]: string }>({});
+  const [isAssigning, setIsAssigning] = useState<number | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [meRes, groupsRes, driversRes] = await Promise.all([
-        axios.get('/api/me'),
+      const [gRes, dRes] = await Promise.all([
         axios.get('/api/ai/smart-group'),
-        axios.get('/api/admin/all-drivers') // Tüm şoförleri getiren yeni uç
+        axios.get('/api/admin/all-drivers')
       ]);
-      
-      setMyDriverStatus(meRes.data.driverStatus || 'available');
-      setIsAdmin(['admin', 'amir', 'ADMIN'].includes(meRes.data.role));
-      setGroups(Array.isArray(groupsRes.data) ? groupsRes.data : []);
-      setDrivers(Array.isArray(driversRes.data) ? driversRes.data : []);
-    } catch (err) {
-      console.error("Hata:", err);
-    } finally {
-      setLoading(false);
-    }
+      setGroups(gRes.data);
+      setDrivers(dRes.data);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
   };
 
   useEffect(() => { fetchData(); }, []);
 
-  const handleAdminAssign = async (groupTitle: string, groupRequests: IVehicleRequest[]) => {
-    const driverId = selectedDrivers[groupTitle];
-    if (!driverId) return alert("Lütfen önce bir şoför seçin!");
+  const handleAssign = async (groupIdx: number, requestIds: string[]) => {
+    const driverId = selectedDrivers[groupIdx];
+    
+    if (!driverId) {
+      alert("Lütfen önce bir şoför seçin.");
+      return;
+    }
 
-    if (!window.confirm(`${groupTitle} rotasını seçili şoföre atamak istiyor musunuz?`)) return;
-
-    setProcessingId(groupTitle);
+    setIsAssigning(groupIdx);
     try {
-        const requestIds = groupRequests.map(r => r._id);
-        await axios.post('/api/admin/assign-group', { requestIds, driverId });
-        
-        alert("Görev başarıyla şoföre atandı!");
-        setGroups(prev => prev.filter(g => g._id !== groupTitle));
-    } catch (err: any) {
-        alert(err.response?.data?.msg || "Atama yapılamadı.");
+      await axios.post('/api/admin/assign-group', {
+        driverId,
+        requestIds
+      });
+      
+      alert("Görevler başarıyla atandı!");
+      fetchData(); 
+    } catch (err) {
+      console.error(err);
+      alert("Atama sırasında bir hata oluştu.");
     } finally {
-        setProcessingId(null);
+      setIsAssigning(null);
     }
   };
 
-  const handleAcceptGroup = async (groupTitle: string, groupRequests: IVehicleRequest[]) => {
-    if (myDriverStatus === 'busy') return alert("Şu an meşgulsünüz.");
-    if (!window.confirm("Bu görevi üstlenmek istiyor musunuz?")) return;
-
-    setProcessingId(groupTitle);
-    try {
-        const requestIds = groupRequests.map(r => r._id);
-        await axios.post('/api/driver/accept-group', { requestIds });
-        
-        alert("Görev zimmetinize atandı!");
-        setGroups(prev => prev.filter(g => g._id !== groupTitle));
-        setMyDriverStatus('busy');
-    } catch (err: any) {
-        alert(err.response?.data?.msg || "Hata oluştu.");
-    } finally {
-        setProcessingId(null);
-    }
-  };
-
-  const filteredGroups = groups.filter(group => {
-    if (activeTab === 'today') return group.canAccept === true;
-    if (activeTab === 'future') return group.canAccept === false;
-    return true;
-  });
+  if (loading) return <div className="p-20 text-center text-slate-400 font-medium animate-pulse">Operasyon planı yükleniyor...</div>;
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
-      
-      {/* BAŞLIK VE YENİLE */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-extrabold text-gray-900 flex items-center gap-2 uppercase tracking-tighter">
-            <SparklesIcon className="h-7 w-7 text-purple-600" />
-            Operasyon Havuzu
-        </h1>
-        <button onClick={fetchData} className="p-2 hover:bg-gray-100 rounded-full transition-all">
-            <ArrowPathIcon className={`h-6 w-6 text-gray-500 ${loading ? 'animate-spin' : ''}`} />
-        </button>
-      </div>
-
-      {/* TABS */}
-      <div className="flex bg-gray-100 p-1.5 rounded-2xl w-full md:w-fit shadow-inner">
-        <button onClick={() => setActiveTab('today')} className={`flex-1 md:flex-none px-8 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'today' ? 'bg-white shadow-md text-blue-600' : 'text-gray-500'}`}>Bugünün İşleri</button>
-        <button onClick={() => setActiveTab('future')} className={`flex-1 md:flex-none px-8 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'future' ? 'bg-white shadow-md text-purple-600' : 'text-gray-500'}`}>Gelecek Planlar</button>
-      </div>
-
-      {!isAdmin && myDriverStatus === 'busy' && (
-        <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-xl flex items-center gap-3">
-            <ExclamationTriangleIcon className="h-6 w-6 text-amber-600" />
-            <p className="text-amber-800 text-sm font-medium">Aktif bir görevdesiniz. Yeni iş alamazsınız.</p>
+    <div className="min-h-screen bg-[#F8FAFC] p-8">
+      {/* ÜST BAR (Aynı Kalıyor) */}
+      <header className="flex justify-between items-start mb-12">
+        <div>
+          <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Akıllı Havuz</h1>
+          <p className="text-slate-500 mt-1 font-medium">Yapay zeka bugün için en verimli rotaları hazırladı.</p>
         </div>
-      )}
-
-      {loading ? (
-        <div className="py-20 text-center text-gray-400 italic font-bold animate-pulse">Yükleniyor...</div>
-      ) : filteredGroups.length === 0 ? (
-        <div className="py-20 text-center border-2 border-dashed rounded-[2.5rem] bg-gray-50 text-gray-400">
-            <CalendarDaysIcon className="h-12 w-12 mx-auto mb-2 opacity-10" />
-            <p className="font-bold">Görev bulunmuyor.</p>
+        <div className="flex gap-4">
+          <div className="bg-white px-5 py-3 rounded-2xl shadow-sm border border-slate-100 text-center text-blue-600 font-black">
+             {groups.filter(g => g.isToday).length} Aktif
+          </div>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredGroups.map((group) => (
-            <div key={group._id} className={`flex flex-col bg-white rounded-4xl border-2 transition-all shadow-sm ${group.canAccept ? 'border-blue-50' : 'border-gray-100 opacity-80'}`}>
-              
-              <div className={`p-5 rounded-4xl ${group.canAccept ? 'bg-blue-50/30' : 'bg-gray-100/50'}`}>
-                <div className="flex justify-between items-start mb-3">
-                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg uppercase ${group.highPriorityCount > 0 ? 'bg-red-500 text-white animate-pulse' : 'bg-gray-200 text-gray-600'}`}>
-                    {group.highPriorityCount > 0 ? 'ACİL' : 'NORMAL'}
-                  </span>
-                  <div className="text-[10px] font-bold text-gray-400 flex items-center gap-1 uppercase">
-                    <UserGroupIcon className="h-3.5 w-3.5" /> {group.totalRequests} KİŞİ
+      </header>
+
+      {/* BUGÜNÜN TALEPLERİ */}
+      <section className="mb-16">
+        <div className="flex items-center gap-2 mb-6">
+          <BoltIcon className="h-5 w-5 text-amber-500" />
+          <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest text-[11px]">Canlı Operasyon</h2>
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          {groups.filter(g => g.isToday).map((group, idx) => (
+            <div key={idx} className="bg-white rounded-4x1 border border-slate-200 shadow-sm flex flex-col overflow-hidden">
+              <div className="p-6 border-b border-slate-50">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="p-2 bg-blue-50 rounded-xl text-blue-600">
+                    <MapPinIcon className="h-6 w-6" />
                   </div>
                 </div>
-                <h2 className="text-lg font-black text-gray-900 leading-tight uppercase">{group._id}</h2>
+                <h3 className="text-lg font-bold text-slate-900 leading-tight">{group.title}</h3>
+                <p className="text-xs text-slate-400 mt-1 italic leading-relaxed">{group.reason}</p>
               </div>
 
-              <div className="p-5 space-y-3 grow overflow-y-auto max-h-[180px]">
-                {group.requests.map((req) => (
-                    <div key={req._id} className="flex justify-between items-center bg-gray-50 p-3 rounded-2xl border border-gray-100">
-                        <div className="max-w-[70%] text-xs">
-                            <p className="font-bold text-gray-800 truncate">{req.requestingUser?.name}</p>
-                            <p className="text-[10px] text-gray-500 truncate italic">{req.toLocation}</p>
-                        </div>
-                        <span className="text-[10px] font-black text-blue-600">{new Date(req.startTime).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>
+              <div className="p-6 flex-1 space-y-4">
+                {group.requests.map((req: any) => (
+                  <div key={req._id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 bg-slate-100 rounded-full flex items-center justify-center text-[10px] font-bold">
+                        {req.requestingUser?.name?.charAt(0) || 'U'}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-700">{req.requestingUser?.name}</p>
+                        <p className="text-[10px] text-slate-400">{req.toLocation}</p>
+                      </div>
                     </div>
+                    <span className="text-[10px] font-bold text-slate-500">{new Date(req.startTime).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
                 ))}
               </div>
 
-              {/* AKSİYON ALANI */}
-              <div className="p-5 pt-0 mt-auto">
-                {group.canAccept ? (
-                  isAdmin ? (
-                    <div className="space-y-3 p-3 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
-                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Tüm Şoförler</label>
-                        <div className="flex gap-2">
-                            <select 
-                                value={selectedDrivers[group._id] || ""}
-                                onChange={(e) => setSelectedDrivers(prev => ({...prev, [group._id]: e.target.value}))}
-                                className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-[11px] font-bold outline-none focus:border-blue-500"
-                            >
-                                <option value="">Şoför Seç...</option>
-                                {drivers.map(d => (
-                                    <option key={d._id} value={d._id}>
-                                        {d.name}
-                                    </option>
-                                ))}
-                            </select>
-                            <button 
-                                onClick={() => handleAdminAssign(group._id, group.requests)}
-                                disabled={processingId === group._id}
-                                className="bg-gray-900 text-white p-2 rounded-xl hover:bg-black transition-all"
-                            >
-                                {processingId === group._id ? <ArrowPathIcon className="h-4 w-4 animate-spin" /> : <ChevronRightIcon className="h-4 w-4" />}
-                            </button>
-                        </div>
-                    </div>
-                  ) : (
-                    <button
-                        onClick={() => handleAcceptGroup(group._id, group.requests)}
-                        disabled={myDriverStatus === 'busy' || processingId === group._id}
-                        className={`w-full py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 transition-all active:scale-95
-                        ${(myDriverStatus === 'busy' || processingId === group._id) ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100'}
-                        `}
-                    >
-                        {processingId === group._id ? <ArrowPathIcon className="h-5 w-5 animate-spin" /> : <><CheckBadgeIcon className="h-5 w-5" /> GÖREVİ ÜSTLEN</>}
-                    </button>
-                  )
-                ) : (
-                  <div className="w-full py-4 rounded-2xl bg-gray-100 text-gray-400 font-bold text-sm flex items-center justify-center gap-2 cursor-not-allowed">
-                    <LockClosedIcon className="h-5 w-5" /> GÜNÜNÜ BEKLEYİN
-                  </div>
-                )}
+              {/* ATAMA ALANI: ARTIK ÇALIŞIYOR */}
+              <div className="p-4 bg-slate-50/50 border-t border-slate-100">
+                <div className="flex items-center gap-2">
+                  <select 
+                    value={selectedDrivers[idx] || ''}
+                    onChange={(e) => setSelectedDrivers({ ...selectedDrivers, [idx]: e.target.value })}
+                    className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Şoför Seç...</option>
+                    {drivers.map(d => (
+                      <option key={d._id} value={d._id}>{d.name}</option>
+                    ))}
+                  </select>
+                  <button 
+                    onClick={() => handleAssign(idx, group.ids)}
+                    disabled={isAssigning === idx}
+                    className={`p-2.5 rounded-xl transition-all ${isAssigning === idx ? 'bg-slate-400' : 'bg-slate-900 hover:bg-blue-600'} text-white`}
+                  >
+                    {isAssigning === idx ? (
+                      <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <ArrowRightCircleIcon className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
-      )}
+      </section>
+
+      {/* GELECEK PLANLAR: LİSTE GÖRÜNÜMÜ */}
+      <section>
+        <div className="flex items-center gap-2 mb-6">
+          <CalendarDaysIcon className="h-5 w-5 text-slate-400" />
+          <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest">Gelecek Günlerin Planı</h2>
+        </div>
+
+        <div className="bg-white rounded-3x1 border border-slate-200 overflow-hidden shadow-sm">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-slate-50/50 text-slate-400 text-[10px] font-black uppercase tracking-widest">
+              <tr>
+                <th className="px-8 py-4">Tarih / Saat</th>
+                <th className="px-8 py-4">Güzergah</th>
+                <th className="px-8 py-4">Kişi</th>
+                <th className="px-8 py-4 text-right">Durum</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {groups.filter(g => !g.isToday).map((group, idx) => (
+                <tr key={idx} className="hover:bg-slate-50/30 transition-colors">
+                  <td className="px-8 py-4">
+                    <div className="flex items-center gap-3 text-slate-400">
+                      <ClockIcon className="h-4 w-4" />
+                      <span className="text-sm font-medium">
+                        {new Date(group.requests[0].startTime).toLocaleDateString('tr-TR')}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-8 py-4 font-bold text-slate-600 text-sm">{group.title}</td>
+                  <td className="px-8 py-4">
+                    <div className="flex items-center gap-1 text-slate-400 font-bold text-xs">
+                      <UsersIcon className="h-4 w-4" /> {group.total} Yolcu
+                    </div>
+                  </td>
+                  <td className="px-8 py-4 text-right">
+                    <span className="text-[10px] font-black text-slate-300 border border-slate-200 px-3 py-1 rounded-full uppercase">Kilitli</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   );
 }

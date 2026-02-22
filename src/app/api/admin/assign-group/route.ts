@@ -6,16 +6,13 @@ import { UserRole } from "@/src/lib/models/User";
 
 export async function POST(request: Request) {
     try {
-        // 1. Yetki Kontrolü
         const { user, error } = getAuthenticatedUser(request as any);
         if (error) return error;
 
-        // Sadece Admin veya Amir atama yapabilir
         if (!['admin', 'amir', 'ADMIN'].includes(user.role)) {
             return NextResponse.json({ msg: 'Bu işlem için yetkiniz bulunmuyor.' }, { status: 403 });
         }
 
-        // 2. Veri Kontrolü
         const { requestIds, driverId } = await request.json();
 
         if (!requestIds || !Array.isArray(requestIds) || !driverId) {
@@ -24,18 +21,17 @@ export async function POST(request: Request) {
 
         await connectToDatabase();
 
-        // 3. Talepleri Şoföre Atama
-        // Durumu 'assigned' yapıyoruz ve atanan şoförün ID'sini kaydediyoruz
+        const batchId = `TRIP-${Date.now()}`;
+
         const result = await VehicleRequest.updateMany(
             { 
                 _id: { $in: requestIds },
-                status: 'pending' // Sadece bekleyen talepler atanabilir
+                status: 'pending' 
             },
             { 
-                $set: { 
-                    assignedDriver: driverId, 
-                    status: 'assigned' 
-                } 
+               assignedDriver: driverId,
+                status: 'assigned',
+                batchId: batchId
             }
         );
 

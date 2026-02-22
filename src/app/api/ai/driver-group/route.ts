@@ -11,6 +11,10 @@ export async function GET(request: NextRequest) {
         const { user, error } = getAuthenticatedUser(request as any);
         if (error) return error;
 
+        if(user.role !== 'driver'){
+            return NextResponse.json({ error: "Bu içeriğe erişim yetkiniz yok." }, { status: 403 });
+        }
+
         await connectToDatabase();
         
         const myTasks = await VehicleRequest.find({ 
@@ -27,16 +31,28 @@ export async function GET(request: NextRequest) {
             time: new Date(req.startTime).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
         }));
 
-        // 2. AI'ya Gönder (Prompt'u netleştirdik)
         const prompt = `
-        Aşağıdaki ulaşım taleplerini mantıklı seferlere (gruplara) ayır ve JSON formatında döndür.
-        Önemli: Çıktıda mutlaka "groups" anahtarı olsun.
-        
-        KURALLAR:
-        - Saatleri birbirine yakın olanları aynı gruba koy.
-        - "groups" dizisi içinde her obje "title", "reason" ve "ids" (string dizi) içermeli.
-        
-        Veriler: ${JSON.stringify(dataForAI)}`;
+Sen profesyonel bir üniversite lojistik planlayıcısısın. Görevin, gelen ulaşım taleplerini en verimli SEFERLERE (gruplara) ayırmaktır.
+
+KRİTİK KURALLAR:
+1. KONUM ODAKLI GRUPLAMA: Bir seferdeki tüm yolcuların hedefi (destination) AYNI veya birbirine çok yakın olmalıdır. Farklı yerlere gidenleri aynı gruba koyma.
+2. ZAMAN PENCERESİ: Aynı gruptaki taleplerin "time" değerleri arasında en fazla 90 DAKİKA fark olabilir.
+3. KAPASİTE SINIRI: Bir sefer (grup) en fazla 4 yolcu içerebilir. 5. kişi için yeni bir grup açmalısın.
+4. ÖNCELİK: Eğer bir talep "high" (yüksek) öncelikli ise, onu bekletmeden ilk uygun seferine dahil et.
+5. JSON FORMATI: Sadece aşağıda belirtilen JSON yapısında yanıt ver, başka açıklama ekleme.
+
+VERİLER: ${JSON.stringify(dataForAI)}
+
+İSTEDİĞİM ÇIKTI FORMATI:
+{
+  "groups": [
+    {
+      "title": "Kısa ve net sefer başlığı (Örn: Tıp Fakültesi Seferi)",
+      "reason": "Neden bu talepleri birleştirdiğinin kısa açıklaması",
+      "ids": ["id1", "id2"]
+    }
+  ]
+}`;
 
         const completion = await openai.chat.completions.create({
             messages: [
@@ -80,7 +96,6 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(enrichedGroups);
 
     } catch (err: any) {
-        // HATAYI TERMİNALDE GÖRMEK İÇİN:
         console.error("KRİTİK HATA (api/ai/driver-group):", err.message);
         return NextResponse.json({ 
             error: "Sunucu hatası", 

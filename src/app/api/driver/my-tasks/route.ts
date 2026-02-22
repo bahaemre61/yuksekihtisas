@@ -9,14 +9,20 @@ export async function GET(request:Request) {
 
     try{
         await connectToDatabase();
-        const myTasks = await VehicleRequest.find({
-            assignedDriver : user.id,
-            status : 'assigned'
-        })
-        .populate('requestingUser', 'name email')
-        .sort({startTime : 1});
+  const tasks = await VehicleRequest.find({ 
+    assignedDriver: user.id, 
+    status: 'assigned' 
+  }).populate('requestingUser', 'name email')
+  .lean();
 
-        return NextResponse.json(myTasks, {status : 200});
+  const grouped = tasks.reduce((acc: any, task: any) => {
+    const key = task.batchId || 'single';
+    if (!acc[key]) acc[key] = { title: `${task.toLocation} Seferi`, requests: [] };
+    acc[key].requests.push(task);
+    return acc;
+  } , {});
+
+  return NextResponse.json(Object.values(grouped))
     }catch(error){
         console.error("My Tasks Error:", error);
         return NextResponse.json({msg : 'Sunucu Hatası'}, {status : 500});
