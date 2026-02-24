@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import axios from 'axios';
 import { 
   MapPinIcon, ClockIcon, UsersIcon, BoltIcon, 
-  CalendarDaysIcon, ArrowRightCircleIcon, EllipsisVerticalIcon 
+  CalendarDaysIcon, ArrowRightCircleIcon, EllipsisVerticalIcon, HandRaisedIcon
 } from '@heroicons/react/24/solid';
 
 export default function SmartGroupPage() {
@@ -64,7 +65,24 @@ export default function SmartGroupPage() {
         <div>
           <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Akıllı Havuz</h1>
           <p className="text-slate-500 mt-1 font-medium">Yapay zeka bugün için en verimli rotaları hazırladı.</p>
+          <Link 
+          href="/dashboard/yigin/manuel-atama"
+          className="
+            flex items-center gap-2 
+            bg-orange-500 hover:bg-orange-600 
+            text-white px-6 py-3 rounded-2xl 
+            text-[10px] font-black uppercase tracking-widest 
+            transition-all shadow-lg shadow-orange-500/20 
+            active:scale-95
+          "
+        >
+          <HandRaisedIcon className="h-4 w-4" />
+          Manuel Grup Ekleme
+        </Link>
+
         </div>
+
+        
         <div className="flex gap-4">
           <div className="bg-white px-5 py-3 rounded-2xl shadow-sm border border-slate-100 text-center text-blue-600 font-black">
              {groups.filter(g => g.isToday).length} Aktif

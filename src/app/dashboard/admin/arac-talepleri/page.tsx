@@ -17,6 +17,14 @@ enum RequestStatus {
     CANCELLED = 'cancelled',
 }
 
+// Sıralama önceliği tanımı
+const statusPriority: Record<string, number> = {
+    [RequestStatus.PENDING]: 1,
+    [RequestStatus.ASSIGNED]: 2,
+    [RequestStatus.COMPLETED]: 3,
+    [RequestStatus.CANCELLED]: 4,
+};
+
 interface IVehicleReuqest {
     _id: string;
     purpose: string;
@@ -31,17 +39,20 @@ interface IVehicleReuqest {
 export default function AdminDashboardPage() {
     const [requests, setRequests] = useState<IVehicleReuqest[]>([]);
     const [loading, setLoading] = useState(true);
-    
-    // Filtre State'leri
     const [filterStatus, setFilterStatus] = useState<string>('all');
     const [showCancelled, setShowCancelled] = useState<boolean>(false);
 
     const fetchAllRequests = async () => {
         setLoading(true);
         try {
-            // Backend'e filtre parametrelerini gönderiyoruz
             const res = await axios.get(`/api/admin/requests?status=${filterStatus}&showCancelled=${showCancelled}`);
-            setRequests(res.data);
+            
+            // 📊 DURUMA GÖRE SIRALAMA MANTIĞI
+            const sortedData = [...res.data].sort((a, b) => {
+                return statusPriority[a.status] - statusPriority[b.status];
+            });
+
+            setRequests(sortedData);
         } catch (err) {
             console.error(err);
             alert("Veriler yüklenmedi");
@@ -49,17 +60,15 @@ export default function AdminDashboardPage() {
         setLoading(false);
     };
 
-    // Filtreler her değiştiğinde listeyi yenile
     useEffect(() => {
         fetchAllRequests();
     }, [filterStatus, showCancelled]);
 
     const handleUnassign = async (id: string) => {
         if (!confirm("Bu işi şoförden alıp tekrar havuza (Pending) atmak istediğinize emin misiniz?")) return;
-
         try {
             await axios.put(`/api/admin/requests/${id}/unassign`);
-            fetchAllRequests(); // Listeyi yenilemek en sağlıklısı
+            fetchAllRequests();
         } catch (err) {
             alert("İşlem başarısız.");
         }
@@ -88,7 +97,6 @@ export default function AdminDashboardPage() {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3">
-                        {/* Durum Filtresi */}
                         <div className="flex items-center gap-2 bg-white border rounded-md px-2 py-1 shadow-sm">
                             <FunnelIcon className="h-4 w-4 text-gray-400" />
                             <select 
@@ -103,7 +111,6 @@ export default function AdminDashboardPage() {
                             </select>
                         </div>
 
-                        {/* İptalleri Göster Toggle */}
                         <button
                             onClick={() => setShowCancelled(!showCancelled)}
                             className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all border ${
@@ -129,7 +136,9 @@ export default function AdminDashboardPage() {
                         <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Talep Eden</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Güzergah & Amaç</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nerden</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nereye</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Amaç</th>
                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tarih</th>
                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Durum</th>
                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Şoför</th>
@@ -147,10 +156,19 @@ export default function AdminDashboardPage() {
                                             <div className="text-sm font-bold text-gray-900">{req.requestingUser?.name || 'Silinmiş'}</div>
                                             <div className="text-xs text-gray-500">{req.requestingUser?.email}</div>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-900 font-semibold">{req.purpose}</div>
-                                            <div className="text-xs text-gray-500 truncate max-w-[200px]">{req.fromLocation} ➔ {req.toLocation}</div>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{req.fromLocation}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{req.toLocation}</td>
+                                        
+                                        {/* 💬 AMAÇ KISMI TRUNCATE EDİLDİ */}
+                                        <td className="px-6 py-4 max-w-[200px]">
+                                            <div 
+                                                className="text-sm font-semibold text-gray-900 truncate" 
+                                                title={req.purpose} // Üzerine gelince tam hali görünür
+                                            >
+                                                {req.purpose}
+                                            </div>
                                         </td>
+                                        
                                         <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-600">
                                             <span className="font-medium text-gray-900">{new Date(req.startTime).toLocaleDateString('tr-TR')}</span> <br />
                                             {new Date(req.startTime).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
@@ -162,9 +180,7 @@ export default function AdminDashboardPage() {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                             {req.assignedDriver ? (
-                                                <div className="flex flex-col">
-                                                    <span className="font-medium text-blue-700">{req.assignedDriver.name}</span>
-                                                </div>
+                                                <span className="font-medium text-blue-700">{req.assignedDriver.name}</span>
                                             ) : (
                                                 <span className="text-gray-400 italic">Atanmadı</span>
                                             )}
@@ -183,7 +199,7 @@ export default function AdminDashboardPage() {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center text-gray-400 italic">
+                                    <td colSpan={8} className="px-6 py-12 text-center text-gray-400 italic">
                                         Kriterlere uygun talep bulunamadı.
                                     </td>
                                 </tr>

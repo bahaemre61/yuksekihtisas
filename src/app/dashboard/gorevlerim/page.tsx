@@ -40,7 +40,7 @@ export default function DriverTasksPage() {
       const destination = encodeURIComponent(ANA_US);
       const waypoints = stops.join('|');
 
-      const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin={origin}&destination=${destination}&waypoints=${waypoints}&travelmode=driving`;
+      const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&waypoints=${waypoints}&travelmode=driving`;
 
       // 3. Navigasyonu aç
       window.open(googleMapsUrl, '_blank');
@@ -52,11 +52,9 @@ export default function DriverTasksPage() {
     }
   };
 
-  // ✅ SEFERİ BİTİR & DURUMU MÜSAİT YAP
   const handleCompleteTrip = async (batchId: string) => {
     if (!confirm("Seferi bitirmek istediğinize emin misiniz?")) return;
     try {
-      // Seferi bitirirken şoförü tekrar "available" (müsait) yapıyoruz
       await axios.post('/api/driver/complete-task', { batchId });
       await axios.patch('/api/driver/update-status', { status: 'available' });
       
@@ -98,6 +96,7 @@ export default function DriverTasksPage() {
                     <p className="text-[10px] font-medium text-slate-400 mt-0.5">
                       Talep Eden: <span className="text-slate-600 font-bold">{req.requestingUser?.name}</span>
                     </p>
+                    <p className='text-[9px] text-slate-500 italic mt-0.5'>Saat: {new Date(req.startTime).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
                 ))}
               </div>
