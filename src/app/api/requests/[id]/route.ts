@@ -12,15 +12,16 @@ export async function PUT(
 ) {
     const { user, error } = getAuthenticatedUser(request);
     if (error) return error;
-    try{
-        const {id} = await params;
+
+    try {
+        const { id } = await params;
         const body = await request.json();
 
         await connectToDatabase();
 
         const existingRequest = await VehicleRequest.findById(id);
-        if(!existingRequest){
-            return NextResponse.json({msg : 'Talep bulunamadı.'}, {status : 404});
+        if (!existingRequest) {
+            return NextResponse.json({ msg: 'Talep bulunamadı.' }, { status: 404 });
         }
 
         const oldDriverId = existingRequest.assignedDriver;
@@ -28,37 +29,35 @@ export async function PUT(
         const updatedRequest = await VehicleRequest.findByIdAndUpdate(
             id,
             body,
-            {new: true}
+            { new: true }
         );
 
-        if(oldDriverId)
-        {
-            const isUnassigned = 
-            (body.status === RequestStatus.PENDING) ||
-            (body.assignedDriver === null) ||
-            (body.assignedDriver === undefined && body.status === RequestStatus.PENDING);
-            if (isUnassigned) {
-            console.log(`Talep boşa çıkarıldı. Eski şoför (${oldDriverId}) kontrol ediliyor...`);
+        if (oldDriverId) {
+            const isReleased = 
+                (body.status === RequestStatus.PENDING) || 
+                (body.status === RequestStatus.COMPLETED) || 
+                (body.assignedDriver === null);
 
-            const remainingJobs = await VehicleRequest.countDocuments({
-                assignedDriver: oldDriverId,
-                status: RequestStatus.ASSIGNED,
-                _id: { $ne: id } 
-            });
+            if (isReleased) {
+                const remainingJobs = await VehicleRequest.countDocuments({
+                    assignedDriver: oldDriverId,
+                    status: RequestStatus.ASSIGNED,
+                    _id: { $ne: id } 
+                });
 
-            if (remainingJobs === 0) {
-                await User.findByIdAndUpdate(oldDriverId, { driverStatus: 'available' });
-                console.log("-> Şoförün başka işi kalmadığı için 'Müsait' yapıldı.");
-            } else {
-                console.log(`-> Şoförün hala ${remainingJobs} işi var, 'Meşgul' kalmaya devam ediyor.`);
+                if (remainingJobs === 0) {
+                    await User.findByIdAndUpdate(oldDriverId, { driverStatus: 'available' });
+                    console.log(`-> Şoförün (${oldDriverId}) başka işi kalmadığı için 'Müsait' yapıldı.`);
+                } else {
+                    console.log(`-> Şoförün hala ${remainingJobs} işi var, 'Meşgul' kalmaya devam ediyor.`);
+                }
             }
         }
+
+        return NextResponse.json(updatedRequest, { status: 200 });
+
+    } catch (error) {
+        console.error("Güncelleme Hatası:", error);
+        return NextResponse.json({ msg: 'Güncelleme başarısız' }, { status: 500 });
     }
-
-    return NextResponse.json(updatedRequest, { status: 200 });
-
-  } catch (error) {
-    console.error("Güncelleme Hatası:", error);
-    return NextResponse.json({ msg: 'Güncelleme başarısız' }, { status: 500 });
-  }
-        }
+}

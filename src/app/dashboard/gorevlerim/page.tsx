@@ -3,124 +3,200 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { 
-  MapPinIcon, 
+  ChatBubbleLeftEllipsisIcon, 
   UserIcon, 
   CheckCircleIcon,
-  PlayIcon // Sürüşe başla için daha uygun bir ikon
+  PlayIcon,
+  ClockIcon,
+  TruckIcon,
+  CheckIcon
 } from '@heroicons/react/24/solid';
 
-// 📍 ANA ÜS ADRESİ (Garaj veya Merkez Bina)
 const ANA_US = "Yüksek İhtisas Üniversitesi - 100. Yıl Yerleşkesi (Tıp Fakültesi)";
+
+// --- YARDIMCI BİLEŞEN: GENİŞLEYEBİLİR METİN ---
+const ExpandableText = ({ text, limit = 100 }: { text: string, limit?: number }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  if (!text) return <p className="text-xs text-gray-400 italic">Not bırakılmamış.</p>;
+  if (text.length <= limit) return <p className="text-xs text-gray-600 italic leading-relaxed">{text}</p>;
+
+  return (
+    <div>
+      <p className="text-xs text-gray-600 italic leading-relaxed">
+        {isExpanded ? text : `${text.substring(0, limit)}...`}
+      </p>
+      <button 
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="text-[10px] font-bold text-blue-600 mt-1 uppercase tracking-tighter hover:underline"
+      >
+        {isExpanded ? '↑ KÜÇÜLT' : '↓ DAHA FAZLA GÖR'}
+      </button>
+    </div>
+  );
+};
 
 export default function DriverTasksPage() {
   const [trips, setTrips] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [completedRequests, setCompletedRequests] = useState<string[]>([]);
 
   const fetchMyTasks = async () => {
     try {
       const res = await axios.get('/api/driver/my-tasks');
       setTrips(res.data);
-    } catch (err) { console.error(err); }
-    finally { setLoading(false); }
+    } catch (err) { 
+      console.error("Görevler çekilemedi:", err); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   useEffect(() => { fetchMyTasks(); }, []);
 
-  // 🚗 SÜRÜŞE BAŞLA & DURUM GÜNCELLE
-  const handleStartDriving = async (requests: any[]) => {
-    if (requests.length === 0) return;
+  const openNavigation = (location: string) => {
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(location.trim())}&travelmode=driving`;
+  window.open(url, '_blank');
+  };
 
+  const markAsDone = async (requestId: string) => {
     try {
-      // 1. Backend'e şoförün durumunu "busy" (meşgul) yapması için istek atıyoruz
-      await axios.patch('/api/driver/update-status', { status: 'busy' });
+      const res = await axios.put(`/api/requests/${requestId}`, { 
+        status: 'completed' 
+      });
       
-      // 2. Google Maps Rota Hazırlığı (Ana Üs -> Duraklar -> Ana Üs)
-      const stops = requests.map(r => encodeURIComponent(r.toLocation.trim()));
-      const origin = encodeURIComponent(ANA_US);
-      const destination = encodeURIComponent(ANA_US);
-      const waypoints = stops.join('|');
-
-      const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&waypoints=${waypoints}&travelmode=driving`;
-
-      // 3. Navigasyonu aç
-      window.open(googleMapsUrl, '_blank');
-      
-      // Arayüzü tazeleyebiliriz (opsiyonel)
-      console.log("Sürüş başladı, şoför meşgul moduna alındı.");
+      if (res.status === 200) {
+        setCompletedRequests(prev => [...prev, requestId]);
+      }
     } catch (err) {
-      alert("Durum güncellenirken bir hata oluştu, ancak navigasyon açılıyor.");
+      alert("Hata: Durak güncellenemedi.");
     }
   };
 
   const handleCompleteTrip = async (batchId: string) => {
-    if (!confirm("Seferi bitirmek istediğinize emin misiniz?")) return;
+    if (!confirm("Tüm duraklar bittiyse ve merkeze dönüyorsanız onaylayın.")) return;
     try {
       await axios.post('/api/driver/complete-task', { batchId });
-      await axios.patch('/api/driver/update-status', { status: 'available' });
-      
       fetchMyTasks();
     } catch (err) {
-      alert("Hata oluştu.");
+      alert("Hata: Sefer kapatılamadı.");
     }
   };
 
-  if (loading) return <div className="p-10 text-center font-black text-slate-400 animate-pulse text-xs">Veriler Alınıyor...</div>;
+  if (loading) return (
+    <div className="flex items-center justify-center h-[60vh] text-gray-400 font-black text-xs uppercase tracking-[0.3em]">
+      GÖREVLER YÜKLENİYOR...
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] p-4 md:p-6">
-      <header className="mb-6 flex justify-between items-center">
-        <h1 className="text-xl font-black text-slate-900 tracking-tighter italic uppercase">Görevlerim</h1>
-        <div className="bg-green-50 text-green-600 px-3 py-1 rounded-full text-[10px] font-black border border-green-100">
-          SİSTEM AKTİF
-        </div>
+    <div className="max-w-7xl mx-auto py-8 px-4 space-y-8">
+      <header className="border-b border-gray-100 pb-5">
+        <h1 className="text-2xl font-black text-gray-800 uppercase tracking-tighter italic">
+          GÖREV <span className="text-blue-600">PANELİ</span>
+        </h1>
+        <p className="text-xs text-gray-400 font-bold uppercase mt-1 tracking-widest">Atanan aktif ring ve münferit seferler.</p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {trips.length > 0 ? (
           trips.map((trip, idx) => (
-            <div key={idx} className="bg-white rounded-4x1 shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+            <div key={idx} className="bg-white border border-gray-200 rounded-4x1 overflow-hidden shadow-sm flex flex-col h-full transition-all hover:shadow-md">
               
-              {/* Grup Başlığı */}
-              <div className="px-5 py-4 bg-slate-900 text-white flex justify-between items-center">
-                <h2 className="text-[11px] font-black uppercase tracking-widest text-blue-400">
-                  {trip.title}
-                </h2>
-                <span className="text-[9px] font-bold bg-white/10 px-2 py-0.5 rounded-lg">Ring Seferi</span>
+              {/* Kart Üst Bilgisi */}
+              <div className="px-6 py-4 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <TruckIcon className="h-4 w-4 text-blue-600" />
+                  <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                    {trip.requests.length > 1 ? 'Ring Seferi' : 'Münferit Görev'}
+                  </span>
+                </div>
+                <span className="text-[9px] font-black bg-blue-100 text-blue-700 px-3 py-1 rounded-full uppercase">
+                  {trip.title || `SEFER #${idx + 1}`}
+                </span>
               </div>
 
-              {/* Yolcu ve Konum Listesi */}
-              <div className="p-5 flex-1 space-y-4">
-                {trip.requests.map((req: any, rIdx: number) => (
-                  <div key={rIdx} className="border-l-2 border-blue-500 pl-4 py-1">
-                    <p className="text-sm font-bold text-slate-800">{req.toLocation}</p>
-                    <p className="text-[10px] font-medium text-slate-400 mt-0.5">
-                      Talep Eden: <span className="text-slate-600 font-bold">{req.requestingUser?.name}</span>
-                    </p>
-                    <p className='text-[9px] text-slate-500 italic mt-0.5'>Saat: {new Date(req.startTime).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</p>
-                  </div>
-                ))}
+              {/* Durak Satırları */}
+              <div className="divide-y divide-gray-50 flex-1">
+                {trip.requests.map((req: any, rIdx: number) => {
+                  const isDone = completedRequests.includes(req._id) || req.status === 'completed';
+                  
+                  return (
+                    <div key={req._id} className={`p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all ${isDone ? 'opacity-40 bg-gray-50/50' : ''}`}>
+                      
+                      {/* Sol: Durak ve Personel Bilgisi */}
+                      <div className="flex-1 space-y-3">
+                        <div className="flex items-start gap-4">
+                          <div className={`mt-1 h-6 w-6 shrink-0 rounded-full flex items-center justify-center text-[10px] font-black ${isDone ? 'bg-green-500 text-white' : 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'}`}>
+                            {isDone ? <CheckIcon className="h-4 w-4 stroke-[3px]" /> : rIdx + 1}
+                          </div>
+                          <div className="flex-1">
+                            <p className={`text-sm font-black ${isDone ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+                              {req.toLocation}
+                            </p>
+                            <div className="flex flex-wrap items-center gap-4 mt-2">
+                              <span className="text-[10px] text-gray-500 flex items-center gap-1 font-bold uppercase">
+                                <UserIcon className="h-3.5 w-3.5" /> {req.requestingUser?.name}
+                              </span>
+                              <span className="text-[10px] text-blue-600 flex items-center gap-1 font-black bg-blue-50 px-2 py-0.5 rounded-lg">
+                                <ClockIcon className="h-3.5 w-3.5" /> {new Date(req.startTime).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Önemli Not (Expandable) */}
+                        <div className="ml-10 bg-slate-50 border-l-2 border-slate-200 p-3 rounded-r-xl">
+                          <div className="flex items-center gap-1 text-[9px] font-black text-gray-400 uppercase mb-1 tracking-tighter">
+                            <ChatBubbleLeftEllipsisIcon className="h-3 w-3" /> Personel Notu
+                          </div>
+                          <ExpandableText text={req.purpose} />
+                        </div>
+                      </div>
+
+                      {/* Sağ: Aksiyon Butonları */}
+                      <div className="flex items-center gap-3 pl-10 md:pl-0">
+                        {!isDone ? (
+                          <>
+                            <button 
+                              onClick={() => openNavigation(req.toLocation)}
+                              className="p-3 bg-white border border-gray-200 text-blue-600 rounded-2xl hover:bg-blue-50 transition-all active:scale-90 shadow-sm"
+                              title="Yol Tarifi Al"
+                            >
+                              <PlayIcon className="h-6 w-6" />
+                            </button>
+                            <button 
+                              onClick={() => markAsDone(req._id)}
+                              className="flex items-center gap-2 px-6 py-3 bg-white border border-green-200 text-green-600 rounded-2xl hover:bg-green-50 transition-all active:scale-95 text-[11px] font-black uppercase tracking-widest shadow-sm"
+                            >
+                              <CheckCircleIcon className="h-6 w-6" />
+                              TAMAMLA
+                            </button>
+                          </>
+                        ) : (
+                          <div className="flex items-center gap-1 text-green-600 font-black text-[10px] uppercase bg-green-50 px-4 py-3 rounded-2xl border border-green-100">
+                            <CheckCircleIcon className="h-5 w-5" /> Durak Bitti
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
-              {/* Aksiyon Butonları */}
-              <div className="p-4 bg-slate-50/50 border-t border-slate-100 grid grid-cols-2 gap-3">
-                <button 
-                  onClick={() => handleStartDriving(trip.requests)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-2xl text-[10px] font-black flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-100"
-                >
-                  <PlayIcon className="h-3.5 w-3.5" /> SÜRÜŞE BAŞLA
-                </button>
-                <button 
-                  onClick={() => handleCompleteTrip(trip.requests[0].batchId)}
-                  className="bg-white text-green-600 border border-green-200 hover:bg-green-50 py-3.5 rounded-2xl text-[10px] font-black transition-all flex items-center justify-center gap-2"
-                >
-                  <CheckCircleIcon className="h-3.5 w-3.5" /> BİTİR
-                </button>
+              {/* Kart Altı: Tüm Seferi Kapatma */}
+              <div className="p-5 bg-gray-50 border-t border-gray-100">
+                  <button 
+                    onClick={() => handleCompleteTrip(trip.requests[0].batchId || trip.requests[0]._id)}
+                    className="w-full py-4 bg-gray-800 hover:bg-black text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95"
+                  >
+                    Bütün Rotayı Bitir
+                  </button>
               </div>
             </div>
           ))
         ) : (
-          <div className="col-span-full py-20 text-center bg-white rounded-[2.5rem] border-2 border-dashed border-slate-100 font-black text-slate-300 text-xs">
-            ŞU AN AKTİF GÖREVİNİZ BULUNMUYOR
+          <div className="col-span-full py-24 text-center bg-white border-2 border-dashed border-gray-100 rounded-[3rem]">
+            <p className="text-xs font-black text-gray-300 uppercase tracking-[0.4em]">Bekleyen Görev Bulunmuyor</p>
           </div>
         )}
       </div>

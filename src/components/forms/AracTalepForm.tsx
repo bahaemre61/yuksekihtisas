@@ -102,33 +102,45 @@ export default function CreateRequestPage() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); 
-    setLoading(true);
-    setError('');
-    setSuccessMessage('');
+  e.preventDefault(); 
 
-    // "Diğer" seçeneği kontrolü ile son lokasyonları belirle
-    const payload = {
-      ...formData,
-      fromLocation: formData.fromLocation === 'other' ? formData.customFrom : formData.fromLocation,
-      toLocation: formData.toLocation === 'other' ? formData.customTo : formData.toLocation,
-      priority: canSetPriority ? formData.priority : 'normal'
-    };
+  // 1. Öğle Arası Kontrolü (12:00 - 13:00 arası yasak)
+  const selectedDate = new Date(formData.startTime);
+  const hours = selectedDate.getHours();
 
-    try {
-      if (new Date(payload.endTime) <= new Date(payload.startTime)) {
-        throw new Error('Dönüş saati, gidiş saatinden sonra olmalıdır.');
-      }
+  // hours === 12 demek; 12:00 ile 12:59 arasındaki her dakikayı kapsar.
+  if (hours === 12) {
+    alert("Öğle arası (12:00 - 13:00) saatleri için araç talebi oluşturulamaz. Lütfen mesai saatlerini seçiniz.");
+    return;
+  }
 
-      await axios.post('/api/requests', payload);
-      setSuccessMessage('Araç talebiniz başarıyla oluşturuldu! Yönlendiriliyorsunuz...');
-      setTimeout(() => router.push('/dashboard/taleplerim'), 2000);
-    } catch (err: any) {
-      setError(err.response?.data?.msg || err.message || 'Bir hata oluştu.');
-    } finally {
-      setLoading(false);
-    }
+  setLoading(true);
+  setError('');
+  setSuccessMessage('');
+
+  // 2. Payload Hazırlığı (Temizleme)
+  const payload = {
+    ...formData,
+    fromLocation: formData.fromLocation === 'other' ? formData.customFrom : formData.fromLocation,
+    toLocation: formData.toLocation === 'other' ? formData.customTo : formData.toLocation,
+    priority: canSetPriority ? formData.priority : 'normal'
   };
+
+  try {
+    if (new Date(payload.endTime) <= new Date(payload.startTime)) {
+      throw new Error('Dönüş saati, gidiş saatinden sonra olmalıdır.');
+    }
+
+    await axios.post('/api/requests', payload); 
+
+    setSuccessMessage('Araç talebiniz başarıyla oluşturuldu! Yönlendiriliyorsunuz...');
+    setTimeout(() => router.push('/dashboard/taleplerim'), 2000);
+  } catch (err: any) {
+    setError(err.response?.data?.msg || err.message || 'Bir hata oluştu.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="max-w-3xl mx-auto">

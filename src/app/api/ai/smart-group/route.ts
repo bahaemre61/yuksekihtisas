@@ -26,8 +26,7 @@ export async function GET(request: NextRequest) {
         }
 
         const now = new Date();
-        const todayStr = now.toISOString().split('T')[0];
-
+        const todayStr = now.toLocaleDateString('en-CA', { timeZone: 'Europe/Istanbul' });
         // 1. GÜVENLİ TARİH AYRIMI
         const todayRequests = allPending.filter((req: any) => {
             if (!req.startTime) return false;

@@ -37,6 +37,17 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({msg: 'Dönüş saati, gidiş saatinden sonra olmalıdır.'}, {status : 400});
         }
 
+        const requestDate = new Date(startTime);
+        const hours = requestDate.getHours();
+
+        // 12:00 - 13:00 Kısıtlaması
+        if (hours === 12) {
+            return NextResponse.json(
+                { msg: 'Öğle arası saatlerinde (12:00-13:00) hizmet verilmemektedir.' }, 
+                { status: 400 }
+            );
+        }
+
         await connectToDatabase();
 
         const newRequest = new VehicleRequest({
