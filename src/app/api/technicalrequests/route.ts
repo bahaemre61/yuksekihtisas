@@ -46,12 +46,12 @@ export async function POST(request: NextRequest) {
 
             const safeFilename = `${Date.now()}-${path.basename(file.name).replaceAll(/[^a-zA-Z0-9._-]/g, '')}`;
 
-            const uploadDir = path.join(process.cwd(), 'public/uploads');
+            const uploadDir = path.join(process.cwd(), 'uploads');
             const filePath = path.join(uploadDir, safeFilename);
 
             await writeFile(filePath, buffer);
 
-            screenshotUrl = `/uploads/${safeFilename}`;
+            screenshotUrl = `uploads/${safeFilename}`;
         }
 
         const newRequest = new TechnicalRequest({

@@ -68,15 +68,19 @@ export default function TechnicalAdminPage() {
         fetchAllRequests();
     }, [filterStatus, showCancelled]);
 
-    const handleUnassign = async (id: string) => {
-        if (!confirm("Bu işi teknik personelden alıp tekrar havuza atmak istediğinize emin misiniz?")) return;
-        try {
-            await axios.put(`/api/admin/technical-requests/unassign`, { requestId: id });
-            fetchAllRequests(); // Listeyi yenile
-        } catch (err) {
-            alert("İşlem başarısız.");
+   const handleUnassign = async (id: string) => {
+    if (!confirm("Emin misiniz?")) return;
+    
+    try {
+        const res = await axios.put(`/api/admin/technical-requests/${id}/unassign`);
+        
+        if (res.data.success) {
+            fetchAllRequests(); 
         }
-    };
+    } catch (err) {
+        alert("Hata oluştu.");
+    }
+};
 
     const getStatusColor = (status: string) => {
         switch (status) {

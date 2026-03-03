@@ -6,26 +6,33 @@ import connectToDatabase from '@/src/lib/db';
 import { UserRole } from '@/src/lib/models/User';
 
 
-export async function PUT(request: NextRequest) {
-   const {user,error}= getAuthenticatedUser(request);
-      if(error) return error;
-  
-      if(user.role !== UserRole.ADMIN)
-      {
-          return NextResponse.json({msg : "Yasak: Yetkisiz giriş."}, {status : 403});
-      }
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> } 
+) {
+  const { user, error } = getAuthenticatedUser(request);
+  if (error) return error;
+
+  if (user.role !== UserRole.ADMIN) {
+    return NextResponse.json({ msg: "Yasak: Yetkisiz giriş." }, { status: 403 });
+  }
 
   try {
-    const { requestId } = await request.json();
+    const { id } = await params; 
     await connectToDatabase();
 
-    await TechnicalRequest.findByIdAndUpdate(requestId, {
+    const updated = await TechnicalRequest.findByIdAndUpdate(id, {
         status: 'pending',
         technicalStaff: [] 
-    });
+    }, { new: true });
+
+    if (!updated) {
+        return NextResponse.json({ msg: "Talep bulunamadı." }, { status: 404 });
+    }
 
     return NextResponse.json({ success: true, msg: 'Personel ataması kaldırıldı.' });
   } catch (error) {
+    console.error("Unassign error:", error);
     return NextResponse.json({ success: false }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { XMarkIcon, MagnifyingGlassPlusIcon } from '@heroicons/react/24/outline';
 
 
 interface IUser {
@@ -30,6 +31,7 @@ export default function TeknikDestekPage() {
   const [requests, setRequests] = useState<IRequest[]>([]);
   const [technicians, setTechnicians] = useState<ITechnician[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedImg, setSelectedImg] = useState<string | null>(null);
   
   const [selectedTechs, setSelectedTechs] = useState<Record<string, string[]>>({});
 
@@ -146,24 +148,61 @@ export default function TeknikDestekPage() {
                  </div>
                  <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded">{req.description}</p>
               </div>
-               <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-          {/* req.screenshot kısmının veritabanındaki dosya adı (Örn: image-123.jpg) olduğundan emin ol */}
-                   {req.screenshotUrl ? (
-                  <a 
-                  href={`/api/display-image/${req.screenshotUrl.replace('/uploads/', '')}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline"
-                >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-      Ekran Görüntüsünü İncele
-</a>
-  ) : (
-    <span className="text-xs text-gray-400 italic">Ekran görüntüsü eklenmemiş</span>
-  )}
-</div>
+  <div className="relative">
+      {/* 1. TALEP LİSTESİNDEKİ BUTON KISMI */}
+      {/* ... req map döngüsü içinde ... */}
+      <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100 mt-2">
+        {req.screenshotUrl ? (
+          <button 
+            onClick={() => setSelectedImg(`/api/display-image/${req.screenshotUrl!.split('/').pop()}`)}
+            className="flex items-center gap-2 text-[10px] font-black text-blue-600 hover:text-blue-800 uppercase tracking-widest transition-all group"
+          >
+            <MagnifyingGlassPlusIcon className="h-4 w-4 transition-transform group-hover:scale-125" />
+            Görseli İncele
+          </button>
+        ) : (
+          <span className="text-[9px] text-gray-400 font-bold uppercase italic">Görsel Yok</span>
+        )}
+      </div>
+
+      {/* 2. PREMIUM MODAL KATMANI */}
+      {selectedImg && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center p-2 md:p-10">
+    {/* Arka Plan (Blur artırıldı) */}
+    <div 
+      className="absolute inset-0 bg-gray-900/70 backdrop-blur-md transition-opacity" 
+      onClick={() => setSelectedImg(null)} 
+    />
+    
+    {/* Modal İçeriği (Genişlik max-w-6xl yapıldı) */}
+    <div className="relative bg-white rounded-3x1 md:rounded-[3rem] shadow-2xl max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
+      
+      {/* Üst Bar (Kapat butonu burada daha şık) */}
+      <div className="px-8 py-4 flex justify-between items-center border-b border-gray-100 bg-white">
+        <div className="flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
+            <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Teknik Arıza Detay Görüntüsü</span>
+        </div>
+        <button 
+          onClick={() => setSelectedImg(null)}
+          className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-full transition-all"
+        >
+          <XMarkIcon className="h-6 w-6 stroke-[2px]" />
+        </button>
+      </div>
+
+      {/* Resim Alanı (Yükseklik artırıldı) */}
+      <div className="flex-1 bg-gray-50 overflow-auto flex items-center justify-center p-2">
+          <img 
+            src={selectedImg} 
+            alt="Detay" 
+            className="w-full h-auto max-h-[75vh] md:max-h-[85vh] object-contain shadow-sm"
+          />
+      </div>
+    </div>
+  </div>
+)}
+    </div>
 
               {/* ÇOKLU SEÇİM ALANI */}
               <div className="p-4 bg-gray-50 border-t">
