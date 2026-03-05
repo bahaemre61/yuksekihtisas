@@ -24,7 +24,7 @@ export default function TeknikTalepForm() {
       const data = await res.json();
       
 
-      if (data.role === 'admin' || data.role === 'amir' || data.role === 'ADMIN') {
+      if (data.role === 'admin' || data.role === 'amir' || data.role === 'ADMIN' || data.role === 'AMIR' || data.role === 'TECHAMIR' || data.role === 'techamir' || data.role === 'SUPERVISOR' || data.role === 'supervisor') {
         setCanSelectHighPriority(true);
       }
     } catch (error) {

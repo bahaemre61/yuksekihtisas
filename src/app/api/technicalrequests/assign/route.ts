@@ -12,7 +12,7 @@ export async function PUT(request:NextRequest) {
         const {user,error} = getAuthenticatedUser(request);
         if(error) return error;
 
-        if(user.role !== 'admin' && user.role !== 'amir' && user.role !== 'tech'){
+        if(user.role !== 'admin' && user.role !== 'techamir' && user.role !== 'tech'){
             return NextResponse.json({ msg: 'Yetkisiz erişim.'}, {status : 403});
         }
 

@@ -3,11 +3,16 @@ import type { NextRequest } from "next/server";
 import connectToDatabase from "@/src/lib/db";
 import TechnicalRequest from "@/src/lib/models/TechnicalRequest";
 import { getAuthenticatedUser } from "@/src/lib/auth";
+import { UserRole } from "@/src/lib/models/User";
 
 export async function GET(request: NextRequest) {
     try {
         const { user, error } = getAuthenticatedUser(request);
         if (error) return error;
+
+         if (user.role !== UserRole.ADMIN && user.role !== UserRole.SUPERVISOR) {
+            return NextResponse.json({ msg: "Yasak: Yetkisiz giriş." }, { status: 403 });
+          }
 
         const { searchParams } = new URL(request.url);
         const status = searchParams.get('status'); 

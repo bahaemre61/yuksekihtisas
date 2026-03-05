@@ -25,7 +25,7 @@ import {
 } from '@heroicons/react/24/outline';
 import unilogo from "@/src/components/yuksekihtisasuni-logo.png"
 
-const UserRole = {USER: 'user', DRIVER: 'driver', ADMIN: 'admin', AMIR : 'amir', TECHNICAL: 'tech'} as const;
+const UserRole = {USER: 'user', DRIVER: 'driver', ADMIN: 'admin', AMIR : 'amir', TECHNICAL: 'tech', SUPERVISOR: 'supervisor', TECHAMIR: 'techamir'} as const;
 type UserRole = typeof UserRole[keyof typeof UserRole];
 interface IUser {name: string; role: UserRole; driverStatus?: 'available' | 'busy';}
 
@@ -83,20 +83,20 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: {
     }
     
     const navLinks = [
-    { name: 'Ana Sayfa', href: '/dashboard', icon: HomeIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN,UserRole.TECHNICAL,UserRole.AMIR] },
-    { name: 'Yeni Talep Oluştur', href: '/dashboard/talep-olustur', icon: PlusCircleIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.AMIR,UserRole.TECHNICAL] },
-    { name: 'Araç Taleplerim', href: '/dashboard/taleplerim', icon: TruckIcon, roles: [UserRole.USER, UserRole.ADMIN,UserRole.TECHNICAL] },
-    { name: 'Teknik Taleplerim', href: '/dashboard/tekniktaleplerim', icon: WrenchScrewdriverIcon, roles: [UserRole.USER, UserRole.ADMIN,UserRole.DRIVER, UserRole.AMIR] },
-    { name: 'Araç Talep Yığını', href: '/dashboard/yigin', icon: ArchiveBoxIcon, roles: [UserRole.ADMIN, UserRole.AMIR] },
-    { name: 'Teknik Talepler', href: '/dashboard/teknikyigin', icon: CpuChipIcon, roles: [UserRole.ADMIN, UserRole.AMIR]},
-    { name: 'Yapılacak Listem', href: '/dashboard/todo', icon: CheckBadgeIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.AMIR,UserRole.TECHNICAL] },
-    { name: 'Duyurular', href: '/dashboard/duyurular', icon: DocumentTextIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.AMIR,UserRole.TECHNICAL] },
-    { name: 'Yemek Menüsü', href: '/dashboard/yemek', icon: CalendarIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.AMIR,UserRole.TECHNICAL] },
+    { name: 'Ana Sayfa', href: '/dashboard', icon: HomeIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN,UserRole.TECHNICAL,UserRole.AMIR, UserRole.SUPERVISOR, UserRole.TECHAMIR] },
+    { name: 'Yeni Talep Oluştur', href: '/dashboard/talep-olustur', icon: PlusCircleIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.AMIR,UserRole.TECHNICAL, UserRole.SUPERVISOR, UserRole.TECHAMIR] },
+    { name: 'Araç Taleplerim', href: '/dashboard/taleplerim', icon: TruckIcon, roles: [UserRole.USER, UserRole.ADMIN,UserRole.TECHNICAL, UserRole.SUPERVISOR, UserRole.TECHAMIR, UserRole.AMIR] },
+    { name: 'Teknik Taleplerim', href: '/dashboard/tekniktaleplerim', icon: WrenchScrewdriverIcon, roles: [UserRole.USER, UserRole.ADMIN,UserRole.DRIVER, UserRole.AMIR, UserRole.SUPERVISOR] },
+    { name: 'Araç Talep Yığını', href: '/dashboard/yigin', icon: ArchiveBoxIcon, roles: [UserRole.ADMIN, UserRole.SUPERVISOR] },
+    { name: 'Teknik Talepler', href: '/dashboard/teknikyigin', icon: CpuChipIcon, roles: [UserRole.ADMIN, UserRole.TECHAMIR]},
+    { name: 'Yapılacak Listem', href: '/dashboard/todo', icon: CheckBadgeIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.AMIR,UserRole.TECHNICAL , UserRole.SUPERVISOR, UserRole.TECHAMIR] },
+    { name: 'Duyurular', href: '/dashboard/duyurular', icon: DocumentTextIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.AMIR,UserRole.TECHNICAL, UserRole.TECHAMIR] },
+    { name: 'Yemek Menüsü', href: '/dashboard/yemek', icon: CalendarIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.AMIR,UserRole.TECHNICAL, UserRole.SUPERVISOR, UserRole.TECHAMIR] },
     { name: 'Görevlerim', href: '/dashboard/gorevlerim',icon : ClipboardDocumentCheckIcon,roles : [UserRole.DRIVER,]},
     { name: 'Teknik Görevlerim', href: '/dashboard/teknikgorevlerim',icon : ServerStackIcon,roles : [UserRole.TECHNICAL,]},
-    { name: 'Yönetim Paneli', href: '/dashboard/admin',icon : CommandLineIcon,roles: [UserRole.ADMIN, UserRole.AMIR]},
+    { name: 'Yönetim Paneli', href: '/dashboard/admin',icon : CommandLineIcon,roles: [UserRole.ADMIN, UserRole.SUPERVISOR]},
     { name: 'Kullanıcılar', href: '/dashboard/kullanicilar', icon: UserIcon, roles: [UserRole.ADMIN]},
-    { name: 'Ayarlar', href: '/dashboard/ayarlar', icon: Cog6ToothIcon, roles: [UserRole.USER, UserRole.AMIR, UserRole.TECHNICAL, UserRole.DRIVER, UserRole.ADMIN]},
+    { name: 'Ayarlar', href: '/dashboard/ayarlar', icon: Cog6ToothIcon, roles: [UserRole.USER, UserRole.AMIR, UserRole.TECHNICAL, UserRole.DRIVER, UserRole.ADMIN ,UserRole.SUPERVISOR,UserRole.TECHAMIR] },
     ];
 
     const sidebarContent =(

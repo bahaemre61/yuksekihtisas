@@ -11,7 +11,7 @@ export async function GET(request:NextRequest) {
     if(error) return error;
 
 
-    if(user.role !== UserRole.ADMIN && user.role !== UserRole.AMIR)
+    if(user.role !== UserRole.ADMIN && user.role !== UserRole.SUPERVISOR)
     {
         return NextResponse.json({msg : 'Yasak: Sadece adminler ve amirler erişebilir'}, {status : 403});
     }

@@ -13,7 +13,7 @@ export async function PUT(
   const { user, error } = getAuthenticatedUser(request);
   if (error) return error;
 
-  if (user.role !== UserRole.ADMIN) {
+  if (user.role !== UserRole.ADMIN && user.role !== UserRole.SUPERVISOR) {
     return NextResponse.json({ msg: "Yasak: Yetkisiz giriş." }, { status: 403 });
   }
 

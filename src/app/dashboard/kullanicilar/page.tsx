@@ -15,7 +15,7 @@ interface IUser {
     _id: string;
     name: string;
     email: string;
-    role: 'user' | 'driver' | 'admin' | 'amir' | 'tech';
+    role: 'user' | 'driver' | 'admin' | 'amir' | 'tech' | 'supervisor' | 'techamir';
 }
 
 export default function UserPage() {
@@ -165,6 +165,8 @@ export default function UserPage() {
                                 <option value="admin">Admin</option>
                                 <option value="amir">Amir</option>
                                 <option value="tech">Teknik</option>
+                                <option value="supervisor">Süpervizör</option>
+                                <option value="techamir">Teknik Amir</option>
                             </select>
                         </div>
                         <div className="md:col-span-1">
@@ -201,6 +203,8 @@ export default function UserPage() {
                                                     user.role === 'amir' ? 'bg-blue-50 text-blue-700 border-blue-200' :
                                                         user.role === 'driver' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
                                                             user.role === 'tech' ? 'bg-green-50 text-green-700 border-green-200' :
+                                                               user.role === 'supervisor' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+                                                               user.role === 'techamir' ? 'bg-teal-50 text-teal-700 border-teal-200' :
                                                                 'bg-gray-50 text-gray-600 border-gray-200'}`}>
                                                 {user.role.toUpperCase()}
                                             </span>
@@ -290,6 +294,8 @@ export default function UserPage() {
                             <option value="admin">Admin</option>
                             <option value="amir">Amir</option>
                             <option value="tech">Teknik</option>
+                            <option value="supervisor">Genel Sekreterlik</option>
+                            <option value="techamir">Teknik Amir</option>
                         </select>
                     </div>
                 
