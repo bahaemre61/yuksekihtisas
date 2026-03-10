@@ -14,6 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Yüksek İhtisas Üniversitesi",
+  manifest: "/manifest.json",
   description: "",
 };
 
