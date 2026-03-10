@@ -24,6 +24,8 @@ import {
   Cog6ToothIcon
 } from '@heroicons/react/24/outline';
 import unilogo from "@/src/components/yuksekihtisasuni-logo.png"
+import DriverNotificationStatus from "./notification/DriverNotificationStatus";
+import TechNotificationStatus from "./notification/TechNotificationStatus";
 
 const UserRole = {USER: 'user', DRIVER: 'driver', ADMIN: 'admin', AMIR : 'amir', TECHNICAL: 'tech', SUPERVISOR: 'supervisor', TECHAMIR: 'techamir'} as const;
 type UserRole = typeof UserRole[keyof typeof UserRole];
@@ -148,9 +150,23 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: {
               })}
             </nav>
           </div>
+          
+        )}
+        {user && user.role === UserRole.TECHNICAL && (
+          <div className="border-t border-gray-200 p-4 bg-amber-50/30">
+            <TechNotificationStatus /> 
+            <div className="text-center mt-3">
+              <p className="text-[10px] font-black text-amber-600/50 uppercase tracking-widest mb-1 italic">Teknik Servis Hattı</p>
+              <span className="text-[9px] font-black text-amber-700 bg-amber-100 px-3 py-1 rounded-lg border border-amber-200 uppercase tracking-tighter">
+                Anlık Bildirimler Aktif
+              </span>
+            </div>
+          </div>
         )}
         {user && user.role === UserRole.DRIVER && (
+          
     <div className="border-t border-gray-200 p-4">
+    <DriverNotificationStatus />
       <div className="text-center mb-2">
         <p className="text-sm font-medium text-gray-700">Durumunuz</p>
         {user.driverStatus === 'available' ? (

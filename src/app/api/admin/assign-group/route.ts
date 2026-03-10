@@ -4,6 +4,7 @@ import connectToDatabase from "@/src/lib/db";
 import VehicleRequest, { RequestStatus } from "@/src/lib/models/VehicleRequest";
 import User from "@/src/lib/models/User";
 import { sendMail } from "@/src/lib/mail";
+import webpush from 'web-push';
 
 export async function POST(request: Request) {
     try {
@@ -18,6 +19,15 @@ export async function POST(request: Request) {
 
         await connectToDatabase();
 
+        const pubKey = process.env.NEXT_PUBLIC_VAPID_KEY;
+        const privKey = process.env.VAPID_PRIVATE_KEY;
+
+        if (!pubKey || !privKey) {
+            return NextResponse.json({ msg: 'VAPID anahtarları yapılandırılmamış.' }, { status: 500 });
+        }
+
+        webpush.setVapidDetails('mailto:bilgiislem@yuksekihtisas.edu.tr', pubKey, privKey);
+
         const driver = await User.findById(driverId);
         if (!driver) {
             return NextResponse.json({ msg: 'Şoför bulunamadı.' }, { status: 404 });
@@ -27,6 +37,18 @@ export async function POST(request: Request) {
             { _id: { $in: requestIds }, status: RequestStatus.PENDING },
             { $set: { assignedDriver: driverId, status: RequestStatus.ASSIGNED } }
         );
+
+        if (driver && driver.pushSubscription) {
+          const payload = JSON.stringify({
+        title: '🚨 YENİ GÖREV ATANDI!',
+        body: `${requestIds.length} adet yeni talep listenize eklendi. Hemen kontrol edin.`,
+        url: '/dashboard/gorevlerim'
+      });
+      const response = await webpush.sendNotification(driver.pushSubscription, payload);
+      console.log("Push bildirimi gönderildi:", response.statusCode);
+    }else{
+        console.log("Şoförün bildirim aboneliği yok");
+    }
 
         if (result.modifiedCount === 0) {
             return NextResponse.json({ msg: 'Talepler güncellenemedi (Zaten atanmış olabilir).' }, { status: 400 });

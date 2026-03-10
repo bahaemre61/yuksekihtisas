@@ -32,6 +32,7 @@ interface IVehicleReuqest {
     toLocation: string;
     status: RequestStatus;
     startTime: string;
+    endTime: string;
     requestingUser: { name: string; email: string };
     assignedDriver?: { name: string; email: string };
 }
@@ -171,8 +172,9 @@ export default function AdminDashboardPage() {
                                         
                                         <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-600">
                                             <span className="font-medium text-gray-900">{new Date(req.startTime).toLocaleDateString('tr-TR')}</span> <br />
-                                            {new Date(req.startTime).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
-                                        </td>
+                                            {new Date(req.startTime).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}- 
+                                            {new Date(req.endTime).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                                        </td>   
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className={`px-2.5 py-0.5 inline-flex text-[10px] leading-5 font-bold rounded-full border ${getStatusColor(req.status)}`}>
                                                 {req.status.toUpperCase()}

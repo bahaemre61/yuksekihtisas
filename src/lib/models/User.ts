@@ -22,6 +22,7 @@ export interface IUser extends Document {
     driverStatus?: 'available' | 'busy';
     resetPasswordToken?: string;
     resetPasswordExpires?: Date;
+    pushSubscription?: any;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -38,6 +39,7 @@ const UserSchema = new Schema<IUser>({
         enum: ['available', 'busy'],
         default : 'available',
     },
+    pushSubscription: { type: Object },
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date },
 });
