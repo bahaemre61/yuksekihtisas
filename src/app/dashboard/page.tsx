@@ -77,14 +77,16 @@ export default function DashboardHome() {
         setUserName(userRes.data.name);
 
         const reqReq = await axios.get('/api/requests/my');
-        setRecentRequests(reqReq.data.slice(0,5));
+        const activeRequests = reqReq.data.filter((req: IVehicleRequest) => req.status !== RequestStatus.CANCELLED);
+        setRecentRequests(activeRequests.slice(0,5));
 
         // 3. YENİ: Teknik Talepler
         // Not: Teknik talep API'niz { success: true, data: [...] } dönüyorsa .data.data dememiz gerekebilir.
         // Yazdığımız API yapısına göre: res.data.data
         const techRes = await axios.get('/api/technicalrequests/my');
         if(techRes.data.success) {
-            setRecentTechnicalRequests(techRes.data.data.slice(0, 5));
+            const activeTechRequests = techRes.data.data.filter((req: ITechnicalRequest) => req.status !== RequestStatus.CANCELLED);
+            setRecentTechnicalRequests(activeTechRequests.slice(0, 5));
         }
 
         // 4. Duyurular

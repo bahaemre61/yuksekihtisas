@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import connectToDatabase from '@/src/lib/db';
 import User from '@/src/lib/models/User';
 import crypto from 'crypto';
-import nodemailer from 'nodemailer';
+import sendMail from '@/src/lib/mail';
 
 export async function POST(request: Request) {
   try {
@@ -20,14 +20,6 @@ export async function POST(request: Request) {
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpires = Date.now() + 3600000; 
     await user.save();
-
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -54,7 +46,7 @@ export async function POST(request: Request) {
       `,
     };
 
-    await transporter.sendMail(mailOptions);
+    sendMail(user.email, mailOptions.subject, mailOptions.html);
 
     return NextResponse.json({ msg: 'Sıfırlama bağlantısı e-posta adresinize gönderildi.' }, { status: 200 });
 

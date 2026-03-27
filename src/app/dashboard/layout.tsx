@@ -18,7 +18,6 @@ export default function DashboardLayout({
              isMobileMenuOpen={isMobileMenuOpen}
              setIsMobileMenuOpen={setIsMobileMenuOpen}
             />
-            <FeedbackModal formUrl="https://forms.cloud.microsoft/r/BMCfDEH5rn" />
 
             <div className='flex flex-col w-0 flex-1 overflow-hidden md:pl-64'>
                 <Header setIsMobileMenuOpen={setIsMobileMenuOpen} />

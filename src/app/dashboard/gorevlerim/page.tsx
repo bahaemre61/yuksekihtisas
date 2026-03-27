@@ -110,6 +110,10 @@ export default function DriverTasksPage() {
                 const isDone = completedRequests.includes(req._id) || req.status === 'completed';
                 const timeInfo = getFlexTimeLabel(req.startTime, req.endTime);
                 
+                const isOneWay = req.purpose?.includes('[Tek Yön]');
+                const isRoundTrip = !isOneWay;
+                const cleanPurpose = req.purpose?.replace('[Tek Yön] ', '') || '';
+                
                 return (
                   <div key={req._id} className={`p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all ${isDone ? 'opacity-40 bg-gray-50/50' : ''}`}>
                     <div className="flex-1 space-y-3">
@@ -155,12 +159,21 @@ export default function DriverTasksPage() {
                               {timeInfo.icon} {timeInfo.label}
                             </span>
 
-                            {/* 🔄 DÖNÜŞ ZAMANI ETİKETİ */}
+                            {/* DÖNÜŞ ZAMANI VE SEYAHAT TİPİ ETİKETİ */}
                             {!isDone && (
-                              <span className="text-[10px] text-gray-400 flex items-center gap-1 font-black uppercase bg-gray-50 px-2 py-0.5 rounded-lg border border-gray-100">
-                                <ArrowPathRoundedSquareIcon className="h-3.5 w-3.5 text-gray-400" /> 
-                                DÖNÜŞ: {new Date(req.endTime).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
-                              </span>
+                              <>
+                                {isOneWay && (
+                                  <span className="text-[10px] text-purple-600 flex items-center gap-1 font-black uppercase bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-200">
+                                    <ArrowRightIcon className="h-3.5 w-3.5" /> TEK YÖN
+                                  </span>
+                                )}
+                                {isRoundTrip && (
+                                  <span className="text-[10px] text-gray-400 flex items-center gap-1 font-black uppercase bg-gray-50 px-2 py-0.5 rounded-lg border border-gray-100">
+                                    <ArrowPathRoundedSquareIcon className="h-3.5 w-3.5 text-gray-400" /> 
+                                    DÖNÜŞ: {new Date(req.endTime).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                )}
+                              </>
                             )}
                           </div>
                         </div>
@@ -168,7 +181,7 @@ export default function DriverTasksPage() {
 
                       <div className="ml-10 bg-slate-50 border-l-2 border-slate-200 p-3 rounded-r-xl">
                         <div className="flex items-center gap-1 text-[9px] font-black text-gray-400 uppercase mb-1 tracking-tighter"><ChatBubbleLeftEllipsisIcon className="h-3 w-3" /> Personel Notu</div>
-                        <ExpandableText text={req.purpose} />
+                        <ExpandableText text={cleanPurpose} />
                       </div>
                     </div>
 

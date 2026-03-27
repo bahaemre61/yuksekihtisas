@@ -1,8 +1,8 @@
 'use client'; 
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
-import { TrashIcon } from '@heroicons/react/24/outline';
+import { TrashIcon, PencilSquareIcon, XMarkIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 
 enum RequestStatus {
   PENDING = 'pending',
@@ -77,6 +77,20 @@ export default function MyRequestsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [editingRequest, setEditingRequest] = useState<ITechnicalRequest | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    title: '',
+    description: '',
+    location: '',
+    customLocation: '',
+    priority: 'MEDIUM'
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [locations, setLocations] = useState<string[]>([]);
+  const [locationsLoading, setLocationsLoading] = useState(true);
+  const [canSelectHighPriority, setCanSelectHighPriority] = useState(false);
+  const [showCancelled, setShowCancelled] = useState(false);
+
   // Verileri Çek
   useEffect(() => {
     const fetchRequests = async () => {
@@ -94,9 +108,44 @@ export default function MyRequestsPage() {
       }
       setLoading(false);
     };
+
+    const fetchLocations = async () => {
+      try {
+        const locRes = await axios.get('/api/locations');
+        if (locRes.data && Array.isArray(locRes.data.data)) {
+          setLocations(locRes.data.data);
+        }
+      } catch (err) {
+        console.error('Lokasyonlar yüklenemedi', err);
+      } finally {
+        setLocationsLoading(false);
+      }
+    };
+
+    const checkUserRole = async () => {
+      try {
+        const res = await axios.get('/api/me'); 
+        const data = res.data;
+        if (['admin', 'amir', 'ADMIN', 'AMIR', 'TECHAMIR', 'techamir', 'SUPERVISOR', 'supervisor'].includes(data.role)) {
+          setCanSelectHighPriority(true);
+        }
+      } catch (error) {
+        console.error('Yetki kontrolü yapılamadı', error);
+      }
+    };
     
     fetchRequests();
+    fetchLocations();
+    checkUserRole();
   }, []); 
+
+  const filteredRequests = useMemo(() => {
+    let result = requests;
+    if (!showCancelled) {
+      result = result.filter(r => r.status !== RequestStatus.CANCELLED);
+    }
+    return result;
+  }, [requests, showCancelled]);
 
   // İptal Fonksiyonu
   const handleCancel = async(requestId: string) =>{
@@ -111,6 +160,53 @@ export default function MyRequestsPage() {
       ));
     }catch(err : any){
       alert(err.response?.data?.msg || "İptal işlemi başarısız oldu.");
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setEditFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const openEditModal = (req: ITechnicalRequest) => {
+    setEditingRequest(req);
+    const isKnown = locations.includes(req.location);
+    setEditFormData({
+      title: req.title,
+      description: req.description,
+      location: isKnown ? req.location : 'other',
+      customLocation: isKnown ? '' : req.location,
+      priority: req.priority
+    });
+  };
+
+  const closeEditModal = () => {
+    setEditingRequest(null);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingRequest) return;
+    
+    setIsSubmitting(true);
+    const payload = {
+      ...editFormData,
+      location: editFormData.location === 'other' ? editFormData.customLocation : editFormData.location
+    };
+
+    try {
+      const res = await axios.put(`/api/technicalrequests/${editingRequest._id}`, payload);
+      
+      setRequests((prev) =>
+        prev.map((req) =>
+          req._id === editingRequest._id ? { ...req, ...res.data.data } : req
+        )
+      );
+      closeEditModal();
+    } catch (err: any) {
+      alert("Güncelleme başarısız: " + (err.response?.data?.msg || err.message));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -135,16 +231,25 @@ export default function MyRequestsPage() {
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg max-w-5xl mx-auto">
-      <h2 className="text-2xl font-semibold text-gray-800 mb-6">Teknik Taleplerim</h2>
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+        <h2 className="text-2xl font-semibold text-gray-800">Teknik Taleplerim</h2>
+        <button 
+          onClick={() => setShowCancelled(!showCancelled)}
+          className="flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-blue-600 transition-colors"
+        >
+          {showCancelled ? <EyeSlashIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+          {showCancelled ? 'İptalleri Gizle' : 'İptalleri Göster'}
+        </button>
+      </div>
       
-      {requests.length === 0 ? (
+      {filteredRequests.length === 0 ? (
         <div className="text-center text-gray-500 py-10 border-2 border-dashed border-gray-300 rounded-lg">
-          <p>Henüz oluşturulmuş bir teknik destek talebiniz bulunmuyor.</p>
+          <p>Henüz gösterilecek bir teknik destek talebiniz bulunmuyor.</p>
         </div>
       ) : (
         <div className="space-y-5">
-          {requests.map((req) => (
-            <div key={req._id} className="border border-gray-200 rounded-lg p-4 shadow-sm transition-shadow hover:shadow-md bg-white">
+          {filteredRequests.map((req) => (
+            <div key={req._id} className={`border border-gray-200 rounded-lg p-4 shadow-sm transition-shadow hover:shadow-md ${req.status === RequestStatus.CANCELLED ? 'opacity-60 bg-gray-50' : 'bg-white'}`}>
               <div className="flex flex-col sm:flex-row justify-between sm:items-start">
                 
                 {/* SOL TARAFTAKİ DETAYLAR */}
@@ -190,15 +295,126 @@ export default function MyRequestsPage() {
                   </div>
 
                   {req.status === RequestStatus.PENDING && (
-                    <button onClick={() => handleCancel(req._id)} className='text-xs font-medium text-red-500 hover:text-red-700 p-1 rounded transition-colors flex items-center gap-1'>
-                      <TrashIcon className='h-5 w-5' /> <span>İptal Et</span>
-                    </button>
-                  )}  
+                    <div className="mt-3 flex items-center justify-end sm:justify-start gap-2">
+                      <button 
+                        onClick={() => openEditModal(req)}
+                        className='text-blue-600 hover:text-blue-800 transition-colors p-1'
+                        title="Düzenle"
+                      >
+                        <PencilSquareIcon className='h-5 w-5' />
+                      </button>
+                      <button 
+                        onClick={() => handleCancel(req._id)}
+                        className='text-red-600 hover:text-red-800 transition-colors p-1'
+                        title="İptal Et"
+                      >
+                        <TrashIcon className='h-5 w-5' />
+                      </button>
+                    </div>
+                  )}
                 </div>
 
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Düzenleme Modalı */}
+      {editingRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50/50">
+              <h3 className="font-semibold text-gray-800 text-lg">Talebi Düzenle</h3>
+              <button onClick={closeEditModal} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleEditSubmit} className="p-4 space-y-4 text-left">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Başlık</label>
+                <input 
+                  type="text" 
+                  name="title"
+                  required
+                  value={editFormData.title} 
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Açıklama</label>
+                <textarea 
+                  name="description"
+                  required
+                  rows={3}
+                  value={editFormData.description} 
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Konum</label>
+                <select 
+                  name="location" 
+                  value={editFormData.location} 
+                  onChange={handleInputChange} 
+                  required 
+                  className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">{locationsLoading ? 'Yükleniyor...' : 'Seçiniz'}</option>
+                  {locations.map((loc, index) => <option key={index} value={loc}>{loc}</option>)}
+                  <option value="other" className="font-bold text-blue-600">+ DİĞER (Elle Gir)</option>
+                </select>
+                {editFormData.location === 'other' && (
+                  <input 
+                    type="text" 
+                    name="customLocation"
+                    value={editFormData.customLocation} 
+                    onChange={handleInputChange}
+                    placeholder="Lütfen konumu belirtin..." 
+                    className="mt-2 block w-full rounded-md border border-gray-300 px-4 py-2 text-sm outline-none focus:ring-blue-500" 
+                    required 
+                  />
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Öncelik</label>
+                <select
+                  name="priority"
+                  value={editFormData.priority}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="LOW">Düşük</option>
+                  <option value="MEDIUM">Orta</option>
+                  {canSelectHighPriority && <option value="HIGH">Acil</option>}
+                </select>
+              </div>
+              
+              <div className="pt-4 flex justify-end gap-3 border-t border-gray-100">
+                <button 
+                  type="button" 
+                  onClick={closeEditModal}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                  disabled={isSubmitting}
+                >
+                  İptal
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 disabled:bg-blue-400"
+                >
+                  {isSubmitting ? 'Kaydediliyor...' : 'Kaydet'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
