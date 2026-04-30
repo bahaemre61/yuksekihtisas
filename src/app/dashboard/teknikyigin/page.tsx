@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { XMarkIcon, MagnifyingGlassPlusIcon } from '@heroicons/react/24/outline';
-
+import Link from 'next/link';
 
 interface IUser {
   _id: string;
@@ -113,8 +113,16 @@ export default function TeknikDestekPage() {
              Birden fazla personel seçerek atama yapabilirsiniz.
           </p>
         </div>
-        <div className="bg-orange-50 text-orange-800 px-4 py-2 rounded-full text-sm font-semibold border border-orange-200">
-          Bekleyen: {requests.length} Adet
+        <div className="flex items-center gap-4">
+          <Link
+            href="/dashboard/admin/teknik-talepler"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
+          >
+            Tüm Talepleri Gör
+          </Link>
+          <div className="bg-orange-50 text-orange-800 px-4 py-2 rounded-full text-sm font-semibold border border-orange-200">
+            Bekleyen: {requests.length} Adet
+          </div>
         </div>
       </div>
 

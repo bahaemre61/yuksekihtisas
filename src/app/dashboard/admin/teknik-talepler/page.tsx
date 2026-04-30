@@ -3,18 +3,18 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Link from 'next/link';
-import { 
-    ArrowLeftIcon, 
-    FunnelIcon, 
-    EyeIcon, 
-    EyeSlashIcon 
+import {
+    ArrowLeftIcon,
+    FunnelIcon,
+    EyeIcon,
+    EyeSlashIcon
 } from '@heroicons/react/24/outline';
 
 enum RequestStatus {
     PENDING = 'pending',
     ASSIGNED = 'assigned',
     COMPLETED = 'completed',
-    CANCELLED = 'cancelled', 
+    CANCELLED = 'cancelled',
 }
 
 const statusPriority: Record<string, number> = {
@@ -47,7 +47,7 @@ export default function TechnicalAdminPage() {
         try {
             // 🛠️ API çağrısına filtreleri ekliyoruz
             const res = await axios.get(`/api/admin/technical-requests?status=${filterStatus}&showCancelled=${showCancelled}`);
-            
+
             // API'den gelen verinin formatını kontrol ederek alıyoruz
             const incomingData = Array.isArray(res.data) ? res.data : (res.data.data || []);
 
@@ -68,19 +68,38 @@ export default function TechnicalAdminPage() {
         fetchAllRequests();
     }, [filterStatus, showCancelled]);
 
-   const handleUnassign = async (id: string) => {
-    if (!confirm("Emin misiniz?")) return;
-    
-    try {
-        const res = await axios.put(`/api/admin/technical-requests/${id}/unassign`);
-        
-        if (res.data.success) {
-            fetchAllRequests(); 
+    const handleUnassign = async (id: string) => {
+        if (!confirm("Emin misiniz?")) return;
+
+        try {
+            const res = await axios.put(`/api/admin/technical-requests/${id}/unassign`);
+
+            if (res.data.success) {
+                fetchAllRequests();
+            }
+        } catch (err) {
+            alert("Hata oluştu.");
         }
-    } catch (err) {
-        alert("Hata oluştu.");
-    }
-};
+    };
+
+    const handleCancel = async (id: string) => {
+        if (!confirm("Bu talebi iptal etmek istediğinize emin misiniz?")) return;
+        try {
+            const res = await axios.put(`/api/admin/technical-requests/${id}/cancel`);
+            if (res.data.success) {
+                fetchAllRequests();
+            }
+        } catch (err) {
+            alert("İptal işlemi başarısız.");
+        }
+    };
+
+    const isPastDate = (dateString: string) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const reqDate = new Date(dateString);
+        return reqDate < today;
+    };
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -108,7 +127,7 @@ export default function TechnicalAdminPage() {
                         {/* Statü Filtresi */}
                         <div className="flex items-center gap-2 bg-white border rounded-lg px-3 py-1.5 shadow-sm">
                             <FunnelIcon className="h-4 w-4 text-gray-400" />
-                            <select 
+                            <select
                                 value={filterStatus}
                                 onChange={(e) => setFilterStatus(e.target.value)}
                                 className="text-xs font-bold bg-transparent outline-none pr-4 cursor-pointer uppercase"
@@ -123,11 +142,10 @@ export default function TechnicalAdminPage() {
                         {/* 👁️ İPTALLERİ GÖSTER/GİZLE BUTONU */}
                         <button
                             onClick={() => setShowCancelled(!showCancelled)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all border ${
-                                showCancelled 
-                                ? 'bg-red-50 text-red-700 border-red-200 shadow-inner' 
-                                : 'bg-white text-gray-600 border-gray-300 shadow-sm'
-                            }`}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all border ${showCancelled
+                                    ? 'bg-red-50 text-red-700 border-red-200 shadow-inner'
+                                    : 'bg-white text-gray-600 border-gray-300 shadow-sm'
+                                }`}
                         >
                             {showCancelled ? <EyeIcon className="h-4 w-4" /> : <EyeSlashIcon className="h-4 w-4" />}
                             {showCancelled ? 'İptalleri Gizle' : 'İptalleri Göster'}
@@ -135,7 +153,7 @@ export default function TechnicalAdminPage() {
                     </div>
                 </div>
             </div>
-            
+
             <div className="overflow-x-auto min-h-[400px]">
                 {loading ? (
                     <div className="flex justify-center items-center py-20 text-gray-400 animate-pulse font-bold uppercase text-xs">
@@ -156,8 +174,8 @@ export default function TechnicalAdminPage() {
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {requests.map((req) => (
-                                <tr 
-                                    key={req._id} 
+                                <tr
+                                    key={req._id}
                                     className={`hover:bg-gray-50 transition-colors ${req.status === 'cancelled' ? 'opacity-50 grayscale-[0.5] bg-gray-50/50' : ''}`}
                                 >
                                     <td className="px-6 py-4 whitespace-nowrap">
@@ -170,11 +188,10 @@ export default function TechnicalAdminPage() {
                                         <div className="text-[10px] text-blue-600 mt-1 font-black uppercase tracking-tighter">{req.location}</div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={`px-2 py-0.5 rounded text-[10px] font-black border ${
-                                            req.priority === 'HIGH' ? 'bg-red-50 text-red-700 border-red-100' :
-                                            req.priority === 'LOW' ? 'bg-green-50 text-green-700 border-green-100' :
-                                            'bg-yellow-50 text-yellow-700 border-yellow-100'
-                                        }`}>
+                                        <span className={`px-2 py-0.5 rounded text-[10px] font-black border ${req.priority === 'HIGH' ? 'bg-red-50 text-red-700 border-red-100' :
+                                                req.priority === 'LOW' ? 'bg-green-50 text-green-700 border-green-100' :
+                                                    'bg-yellow-50 text-yellow-700 border-yellow-100'
+                                            }`}>
                                             {req.priority === 'HIGH' ? 'ACİL' : req.priority === 'LOW' ? 'DÜŞÜK' : 'NORMAL'}
                                         </span>
                                     </td>
@@ -197,13 +214,21 @@ export default function TechnicalAdminPage() {
                                             <span className="text-gray-400 italic">Atanmadı</span>
                                         )}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex flex-col gap-2 items-end">
                                         {req.status === 'assigned' && (
-                                            <button 
+                                            <button
                                                 onClick={() => handleUnassign(req._id)}
                                                 className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg hover:bg-indigo-600 hover:text-white transition-all text-[10px] font-black border border-indigo-100"
                                             >
                                                 BOŞA ÇIKAR
+                                            </button>
+                                        )}
+                                        {(req.status === 'pending' && isPastDate(req.createdAt)) && (
+                                            <button
+                                                onClick={() => handleCancel(req._id)}
+                                                className="px-3 py-1 rounded-lg transition-all text-[10px] font-black border bg-red-50 text-red-600 border-red-200 hover:bg-red-600 hover:text-white ring-1 ring-red-400 animate-pulse"
+                                            >
+                                                İPTAL ET
                                             </button>
                                         )}
                                     </td>

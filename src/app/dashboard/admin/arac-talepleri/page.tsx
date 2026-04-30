@@ -75,6 +75,23 @@ export default function AdminDashboardPage() {
         }
     };
 
+    const handleCancel = async (id: string) => {
+        if (!confirm("Bu talebi iptal etmek istediğinize emin misiniz?")) return;
+        try {
+            await axios.put(`/api/admin/requests/${id}/cancel`);
+            fetchAllRequests();
+        } catch (err) {
+            alert("İptal işlemi başarısız.");
+        }
+    };
+
+    const isPastDate = (dateString: string) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const reqDate = new Date(dateString);
+        return reqDate < today;
+    };
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
@@ -187,13 +204,21 @@ export default function AdminDashboardPage() {
                                                 <span className="text-gray-400 italic">Atanmadı</span>
                                             )}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex flex-col gap-2 items-end">
                                             {req.status === 'assigned' && (
                                                 <button
                                                     onClick={() => handleUnassign(req._id)}
                                                     className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded hover:bg-indigo-600 hover:text-white transition-all text-xs font-bold border border-indigo-200"
                                                 >
                                                     BOŞA ÇIKAR
+                                                </button>
+                                            )}
+                                            {(req.status === 'pending' && isPastDate(req.startTime)) && (
+                                                <button
+                                                    onClick={() => handleCancel(req._id)}
+                                                    className="px-3 py-1 rounded transition-all text-xs font-bold border bg-red-50 text-red-600 border-red-200 hover:bg-red-600 hover:text-white ring-1 ring-red-400 animate-pulse"
+                                                >
+                                                    SÜRESİ GEÇTİ - İPTAL ET
                                                 </button>
                                             )}
                                         </td>

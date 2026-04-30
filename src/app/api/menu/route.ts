@@ -17,12 +17,12 @@ export async function GET(request:NextRequest) {
         await connectToDatabase();
 
         const startDate = new Date(year,month, 1);
-        const endDate = new Date(year,month+ 1,0);
+        const endDate = new Date(year,month+ 1, 1);
 
         const menus = await Menu.find({
             date:{
                 $gte: startDate,
-                $lte : endDate
+                $lt : endDate
             }
         });
         return NextResponse.json(menus, {status : 200});

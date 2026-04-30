@@ -24,7 +24,7 @@ export default function LoginPage() {
         email,
         password,
       });
-      router.push('/dashboard');
+      window.location.href = '/dashboard';
 
     } catch (err: any) {
       if (axios.isAxiosError(err) && err.response) {
