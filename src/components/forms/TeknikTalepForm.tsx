@@ -157,11 +157,11 @@ export default function TeknikTalepForm() {
   };
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-6 space-y-6 max-w-3xl mx-auto">
-      <h2 className="text-xl font-bold text-gray-800 border-b pb-2">Teknik Destek Formu</h2>
+    <div className="bg-base-100 shadow-md rounded-lg p-6 space-y-6 max-w-3xl mx-auto">
+      <h2 className="text-xl font-bold text-base-content border-b pb-2">Teknik Destek Formu</h2>
 
       {message && (
-        <div className={`p-4 rounded-md ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+        <div className={`p-4 rounded-md ${message.type === 'success' ? 'bg-success/20 text-success' : 'bg-error/20 text-error'}`}>
           {message.text}
         </div>
       )}
@@ -170,7 +170,7 @@ export default function TeknikTalepForm() {
         
         {/* Başlık */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Konu Başlığı</label>
+          <label className="block text-sm font-medium text-base-content/80 mb-1">Konu Başlığı</label>
           <input
             type="text"
             name="title"
@@ -178,20 +178,20 @@ export default function TeknikTalepForm() {
             value={formData.title}
             onChange={handleInputChange}
             placeholder="Örn: Bilgisayar Açılmıyor"
-            className="w-full border border-gray-300 rounded-md p-2 focus:ring-orange-500 focus:border-orange-500"
+            className="w-full border border-base-300 rounded-md p-2 focus:ring-orange-500 focus:border-orange-500"
           />
         </div>
 
         {/* İlçe Seçimi (API'den Gelen Data) */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Yerleşke</label>
+          <label className="block text-sm font-medium text-base-content/80 mb-1">Yerleşke</label>
           <select
             name="location"
             required
             value={formData.location}
             onChange={handleInputChange}
             disabled={locationsLoading}
-            className="w-full border border-gray-300 rounded-md p-2 bg-white disabled:bg-gray-100"
+            className="w-full border border-base-300 rounded-md p-2 bg-base-100 disabled:bg-base-200"
           >
             <option value="">{locationsLoading ? 'Yükleniyor...' : 'Seçiniz'}</option>
             {/* Dinamik Listeleme */}
@@ -205,10 +205,10 @@ export default function TeknikTalepForm() {
 
         {/* Aciliyet Durumu */}
          {/* <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Aciliyet Durumu</label>
+          <label className="block text-sm font-medium text-base-content/80 mb-1">Aciliyet Durumu</label>
           <div className="flex gap-4 mt-2">
             {['LOW', 'MEDIUM', 'HIGH'].map((prio) => (
-              <label key={prio} className="flex items-center space-x-2 cursor-pointer border p-3 rounded-md hover:bg-gray-50 w-full transition-colors">
+              <label key={prio} className="flex items-center space-x-2 cursor-pointer border p-3 rounded-md hover:bg-base-200 w-full transition-colors">
                 <input
                   type="radio"
                   name="priority"
@@ -226,7 +226,7 @@ export default function TeknikTalepForm() {
             ))}
           </div> */}
           <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">Aciliyet Durumu</label>
+          <label className="block text-sm font-medium text-base-content/80 mb-3">Aciliyet Durumu</label>
           
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             
@@ -237,12 +237,12 @@ export default function TeknikTalepForm() {
               className={`
                 flex items-center justify-center px-4 py-3 border rounded-lg text-sm font-medium transition-all
                 ${formData.priority === 'LOW'
-                  ? 'border-green-500 bg-green-50 text-green-700 ring-2 ring-green-200'
-                  : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                  ? 'border-success bg-success/10 text-success ring-2 ring-success/30'
+                  : 'border-base-300 text-base-content/80 hover:bg-base-200'
                 }
               `}
             >
-              <CheckCircleIcon className={`h-5 w-5 mr-2 ${formData.priority === 'LOW' ? 'text-green-600' : 'text-gray-400'}`} />
+              <CheckCircleIcon className={`h-5 w-5 mr-2 ${formData.priority === 'LOW' ? 'text-success' : 'text-base-content/50'}`} />
               Düşük
             </button>
 
@@ -253,12 +253,12 @@ export default function TeknikTalepForm() {
               className={`
                 flex items-center justify-center px-4 py-3 border rounded-lg text-sm font-medium transition-all
                 ${formData.priority === 'MEDIUM'
-                  ? 'border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-200'
-                  : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                  ? 'border-info bg-info/10 text-info ring-2 ring-info/30'
+                  : 'border-base-300 text-base-content/80 hover:bg-base-200'
                 }
               `}
             >
-              <ClockIcon className={`h-5 w-5 mr-2 ${formData.priority === 'MEDIUM' ? 'text-blue-600' : 'text-gray-400'}`} />
+              <ClockIcon className={`h-5 w-5 mr-2 ${formData.priority === 'MEDIUM' ? 'text-info' : 'text-base-content/50'}`} />
               Normal
             </button>
 
@@ -269,24 +269,23 @@ export default function TeknikTalepForm() {
               className={`
                 relative flex items-center justify-center px-4 py-3 border rounded-lg text-sm font-medium transition-all
                 ${!canSelectHighPriority
-                  ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed opacity-70' // Pasif Durum
+                  ? 'bg-base-200 border-base-200 text-base-content/50 cursor-not-allowed opacity-70'
                   : formData.priority === 'HIGH'
-                    ? 'border-red-500 bg-red-50 text-red-700 ring-2 ring-red-200 cursor-pointer' // Aktif ve Seçili
-                    : 'border-gray-300 text-gray-700 hover:bg-gray-50 cursor-pointer' // Aktif ama Seçili Değil
+                    ? 'border-error bg-error/10 text-error ring-2 ring-error/30 cursor-pointer'
+                    : 'border-base-300 text-base-content/80 hover:bg-base-200 cursor-pointer'
                 }
               `}
             >
               {!canSelectHighPriority ? (
-                <LockClosedIcon className="h-5 w-5 mr-2 text-gray-400" />
+                <LockClosedIcon className="h-5 w-5 mr-2 text-base-content/50" />
               ) : (
-                <ExclamationTriangleIcon className={`h-5 w-5 mr-2 ${formData.priority === 'HIGH' ? 'text-red-600' : 'text-gray-400'}`} />
+                <ExclamationTriangleIcon className={`h-5 w-5 mr-2 ${formData.priority === 'HIGH' ? 'text-error' : 'text-base-content/50'}`} />
               )}
               
               ACİL DURUM
               
-              {/* Sadece yetkisi olmayanlar görsün diye ufak bir "Sadece Amir" etiketi */}
               {!canSelectHighPriority && (
-                 <span className="absolute -top-2 -right-2 bg-gray-500 text-white text-[9px] px-1.5 py-0.5 rounded-full">
+                 <span className="absolute -top-2 -right-2 bg-base-300 text-base-content/70 text-[9px] px-1.5 py-0.5 rounded-full">
                     Sadece Amir
                  </span>
               )}
@@ -295,15 +294,15 @@ export default function TeknikTalepForm() {
           </div>
           
           {/* Bilgilendirme Metni */}
-          <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
-            <span className="text-red-500 font-bold">*</span>
+          <p className="text-xs text-base-content/60 mt-2 flex items-center gap-1">
+            <span className="text-error font-bold">*</span>
             Acil durumlar teknik ekip ekranında en üstte ve kırmızı olarak listelenir.
           </p>
         </div>
 
         {/* Açıklama */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Arıza Detayı</label>
+          <label className="block text-sm font-medium text-base-content/80 mb-1">Arıza Detayı</label>
           <textarea
             name="description"
             required
@@ -311,33 +310,33 @@ export default function TeknikTalepForm() {
             value={formData.description}
             onChange={handleInputChange}
             placeholder="Sorunu detaylı bir şekilde anlatınız..."
-            className="w-full border border-gray-300 rounded-md p-2 focus:ring-orange-500 focus:border-orange-500"
+            className="w-full border border-base-300 rounded-md p-2 focus:ring-orange-500 focus:border-orange-500"
           ></textarea>
         </div>
 
         {/* Dosya Yükleme */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Ekran Görüntüsü (Opsiyonel)</label>
+          <label className="block text-sm font-medium text-base-content/80 mb-1">Ekran Görüntüsü (Opsiyonel)</label>
           <input
             id="fileInput"
             type="file"
             accept="image/*"
             onChange={handleFileChange}
-            className="block w-full text-sm text-gray-500
+            className="block w-full text-sm text-base-content/60
               file:mr-4 file:py-2 file:px-4
               file:rounded-full file:border-0
               file:text-sm file:font-semibold
-              file:bg-orange-50 file:text-orange-700
-              hover:file:bg-orange-100
-              cursor-pointer border border-gray-300 rounded-lg"
+              file:bg-primary/10 file:text-primary
+              hover:file:bg-primary/20
+              cursor-pointer border border-base-300 rounded-lg"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className={`w-full text-white font-bold py-3 px-4 rounded-md transition duration-300 ${
-            loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-700'
+          className={`w-full text-primary-content font-bold py-3 px-4 rounded-md transition duration-300 ${
+            loading ? 'bg-base-300 text-base-content/50 cursor-not-allowed' : 'bg-primary hover:brightness-90'
           }`}
         >
           {loading ? 'Gönderiliyor...' : 'Teknik Talep Oluştur'}

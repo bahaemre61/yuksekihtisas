@@ -37,10 +37,10 @@ const StatusBadge = ({ status }: { status: RequestStatus }) => {
   let text = status.toUpperCase();
 
   switch (status) {
-    case RequestStatus.PENDING: colorClass = 'bg-yellow-100 text-yellow-800'; text = 'Beklemede'; break;
-    case RequestStatus.ASSIGNED: colorClass = 'bg-blue-100 text-blue-800'; text = 'Atandı'; break;
-    case RequestStatus.COMPLETED: colorClass = 'bg-green-100 text-green-800'; text = 'Tamamlandı'; break;
-    case RequestStatus.CANCELLED: colorClass = 'bg-red-100 text-red-800'; text = 'İptal Edildi'; break;
+    case RequestStatus.PENDING: colorClass = 'bg-warning/20 text-warning'; text = 'Beklemede'; break;
+    case RequestStatus.ASSIGNED: colorClass = 'bg-info/20 text-info'; text = 'Atandı'; break;
+    case RequestStatus.COMPLETED: colorClass = 'bg-success/20 text-success'; text = 'Tamamlandı'; break;
+    case RequestStatus.CANCELLED: colorClass = 'bg-error/20 text-error'; text = 'İptal Edildi'; break;
   }
   return (
     <span className={`px-3 py-1 inline-flex text-xs font-semibold rounded-full ${colorClass}`}>
@@ -179,17 +179,17 @@ export default function MyRequestsPage() {
 
   if (loading) return (
     <div className="flex justify-center items-center h-64">
-      <div className="h-8 w-8 animate-spin border-4 border-blue-600 border-t-transparent rounded-full"></div>
+      <div className="h-8 w-8 animate-spin border-4 border-primary border-t-transparent rounded-full"></div>
     </div>
   );
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-lg">
+    <div className="bg-base-100 p-6 rounded-lg shadow-lg">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-        <h2 className="text-2xl font-semibold text-gray-800">Araç Taleplerim</h2>
+        <h2 className="text-2xl font-semibold text-base-content">Araç Taleplerim</h2>
         <button
           onClick={() => setShowCancelled(!showCancelled)}
-          className="flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-blue-600 transition-colors"
+          className="flex items-center gap-2 text-xs font-semibold text-base-content/50 hover:text-primary transition-colors"
         >
           {showCancelled ? <EyeSlashIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
           {showCancelled ? 'İptalleri Gizle' : 'İptalleri Göster'}
@@ -197,7 +197,7 @@ export default function MyRequestsPage() {
       </div>
 
       {filteredAndSortedRequests.length === 0 ? (
-        <div className="text-center text-gray-500 py-10 border-2 border-dashed border-gray-300 rounded-lg">
+        <div className="text-center text-base-content/50 py-10 border-2 border-dashed border-base-300 rounded-lg">
           <p>Henüz gösterilecek bir talebiniz bulunmuyor.</p>
         </div>
       ) : (
@@ -206,51 +206,51 @@ export default function MyRequestsPage() {
             <div
               key={req._id}
               className={`
-                border border-gray-200 rounded-lg p-4 shadow-sm transition-all duration-300
+                border border-base-200 rounded-lg p-4 shadow-sm transition-all duration-300
                 ${req.status === RequestStatus.PENDING
-                  ? 'hover:shadow-[0_0_15px_rgba(250,204,21,0.4)] hover:border-yellow-300 bg-white'
-                  : 'hover:shadow-md bg-white'}
+                  ? 'hover:shadow-[0_0_15px_rgba(250,204,21,0.4)] hover:border-warning bg-base-100'
+                  : 'hover:shadow-md bg-base-100'}
                 ${req.status === RequestStatus.ASSIGNED
-                  ? 'hover:shadow-[0_0_15px_rgba(59,130,246,0.4)] hover:border-blue-300 bg-white'
-                  : 'hover:shadow-md bg-white'}
+                  ? 'hover:shadow-[0_0_15px_rgba(59,130,246,0.4)] hover:border-info bg-base-100'
+                  : 'hover:shadow-md bg-base-100'}
                 ${req.status === RequestStatus.COMPLETED
-                  ? 'hover:shadow-[0_0_15px_rgba(34,197,94,0.4)] hover:border-green-300 bg-white'
-                  : 'hover:shadow-md bg-white'}
-                ${req.status === RequestStatus.CANCELLED ? 'opacity-60 bg-gray-50' : ''}
+                  ? 'hover:shadow-[0_0_15px_rgba(34,197,94,0.4)] hover:border-success bg-base-100'
+                  : 'hover:shadow-md bg-base-100'}
+                ${req.status === RequestStatus.CANCELLED ? 'opacity-60 bg-base-200/50' : ''}
               `}
             >
               <div className="flex flex-col sm:flex-row justify-between sm:items-start">
                 <div className="flex-1 mb-4 sm:mb-0">
-                  <h3 className="text-lg font-semibold text-gray-900">{req.purpose}</h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <h3 className="text-lg font-semibold text-base-content">{req.purpose}</h3>
+                  <p className="text-sm text-base-content/70 mt-1">
                     <span className="font-bold">Güzergah:</span> {req.fromLocation} &rarr; {req.toLocation}
                   </p>
-                  <p className="text-sm text-gray-500 mt-2">
+                  <p className="text-sm text-base-content/50 mt-2">
                     <span className="font-medium">Gidiş:</span> {formatTRDate(req.startTime)}
                     <br />
                     <span className="font-medium">Dönüş:</span> {formatTRDate(req.endTime)}
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-base-content/50">
                     <strong>Eşyalı:</strong> {req.willCarryItems ? 'Evet' : 'Hayır'}
                   </p>
                 </div>
                 <div className="shrink-0 ml-0 sm:ml-4 sm:text-right space-y-2">
                   <StatusBadge status={req.status} />
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-base-content/50">
                     <strong>Şoför:</strong> {req.assignedDriver ? req.assignedDriver.name : '—'}
                   </p>
                   {req.status === RequestStatus.PENDING && (
                     <div className="mt-2 flex items-center justify-end sm:justify-start gap-2">
                       <button
                         onClick={() => openEditModal(req)}
-                        className='text-blue-600 hover:text-blue-800 transition-colors p-1'
+                        className='text-info hover:text-info/80 transition-colors p-1'
                         title="Düzenle"
                       >
                         <PencilSquareIcon className='h-5 w-5' />
                       </button>
                       <button
                         onClick={() => handleCancel(req._id)}
-                        className='text-red-600 hover:text-red-800 transition-colors p-1'
+                        className='text-error hover:text-error/80 transition-colors p-1'
                         title="İptal Et"
                       >
                         <TrashIcon className='h-5 w-5' />
@@ -267,38 +267,38 @@ export default function MyRequestsPage() {
       {/* Düzenleme Modalı */}
       {editingRequest && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-            <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50/50">
-              <h3 className="font-semibold text-gray-800 text-lg">Talebi Düzenle</h3>
-              <button onClick={closeEditModal} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <div className="bg-base-100 rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b border-base-200 bg-base-200/50">
+              <h3 className="font-semibold text-base-content text-lg">Talebi Düzenle</h3>
+              <button onClick={closeEditModal} className="text-base-content/50 hover:text-base-content transition-colors">
                 <XMarkIcon className="h-6 w-6" />
               </button>
             </div>
 
             <form onSubmit={handleEditSubmit} className="p-4 space-y-4 text-left">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Kullanım Amacı</label>
+                <label className="block text-sm font-medium text-base-content/80 mb-1">Kullanım Amacı</label>
                 <input
                   type="text"
                   required
                   value={editFormData.purpose}
                   onChange={e => setEditFormData({ ...editFormData, purpose: e.target.value })}
-                  className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border border-base-300 rounded-md p-2 text-sm focus:ring-primary focus:border-primary bg-base-100 text-base-content"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nereden</label>
+                  <label className="block text-sm font-medium text-base-content/80 mb-1">Nereden</label>
                   <select
                     name="fromLocation"
                     required
                     value={editFormData.fromLocation}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border border-base-300 rounded-md p-2 text-sm focus:ring-primary focus:border-primary bg-base-100 text-base-content"
                   >
                     <option value="">{locationsLoading ? 'Yükleniyor...' : 'Seçiniz'}</option>
                     {locations.map((loc, idx) => <option key={idx} value={loc}>{loc}</option>)}
-                    <option value="other" className="font-bold text-blue-600">+ DİĞER (Elle Gir)</option>
+                    <option value="other" className="font-bold text-primary">+ DİĞER (Elle Gir)</option>
                   </select>
                   {editFormData.fromLocation === 'other' && (
                     <input
@@ -308,22 +308,22 @@ export default function MyRequestsPage() {
                       placeholder="Lütfen belirtin..."
                       value={editFormData.customFromLocation}
                       onChange={handleInputChange}
-                      className="mt-2 w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-2 w-full border border-base-300 rounded-md p-2 text-sm focus:ring-primary focus:border-primary bg-base-100 text-base-content"
                     />
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nereye</label>
+                  <label className="block text-sm font-medium text-base-content/80 mb-1">Nereye</label>
                   <select
                     name="toLocation"
                     required
                     value={editFormData.toLocation}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border border-base-300 rounded-md p-2 text-sm focus:ring-primary focus:border-primary bg-base-100 text-base-content"
                   >
                     <option value="">{locationsLoading ? 'Yükleniyor...' : 'Seçiniz'}</option>
                     {locations.map((loc, idx) => <option key={idx} value={loc}>{loc}</option>)}
-                    <option value="other" className="font-bold text-blue-600">+ DİĞER (Elle Gir)</option>
+                    <option value="other" className="font-bold text-primary">+ DİĞER (Elle Gir)</option>
                   </select>
                   {editFormData.toLocation === 'other' && (
                     <input
@@ -333,30 +333,30 @@ export default function MyRequestsPage() {
                       placeholder="Lütfen belirtin..."
                       value={editFormData.customToLocation}
                       onChange={handleInputChange}
-                      className="mt-2 w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-2 w-full border border-base-300 rounded-md p-2 text-sm focus:ring-primary focus:border-primary bg-base-100 text-base-content"
                     />
                   )}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Gidiş Tarihi</label>
+                  <label className="block text-sm font-medium text-base-content/80 mb-1">Gidiş Tarihi</label>
                   <input
                     type="datetime-local"
                     required
                     value={editFormData.startTime}
                     onChange={e => setEditFormData({ ...editFormData, startTime: e.target.value })}
-                    className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border border-base-300 rounded-md p-2 text-sm focus:ring-primary focus:border-primary bg-base-100 text-base-content"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Dönüş Tarihi</label>
+                  <label className="block text-sm font-medium text-base-content/80 mb-1">Dönüş Tarihi</label>
                   <input
                     type="datetime-local"
                     required
                     value={editFormData.endTime}
                     onChange={e => setEditFormData({ ...editFormData, endTime: e.target.value })}
-                    className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border border-base-300 rounded-md p-2 text-sm focus:ring-primary focus:border-primary bg-base-100 text-base-content"
                   />
                 </div>
               </div>
@@ -366,18 +366,18 @@ export default function MyRequestsPage() {
                   id="willCarryItems"
                   checked={editFormData.willCarryItems}
                   onChange={e => setEditFormData({ ...editFormData, willCarryItems: e.target.checked })}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-primary focus:ring-primary border-base-300 rounded"
                 />
-                <label htmlFor="willCarryItems" className="ml-2 block text-sm text-gray-700">
+                <label htmlFor="willCarryItems" className="ml-2 block text-sm text-base-content/80">
                   Eşya Taşıncak
                 </label>
               </div>
 
-              <div className="pt-4 flex justify-end gap-3 border-t border-gray-100">
+              <div className="pt-4 flex justify-end gap-3 border-t border-base-200">
                 <button
                   type="button"
                   onClick={closeEditModal}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                  className="px-4 py-2 text-sm font-medium text-base-content/80 bg-base-100 border border-base-300 rounded-md hover:bg-base-200"
                   disabled={isSubmitting}
                 >
                   İptal
@@ -385,7 +385,7 @@ export default function MyRequestsPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 disabled:bg-blue-400"
+                  className="px-4 py-2 text-sm font-medium text-primary-content bg-primary border border-transparent rounded-md shadow-sm hover:bg-primary/80 disabled:bg-base-300"
                 >
                   {isSubmitting ? 'Kaydediliyor...' : 'Kaydet'}
                 </button>

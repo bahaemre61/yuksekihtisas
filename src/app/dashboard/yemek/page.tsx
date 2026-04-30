@@ -120,35 +120,35 @@ export default function MenuPage(){
     <div className="p-4 md:p-6">
       {/* Üst Bar: Ay Seçimi */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">
+        <h2 className="text-2xl font-bold text-base-content">
             {MONTHS[currentDate.getMonth()]} {currentDate.getFullYear()}
         </h2>
         <div className="flex space-x-2">
             <button onClick={() => changeMonth(-1)} className="p-2 rounded-full hover:bg-gray-200">
-                <ChevronLeftIcon className="h-6 w-6 text-gray-600"/>
+                <ChevronLeftIcon className="h-6 w-6 text-base-content/70"/>
             </button>
             <button onClick={() => changeMonth(1)} className="p-2 rounded-full hover:bg-gray-200">
-                <ChevronRightIcon className="h-6 w-6 text-gray-600"/>
+                <ChevronRightIcon className="h-6 w-6 text-base-content/70"/>
             </button>
         </div>
       </div>
 
       {/* Takvim Grid */}
-      <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
+      <div className="bg-base-100 rounded-lg shadow overflow-hidden border border-base-200">
         {/* Gün Başlıkları */}
-        <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200 text-center">
+        <div className="grid grid-cols-7 bg-base-200 border-b border-base-200 text-center">
             {DAYS.map(day => (
-                <div key={day} className="py-3 text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                <div key={day} className="py-3 text-sm font-semibold text-base-content/80 uppercase tracking-wider">
                     {day}
                 </div>
             ))}
         </div>
 
         {/* Günler */}
-        <div className="grid grid-cols-7 auto-rows-fr bg-white">
+        <div className="grid grid-cols-7 auto-rows-fr bg-base-100">
             {/* Boş kutular (Ayın başına kadar) */}
             {Array.from({ length: firstDay - 1 }).map((_, i) => (
-                <div key={`empty-${i}`} className="min-h-[120px] border-b border-r border-gray-100 bg-gray-50/50"></div>
+                <div key={`empty-${i}`} className="min-h-[120px] border-b border-r border-base-200 bg-base-200/50"></div>
             ))}
 
             {/* Gerçek Günler */}
@@ -165,15 +165,15 @@ export default function MenuPage(){
                         key={day} 
                         onClick={() => handleDayClick(day)}
                         className={`
-                            min-h-[140px] p-2 border-b border-r border-gray-100 relative transition-colors
-                            ${isAdmin ? 'cursor-pointer hover:bg-blue-50' : ''}
-                            ${isToday ? 'bg-blue-50/50' : ''}
+                            min-h-[140px] p-2 border-b border-r border-base-200 relative transition-colors
+                            ${isAdmin ? 'cursor-pointer hover:bg-primary/10' : ''}
+                            ${isToday ? 'bg-primary/10/50' : ''}
                         `}
                     >
                         {/* Gün Numarası */}
                         <span className={`
                             inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-medium
-                            ${isToday ? 'bg-blue-600 text-white' : 'text-gray-700'}
+                            ${isToday ? 'bg-primary text-primary-content' : 'text-base-content/80'}
                         `}>
                             {day}
                         </span>
@@ -185,7 +185,7 @@ export default function MenuPage(){
                                     {menuForDay.items.map((item, idx) => (
                                         // Sadece item doluysa göster
                                         item && item.trim() !== "" ? (
-                                            <p key={idx} className="text-xs text-gray-600 truncate font-medium">
+                                            <p key={idx} className="text-xs text-base-content/70 truncate font-medium">
                                                 • {item}
                                             </p>
                                         ) : null
@@ -236,16 +236,16 @@ export default function MenuPage(){
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-                  <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-base-100 p-6 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-base-content">
                     Menü Düzenle: {selectedDate?.toLocaleDateString('tr-TR')}
                   </Dialog.Title>
                   
                   <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700">Yemekler (Her satıra bir tane)</label>
+                    <label className="block text-sm font-medium text-base-content/80">Yemekler (Her satıra bir tane)</label>
                     <textarea
                         rows={5}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+                        className="mt-1 block w-full rounded-md border-base-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
                         placeholder="Mercimek Çorbası&#10;Kuru Fasulye&#10;Pilav"
                         value={editItems}
                         onChange={(e) => setEditItems(e.target.value)}
@@ -253,10 +253,10 @@ export default function MenuPage(){
                   </div>
 
                   <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700">Kalori (Opsiyonel)</label>
+                    <label className="block text-sm font-medium text-base-content/80">Kalori (Opsiyonel)</label>
                     <input
                         type="number"
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+                        className="mt-1 block w-full rounded-md border-base-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
                         value={editCalories}
                         onChange={(e) => setEditCalories(e.target.value)}
                     />
@@ -265,14 +265,14 @@ export default function MenuPage(){
                   <div className="mt-6 flex justify-end space-x-3">
                     <button
                       type="button"
-                      className="inline-flex justify-center rounded-md border border-transparent bg-gray-100 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-200 focus:outline-none"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-base-200 px-4 py-2 text-sm font-medium text-base-content hover:bg-gray-200 focus:outline-none"
                       onClick={() => setIsModalOpen(false)}
                     >
                       İptal
                     </button>
                     <button
                       type="button"
-                      className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-primary-content hover:brightness-90 focus:outline-none"
                       onClick={handleSaveMenu}
                     >
                       Kaydet

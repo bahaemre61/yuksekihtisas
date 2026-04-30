@@ -11,7 +11,7 @@ interface IAnnouncement{
   priority : 'normal' | 'urgent';
   createdAt : string;
 }
-//import useUser from '@/src/lib/hooks/useUser';
+
 export default function AnnouncementsPage() {
 
     const [announcements, setAnnouncements] = useState<IAnnouncement[]>([]);
@@ -41,6 +41,7 @@ export default function AnnouncementsPage() {
       };
       initData();
     }, []);
+
     const handleAddAnnouncement = async(e:React.FormEvent) => {
       e.preventDefault();
       setIsSubmitting(true);
@@ -74,26 +75,27 @@ export default function AnnouncementsPage() {
         setDeletingId(null);
       }
     };
-    if(loading) return <div className='p-6'>Yükleniyor...</div>
+
+    if(loading) return <div className='p-6 text-base-content'>Yükleniyor...</div>
     return (
     <div className="max-w-4xl mx-auto space-y-8">
       
       {isAdmin && (
-        <div className="bg-white p-6 rounded-lg shadow-lg border-l-4 border-blue-500">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Yeni Duyuru Yayınla</h3>
+        <div className="bg-base-100 p-6 rounded-lg shadow-lg border-l-4 border-info">
+            <h3 className="text-lg font-semibold text-base-content mb-4">Yeni Duyuru Yayınla</h3>
             <form onSubmit={handleAddAnnouncement} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="md:col-span-2">
                         <input 
                             type="text" placeholder="Duyuru Başlığı" required 
                             value={title} onChange={e => setTitle(e.target.value)}
-                            className="w-full p-2 border rounded"
+                            className="w-full p-2 border border-base-300 rounded bg-base-100 text-base-content outline-none focus:ring-1 focus:ring-primary"
                         />
                     </div>
                     <div>
                         <select 
                             value={priority} onChange={(e: any) => setPriority(e.target.value)}
-                            className="w-full p-2 border rounded bg-white"
+                            className="w-full p-2 border border-base-300 rounded bg-base-100 text-base-content outline-none"
                         >
                             <option value="normal">Normal</option>
                             <option value="urgent">Acil / Önemli</option>
@@ -103,12 +105,12 @@ export default function AnnouncementsPage() {
                 <textarea 
                     placeholder="Duyuru İçeriği..." required rows={3}
                     value={content} onChange={e => setContent(e.target.value)}
-                    className="w-full p-2 border rounded"
+                    className="w-full p-2 border border-base-300 rounded bg-base-100 text-base-content outline-none focus:ring-1 focus:ring-primary"
                 />
                 <div className="text-right">
                     <button 
                         type="submit" disabled={isSubmitting}
-                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400"
+                        className="bg-primary text-primary-content px-4 py-2 rounded hover:brightness-90 disabled:opacity-50 transition-all"
                     >
                         {isSubmitting ? 'Yayınlanıyor...' : 'Yayınla'}
                     </button>
@@ -117,33 +119,33 @@ export default function AnnouncementsPage() {
         </div>
       )}
 
-      <h2 className="text-2xl font-bold text-gray-800 flex items-center">
-        <MegaphoneIcon className="h-8 w-8 mr-2 text-blue-600" />
+      <h2 className="text-2xl font-bold text-base-content flex items-center">
+        <MegaphoneIcon className="h-8 w-8 mr-2 text-primary" />
         İdari Duyurular
       </h2>
 
       <div className="space-y-4">
         {announcements.length === 0 ? (
-            <p className="text-gray-500">Henüz yayınlanmış bir duyuru yok.</p>
+            <p className="text-base-content/60">Henüz yayınlanmış bir duyuru yok.</p>
         ) : (
             announcements.map((ann) => (
-                <div key={ann._id} className={`bg-white p-6 rounded-lg shadow border-l-4 ${ann.priority === 'urgent' ? 'border-red-500' : 'border-gray-300'}`}>
+                <div key={ann._id} className={`bg-base-100 p-6 rounded-lg shadow border-l-4 ${ann.priority === 'urgent' ? 'border-error' : 'border-base-300'}`}>
                     <div className="flex justify-between items-start">
                         <div>
-                            <h3 className="text-xl font-semibold text-gray-800 flex items-center">
-                                {ann.priority === 'urgent' && <ExclamationCircleIcon className="h-6 w-6 text-red-500 mr-2" />}
+                            <h3 className="text-xl font-semibold text-base-content flex items-center">
+                                {ann.priority === 'urgent' && <ExclamationCircleIcon className="h-6 w-6 text-error mr-2" />}
                                 {ann.title}
                             </h3>
-                            <p className="mt-2 text-gray-600 whitespace-pre-wrap">{ann.content}</p>
+                            <p className="mt-2 text-base-content/80 whitespace-pre-wrap">{ann.content}</p>
                         </div>
                         <div className='flex flex-col items-end ml-4 space-y-2'>
-                        <span className="text-xs text-gray-400 whitespace-nowrap ml-4">
+                        <span className="text-xs text-base-content/50 whitespace-nowrap ml-4">
                             {new Date(ann.createdAt).toLocaleDateString('tr-TR')}
                         </span>
                         {isAdmin && (
                           <button
                           onClick={() => handleDeleteAnnouncement(ann._id)}
-                          className="text-red-500 hover:text-red-700 p-1 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+                          className="text-error hover:text-error/80 p-1 hover:bg-error/10 rounded transition-colors disabled:opacity-50"
                           title='Duyuruyu Sil'
                         >
                           {deletingId === ann._id ?(
@@ -153,8 +155,8 @@ export default function AnnouncementsPage() {
                           )}
                         </button>
                         )}
-                    </div>
-                </div>
+                     </div>
+                 </div>
                 </div>
             ))
         )}

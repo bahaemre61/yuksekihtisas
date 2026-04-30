@@ -53,7 +53,7 @@ const StatusBadge = ({ status }: { status: RequestStatus }) => {
 };
 
 const PriorityBadge = ({ priority }: { priority: string }) => {
-  let color = 'bg-gray-100 text-gray-800';
+  let color = 'bg-base-200 text-base-content';
   let label = 'Normal';
 
   if (priority === 'HIGH') { color = 'bg-red-100 text-red-800'; label = 'ACİL'; }
@@ -230,12 +230,12 @@ export default function MyRequestsPage() {
   }
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-lg max-w-5xl mx-auto">
+    <div className="bg-base-100 p-6 rounded-lg shadow-lg max-w-5xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-        <h2 className="text-2xl font-semibold text-gray-800">Teknik Taleplerim</h2>
+        <h2 className="text-2xl font-semibold text-base-content">Teknik Taleplerim</h2>
         <button 
           onClick={() => setShowCancelled(!showCancelled)}
-          className="flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-blue-600 transition-colors"
+          className="flex items-center gap-2 text-xs font-semibold text-base-content/60 hover:text-primary transition-colors"
         >
           {showCancelled ? <EyeSlashIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
           {showCancelled ? 'İptalleri Gizle' : 'İptalleri Göster'}
@@ -243,32 +243,32 @@ export default function MyRequestsPage() {
       </div>
       
       {filteredRequests.length === 0 ? (
-        <div className="text-center text-gray-500 py-10 border-2 border-dashed border-gray-300 rounded-lg">
+        <div className="text-center text-base-content/60 py-10 border-2 border-dashed border-base-300 rounded-lg">
           <p>Henüz gösterilecek bir teknik destek talebiniz bulunmuyor.</p>
         </div>
       ) : (
         <div className="space-y-5">
           {filteredRequests.map((req) => (
-            <div key={req._id} className={`border border-gray-200 rounded-lg p-4 shadow-sm transition-shadow hover:shadow-md ${req.status === RequestStatus.CANCELLED ? 'opacity-60 bg-gray-50' : 'bg-white'}`}>
+            <div key={req._id} className={`border border-base-200 rounded-lg p-4 shadow-sm transition-shadow hover:shadow-md ${req.status === RequestStatus.CANCELLED ? 'opacity-60 bg-base-200' : 'bg-base-100'}`}>
               <div className="flex flex-col sm:flex-row justify-between sm:items-start">
                 
                 {/* SOL TARAFTAKİ DETAYLAR */}
                 <div className="flex-1 mb-4 sm:mb-0 pr-4">
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-lg font-semibold text-gray-900">{req.title}</h3>
+                    <h3 className="text-lg font-semibold text-base-content">{req.title}</h3>
                     <PriorityBadge priority={req.priority} />
                   </div>
                   
-                  <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                  <p className="text-sm text-base-content/70 mb-2 line-clamp-2">
                     {req.description}
                   </p>
 
-                  <div className="flex flex-wrap gap-4 text-sm text-gray-500 mt-3">
+                  <div className="flex flex-wrap gap-4 text-sm text-base-content/60 mt-3">
                     <div className="flex items-center gap-1">
-                        <span className="font-bold text-gray-700">Konum:</span> {req.location}
+                        <span className="font-bold text-base-content/80">Konum:</span> {req.location}
                     </div>
                     <div className="flex items-center gap-1">
-                        <span className="font-bold text-gray-700">Tarih:</span> {formatTRDate(req.createdAt)}
+                        <span className="font-bold text-base-content/80">Tarih:</span> {formatTRDate(req.createdAt)}
                     </div>
                   </div>
                 </div>             
@@ -278,19 +278,19 @@ export default function MyRequestsPage() {
                   <StatusBadge status={req.status} />
                   
                   {/* 2. GÜNCELLEME BURADA: Personel Listesi */}
-                  <div className="text-sm text-gray-500 flex flex-col items-start sm:items-end">
+                  <div className="text-sm text-base-content/60 flex flex-col items-start sm:items-end">
                     <strong className="mb-1">Teknik Ekip:</strong>
                     
                     {req.technicalStaff && req.technicalStaff.length > 0 ? (
                         <div className="flex flex-col gap-1 sm:items-end">
                             {req.technicalStaff.map((staff, idx) => (
-                                <span key={idx} className="bg-gray-100 text-gray-800 px-2 py-0.5 rounded text-xs font-medium border border-gray-200">
+                                <span key={idx} className="bg-base-200 text-base-content px-2 py-0.5 rounded text-xs font-medium border border-base-200">
                                     {staff.name}
                                 </span>
                             ))}
                         </div>
                     ) : (
-                        <span className="italic text-gray-400"> Henüz Atanmadı </span>
+                        <span className="italic text-base-content/50"> Henüz Atanmadı </span>
                     )}
                   </div>
 
@@ -298,7 +298,7 @@ export default function MyRequestsPage() {
                     <div className="mt-3 flex items-center justify-end sm:justify-start gap-2">
                       <button 
                         onClick={() => openEditModal(req)}
-                        className='text-blue-600 hover:text-blue-800 transition-colors p-1'
+                        className='text-primary hover:text-blue-800 transition-colors p-1'
                         title="Düzenle"
                       >
                         <PencilSquareIcon className='h-5 w-5' />
@@ -323,51 +323,51 @@ export default function MyRequestsPage() {
       {/* Düzenleme Modalı */}
       {editingRequest && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-            <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50/50">
-              <h3 className="font-semibold text-gray-800 text-lg">Talebi Düzenle</h3>
-              <button onClick={closeEditModal} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <div className="bg-base-100 rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b border-base-200 bg-base-200/50">
+              <h3 className="font-semibold text-base-content text-lg">Talebi Düzenle</h3>
+              <button onClick={closeEditModal} className="text-base-content/50 hover:text-base-content/70 transition-colors">
                 <XMarkIcon className="h-6 w-6" />
               </button>
             </div>
             
             <form onSubmit={handleEditSubmit} className="p-4 space-y-4 text-left">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Başlık</label>
+                <label className="block text-sm font-medium text-base-content/80 mb-1">Başlık</label>
                 <input 
                   type="text" 
                   name="title"
                   required
                   value={editFormData.title} 
                   onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border border-base-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Açıklama</label>
+                <label className="block text-sm font-medium text-base-content/80 mb-1">Açıklama</label>
                 <textarea 
                   name="description"
                   required
                   rows={3}
                   value={editFormData.description} 
                   onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border border-base-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Konum</label>
+                <label className="block text-sm font-medium text-base-content/80 mb-1">Konum</label>
                 <select 
                   name="location" 
                   value={editFormData.location} 
                   onChange={handleInputChange} 
                   required 
-                  className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border border-base-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">{locationsLoading ? 'Yükleniyor...' : 'Seçiniz'}</option>
                   {locations.map((loc, index) => <option key={index} value={loc}>{loc}</option>)}
-                  <option value="other" className="font-bold text-blue-600">+ DİĞER (Elle Gir)</option>
+                  <option value="other" className="font-bold text-primary">+ DİĞER (Elle Gir)</option>
                 </select>
                 {editFormData.location === 'other' && (
                   <input 
@@ -376,19 +376,19 @@ export default function MyRequestsPage() {
                     value={editFormData.customLocation} 
                     onChange={handleInputChange}
                     placeholder="Lütfen konumu belirtin..." 
-                    className="mt-2 block w-full rounded-md border border-gray-300 px-4 py-2 text-sm outline-none focus:ring-blue-500" 
+                    className="mt-2 block w-full rounded-md border border-base-300 px-4 py-2 text-sm outline-none focus:ring-blue-500" 
                     required 
                   />
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Öncelik</label>
+                <label className="block text-sm font-medium text-base-content/80 mb-1">Öncelik</label>
                 <select
                   name="priority"
                   value={editFormData.priority}
                   onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border border-base-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="LOW">Düşük</option>
                   <option value="MEDIUM">Orta</option>
@@ -396,11 +396,11 @@ export default function MyRequestsPage() {
                 </select>
               </div>
               
-              <div className="pt-4 flex justify-end gap-3 border-t border-gray-100">
+              <div className="pt-4 flex justify-end gap-3 border-t border-base-200">
                 <button 
                   type="button" 
                   onClick={closeEditModal}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                  className="px-4 py-2 text-sm font-medium text-base-content/80 bg-base-100 border border-base-300 rounded-md hover:bg-base-200"
                   disabled={isSubmitting}
                 >
                   İptal
@@ -408,7 +408,7 @@ export default function MyRequestsPage() {
                 <button 
                   type="submit" 
                   disabled={isSubmitting}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 disabled:bg-blue-400"
+                  className="px-4 py-2 text-sm font-medium text-primary-content bg-primary border border-transparent rounded-md shadow-sm hover:brightness-90 disabled:bg-blue-400"
                 >
                   {isSubmitting ? 'Kaydediliyor...' : 'Kaydet'}
                 </button>

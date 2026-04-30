@@ -94,29 +94,29 @@ export default function AdminDashboardPage() {
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-            case 'assigned': return 'bg-blue-100 text-blue-800 border-blue-200';
-            case 'completed': return 'bg-green-100 text-green-800 border-green-200';
-            case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
-            default: return 'bg-gray-100 text-gray-800 border-gray-200';
+            case 'pending': return 'bg-warning/20 text-warning border-warning/30';
+            case 'assigned': return 'bg-info/20 text-info border-info/30';
+            case 'completed': return 'bg-success/20 text-success border-success/30';
+            case 'cancelled': return 'bg-error/20 text-error border-error/30';
+            default: return 'bg-base-200 text-base-content border-base-300';
         }
     };
 
     return (
-        <div className="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-200">
+        <div className="bg-base-100 shadow-sm rounded-lg overflow-hidden border border-base-200">
             {/* Header ve Filtreler */}
-            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50/50">
+            <div className="px-6 py-4 border-b border-base-200 bg-base-200/50">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                        <Link href="/dashboard/admin" className="p-2 hover:bg-gray-200 rounded-full transition-colors">
-                            <ArrowLeftIcon className="h-5 w-5 text-gray-600" />
+                        <Link href="/dashboard/admin" className="p-2 hover:bg-base-200 rounded-full transition-colors">
+                            <ArrowLeftIcon className="h-5 w-5 text-base-content/70" />
                         </Link>
-                        <h2 className="text-xl font-bold text-gray-800 uppercase tracking-tight">Talepler</h2>
+                        <h2 className="text-xl font-bold text-base-content uppercase tracking-tight">Talepler</h2>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3">
-                        <div className="flex items-center gap-2 bg-white border rounded-md px-2 py-1 shadow-sm">
-                            <FunnelIcon className="h-4 w-4 text-gray-400" />
+                        <div className="flex items-center gap-2 bg-base-100 border border-base-200 rounded-md px-2 py-1 shadow-sm">
+                            <FunnelIcon className="h-4 w-4 text-base-content/50" />
                             <select 
                                 value={filterStatus}
                                 onChange={(e) => setFilterStatus(e.target.value)}
@@ -133,8 +133,8 @@ export default function AdminDashboardPage() {
                             onClick={() => setShowCancelled(!showCancelled)}
                             className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all border ${
                                 showCancelled 
-                                ? 'bg-red-50 text-red-700 border-red-200 shadow-inner' 
-                                : 'bg-white text-gray-600 border-gray-300 shadow-sm'
+                                ? 'bg-error/10 text-error border-error/30 shadow-inner' 
+                                : 'bg-base-100 text-base-content/70 border-base-300 shadow-sm hover:bg-base-200'
                             }`}
                         >
                             {showCancelled ? <EyeIcon className="h-4 w-4" /> : <EyeSlashIcon className="h-4 w-4" />}
@@ -146,49 +146,49 @@ export default function AdminDashboardPage() {
 
             <div className="overflow-x-auto min-h-[400px]">
                 {loading ? (
-                    <div className="flex justify-center items-center py-20 text-gray-400 animate-pulse">
+                    <div className="flex justify-center items-center py-20 text-base-content/50 animate-pulse">
                         Veriler yükleniyor...
                     </div>
                 ) : (
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                    <table className="min-w-full divide-y divide-base-200">
+                        <thead className="bg-base-200/50">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Talep Eden</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nerden</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nereye</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Amaç</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tarih</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Durum</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Şoför</th>
-                                <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">İşlemler</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-base-content/60 uppercase tracking-wider">Talep Eden</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-base-content/60 uppercase tracking-wider">Nerden</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-base-content/60 uppercase tracking-wider">Nereye</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-base-content/60 uppercase tracking-wider">Amaç</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-base-content/60 uppercase tracking-wider">Tarih</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-base-content/60 uppercase tracking-wider">Durum</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-base-content/60 uppercase tracking-wider">Şoför</th>
+                                <th className="px-6 py-3 text-right text-xs font-semibold text-base-content/60 uppercase tracking-wider">İşlemler</th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody className="bg-base-100 divide-y divide-base-200">
                             {requests.length > 0 ? (
                                 requests.map((req) => (
                                     <tr 
                                         key={req._id} 
-                                        className={`hover:bg-gray-50 transition-colors ${req.status === 'cancelled' ? 'opacity-50 grayscale-[0.5] bg-gray-50/50' : ''}`}
+                                        className={`hover:bg-base-200/50 transition-colors ${req.status === 'cancelled' ? 'opacity-50 grayscale-[0.5] bg-base-200/30' : ''}`}
                                     >
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm font-bold text-gray-900">{req.requestingUser?.name || 'Silinmiş'}</div>
-                                            <div className="text-xs text-gray-500">{req.requestingUser?.email}</div>
+                                            <div className="text-sm font-bold text-base-content">{req.requestingUser?.name || 'Silinmiş'}</div>
+                                            <div className="text-xs text-base-content/60">{req.requestingUser?.email}</div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{req.fromLocation}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{req.toLocation}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-base-content/80">{req.fromLocation}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-base-content/80">{req.toLocation}</td>
                                         
                                         {/* 💬 AMAÇ KISMI TRUNCATE EDİLDİ */}
                                         <td className="px-6 py-4 max-w-[200px]">
                                             <div 
-                                                className="text-sm font-semibold text-gray-900 truncate" 
+                                                className="text-sm font-semibold text-base-content truncate" 
                                                 title={req.purpose} // Üzerine gelince tam hali görünür
                                             >
                                                 {req.purpose}
                                             </div>
                                         </td>
                                         
-                                        <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-600">
-                                            <span className="font-medium text-gray-900">{new Date(req.startTime).toLocaleDateString('tr-TR')}</span> <br />
+                                        <td className="px-6 py-4 whitespace-nowrap text-xs text-base-content/70">
+                                            <span className="font-medium text-base-content">{new Date(req.startTime).toLocaleDateString('tr-TR')}</span> <br />
                                             {new Date(req.startTime).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}- 
                                             {new Date(req.endTime).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
                                         </td>   
@@ -197,18 +197,18 @@ export default function AdminDashboardPage() {
                                                 {req.status.toUpperCase()}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-base-content/70">
                                             {req.assignedDriver ? (
-                                                <span className="font-medium text-blue-700">{req.assignedDriver.name}</span>
+                                                <span className="font-medium text-info">{req.assignedDriver.name}</span>
                                             ) : (
-                                                <span className="text-gray-400 italic">Atanmadı</span>
+                                                <span className="text-base-content/40 italic">Atanmadı</span>
                                             )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex flex-col gap-2 items-end">
                                             {req.status === 'assigned' && (
                                                 <button
                                                     onClick={() => handleUnassign(req._id)}
-                                                    className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded hover:bg-indigo-600 hover:text-white transition-all text-xs font-bold border border-indigo-200"
+                                                    className="bg-info/10 text-info px-3 py-1 rounded hover:bg-info hover:text-info-content transition-all text-xs font-bold border border-info/30"
                                                 >
                                                     BOŞA ÇIKAR
                                                 </button>
@@ -216,7 +216,7 @@ export default function AdminDashboardPage() {
                                             {(req.status === 'pending' && isPastDate(req.startTime)) && (
                                                 <button
                                                     onClick={() => handleCancel(req._id)}
-                                                    className="px-3 py-1 rounded transition-all text-xs font-bold border bg-red-50 text-red-600 border-red-200 hover:bg-red-600 hover:text-white ring-1 ring-red-400 animate-pulse"
+                                                    className="px-3 py-1 rounded transition-all text-xs font-bold border bg-error/10 text-error border-error/30 hover:bg-error hover:text-error-content ring-1 ring-error/50 animate-pulse"
                                                 >
                                                     SÜRESİ GEÇTİ - İPTAL ET
                                                 </button>
@@ -226,7 +226,7 @@ export default function AdminDashboardPage() {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={8} className="px-6 py-12 text-center text-gray-400 italic">
+                                    <td colSpan={8} className="px-6 py-12 text-center text-base-content/50 italic">
                                         Kriterlere uygun talep bulunamadı.
                                     </td>
                                 </tr>

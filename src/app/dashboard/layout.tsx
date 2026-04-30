@@ -13,7 +13,7 @@ export default function DashboardLayout({
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     return(
-        <div className='flex h-screen overflow-hidden bg-gray-100'>
+        <div className='flex h-screen overflow-hidden bg-base-200'>
             <Sidebar 
              isMobileMenuOpen={isMobileMenuOpen}
              setIsMobileMenuOpen={setIsMobileMenuOpen}

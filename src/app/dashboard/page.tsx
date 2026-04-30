@@ -50,10 +50,10 @@ interface IMenu{
 const StatusBadge = ({status}: {status: RequestStatus}) => {
   let colorClass = ''; let text = status.toUpperCase();
   switch(status) {
-    case RequestStatus.PENDING: colorClass = 'bg-yellow-100 text-yellow-800'; text = 'Beklemede'; break;
-    case RequestStatus.ASSIGNED: colorClass = 'bg-blue-100 text-blue-800'; text = 'Atandı'; break;
-    case RequestStatus.COMPLETED: colorClass = 'bg-green-100 text-green-800'; text = 'Tamamlandı'; break;
-    case RequestStatus.CANCELLED: colorClass = 'bg-red-100 text-red-800'; text = 'İptal'; break;
+    case RequestStatus.PENDING: colorClass = 'bg-warning/20 text-warning'; text = 'Beklemede'; break;
+    case RequestStatus.ASSIGNED: colorClass = 'bg-info/20 text-info'; text = 'Atandı'; break;
+    case RequestStatus.COMPLETED: colorClass = 'bg-success/20 text-success'; text = 'Tamamlandı'; break;
+    case RequestStatus.CANCELLED: colorClass = 'bg-error/20 text-error'; text = 'İptal'; break;
     default: text = status;
   }
   return <span className={`px-2 py-1 text-xs font-bold rounded ${colorClass}`}>{text}</span>
@@ -117,7 +117,7 @@ export default function DashboardHome() {
   if(loading) {
     return(
       <div className='flex items-center justify-center h-screen'>
-        <div className='animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500'></div>
+        <div className='animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary'></div>
       </div>
     );
   }
@@ -127,8 +127,8 @@ return (
       {/* Hoşgeldiniz Başlığı */}
       <div className="flex justify-between items-end">
         <div>
-            <h1 className="text-3xl font-bold text-gray-800">Merhaba, {userName} 👋</h1>
-            <p className="text-gray-500 mt-1">Güncel durum ve taleplerin burada.</p>
+            <h1 className="text-3xl font-bold text-base-content">Merhaba, {userName} 👋</h1>
+            <p className="text-base-content/60 mt-1">Güncel durum ve taleplerin burada.</p>
         </div>
       </div>
       
@@ -138,28 +138,28 @@ return (
         <div className="lg:col-span-2 space-y-6">
             
             {/* 1. KART: ARAÇ TALEPLERİM */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <div className="bg-base-100 p-6 rounded-xl shadow-sm border border-base-200">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                        <TruckIcon className="h-5 w-5 mr-2 text-blue-500" />
+                    <h3 className="text-lg font-semibold text-base-content flex items-center">
+                        <TruckIcon className="h-5 w-5 mr-2 text-primary" />
                         Son Araç Taleplerim
                     </h3>
-                    <Link href="/dashboard/taleplerim" className="text-sm text-blue-600 hover:underline flex items-center">
+                    <Link href="/dashboard/taleplerim" className="text-sm text-primary hover:underline flex items-center">
                         Tümü <ArrowRightIcon className="h-4 w-4 ml-1"/>
                     </Link>
                 </div>
                 
                 <div className="space-y-3">
                     {recentRequests.length === 0 ? (
-                        <div className="text-center py-6 text-gray-400 bg-gray-50 rounded-lg border border-dashed border-gray-200 text-sm">
+                        <div className="text-center py-6 text-base-content/50 bg-base-200 rounded-lg border border-dashed border-base-200 text-sm">
                             Aktif araç talebiniz bulunmuyor.
                         </div>
                     ) : (
                         recentRequests.map((req) => (
-                            <div key={req._id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors border-b border-gray-50 last:border-0">
+                            <div key={req._id} className="flex items-center justify-between p-3 hover:bg-base-200 rounded-lg transition-colors border-b border-base-200 last:border-0">
                                 <div>
-                                    <p className="font-medium text-gray-800">{req.purpose}</p>
-                                    <p className="text-xs text-gray-500">
+                                    <p className="font-medium text-base-content">{req.purpose}</p>
+                                    <p className="text-xs text-base-content/60">
                                         {new Date(req.startTime).toLocaleString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
                                     </p>
                                 </div>
@@ -171,29 +171,29 @@ return (
             </div>
 
             {/* 2. KART: TEKNİK TALEPLERİM (YENİ EKLENEN KISIM) */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <div className="bg-base-100 p-6 rounded-xl shadow-sm border border-base-200">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                        <CpuChipIcon className="h-5 w-5 mr-2 text-orange-500" />
+                    <h3 className="text-lg font-semibold text-base-content flex items-center">
+                        <CpuChipIcon className="h-5 w-5 mr-2 text-warning" />
                         Son Teknik Taleplerim
                     </h3>
                     {/* Linki teknik taleplerim sayfasına yönlendirdik */}
-                    <Link href="/dashboard/tekniktaleplerim" className="text-sm text-orange-600 hover:underline flex items-center">
+                    <Link href="/dashboard/tekniktaleplerim" className="text-sm text-warning hover:underline flex items-center">
                         Tümü <ArrowRightIcon className="h-4 w-4 ml-1"/>
                     </Link>
                 </div>
                 
                 <div className="space-y-3">
                     {recentTechnicalRequests.length === 0 ? (
-                        <div className="text-center py-6 text-gray-400 bg-gray-50 rounded-lg border border-dashed border-gray-200 text-sm">
+                        <div className="text-center py-6 text-base-content/50 bg-base-200 rounded-lg border border-dashed border-base-200 text-sm">
                             Aktif teknik destek talebiniz bulunmuyor.
                         </div>
                     ) : (
                         recentTechnicalRequests.map((req) => (
-                            <div key={req._id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors border-b border-gray-50 last:border-0">
+                            <div key={req._id} className="flex items-center justify-between p-3 hover:bg-base-200 rounded-lg transition-colors border-b border-base-200 last:border-0">
                                 <div>
-                                    <p className="font-medium text-gray-800">{req.title}</p>
-                                    <p className="text-xs text-gray-500">
+                                    <p className="font-medium text-base-content">{req.title}</p>
+                                    <p className="text-xs text-base-content/60">
                                         {new Date(req.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', hour:'2-digit', minute:'2-digit' })}
                                     </p>
                                 </div>
@@ -210,57 +210,57 @@ return (
         <div className="space-y-6">
 
           {/* 1. Günün Menüsü Kartı */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-              <CalendarIcon className="h-5 w-5 mr-2 text-green-600" />
+          <div className="bg-base-100 p-6 rounded-xl shadow-sm border border-base-200">
+            <h3 className="text-lg font-semibold text-base-content mb-4 flex items-center">
+              <CalendarIcon className="h-5 w-5 mr-2 text-success" />
               Günün Menüsü
             </h3>
             
             {todayMenu ? (
-                <div className="bg-green-50 p-4 rounded-lg">
-                    <p className="text-sm text-green-800 font-bold mb-2 border-b border-green-200 pb-1">
+                <div className="bg-success/10 p-4 rounded-lg border border-success/20">
+                    <p className="text-sm text-success font-bold mb-2 border-b border-success/20 pb-1">
                         {new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' })}
                     </p>
                     <ul className="space-y-1">
                         {todayMenu.items.map((item, idx) => (
-                            <li key={idx} className="text-sm text-gray-700 flex items-start">
-                                <span className="mr-2 text-green-400">•</span> {item}
+                            <li key={idx} className="text-sm text-base-content/80 flex items-start">
+                                <span className="mr-2 text-success">•</span> {item}
                             </li>
                         ))}
                     </ul>
                     {todayMenu.calories && (
-                        <p className="text-xs text-green-600 mt-3 text-right font-semibold">
+                        <p className="text-xs text-success/70 mt-3 text-right font-semibold">
                             ~ {todayMenu.calories} kcal
                         </p>
                     )}
                 </div>
             ) : (
-                <div className="text-center py-6 text-gray-400 bg-gray-50 rounded-lg text-sm border border-dashed border-gray-200">
+                <div className="text-center py-6 text-base-content/50 bg-base-200 rounded-lg text-sm border border-dashed border-base-200">
                     Bugün için menü girişi yapılmamış.
                 </div>
             )}
             <div className="mt-3 text-right">
-                <Link href="/dashboard/yemek" className="text-xs text-gray-500 hover:text-green-600">
+                <Link href="/dashboard/yemek" className="text-xs text-base-content/60 hover:text-success">
                     Tüm Ayı Gör &rarr;
                 </Link>
             </div>
           </div>
 
           {/* 2. Duyurular Kartı */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-              <MegaphoneIcon className="h-5 w-5 mr-2 text-purple-500" />
+          <div className="bg-base-100 p-6 rounded-xl shadow-sm border border-base-200">
+            <h3 className="text-lg font-semibold text-base-content mb-4 flex items-center">
+              <MegaphoneIcon className="h-5 w-5 mr-2 text-secondary" />
               Duyurular
             </h3>
             
             <div className="space-y-4">
                 {announcements.length === 0 ? (
-                    <p className="text-sm text-gray-400 text-center py-4 bg-gray-50 rounded-lg border border-dashed">Yeni duyuru yok.</p>
+                    <p className="text-sm text-base-content/50 text-center py-4 bg-base-200 rounded-lg border border-dashed">Yeni duyuru yok.</p>
                 ) : (
                     announcements.map(ann => (
-                        <div key={ann._id} className={`text-sm pb-3 border-b border-gray-100 last:border-0 last:pb-0 ${ann.priority === 'urgent' ? 'bg-red-50 p-2 rounded border-l-2 border-red-500' : ''}`}>
-                            <p className="font-medium text-gray-800 truncate">{ann.title}</p>
-                            <p className="text-xs text-gray-500 mt-1">
+                        <div key={ann._id} className={`text-sm pb-3 border-b border-base-200 last:border-0 last:pb-0 ${ann.priority === 'urgent' ? 'bg-error/10 p-2 rounded border-l-2 border-error' : ''}`}>
+                            <p className="font-medium text-base-content truncate">{ann.title}</p>
+                            <p className="text-xs text-base-content/60 mt-1">
                                 {new Date(ann.createdAt).toLocaleDateString('tr-TR')}
                             </p>
                         </div>
@@ -268,7 +268,7 @@ return (
                 )}
             </div>
             <div className="mt-3 text-right">
-                <Link href="/dashboard/duyurular" className="text-xs text-gray-500 hover:text-purple-600">
+                <Link href="/dashboard/duyurular" className="text-xs text-base-content/60 hover:text-secondary">
                     Tümünü Oku &rarr;
                 </Link>
             </div>

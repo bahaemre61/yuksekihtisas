@@ -110,27 +110,27 @@ export default function UserPage() {
     };
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow-lg">
+        <div className="bg-base-100 p-6 rounded-lg shadow-lg border border-base-200">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">Kullanıcı Yönetimi</h2>
+                <h2 className="text-2xl font-bold text-base-content">Kullanıcı Yönetimi</h2>
                 
                 <div className="flex w-full md:w-auto gap-2">
                     <div className="relative grow md:w-64">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <MagnifyingGlassIcon className="h-4 w-4 text-gray-400" />
+                            <MagnifyingGlassIcon className="h-4 w-4 text-base-content/40" />
                         </div>
                         <input
                             type="text"
                             placeholder="İsim veya e-posta ara..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+                            className="w-full pl-9 pr-3 py-2 text-sm border border-base-300 bg-base-100 text-base-content rounded-md focus:ring-1 focus:ring-primary outline-none transition-all"
                         />
                     </div>
 
                     <button
                         onClick={() => setShowAddForm(!showAddForm)}
-                        className="flex items-center px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors shadow-sm whitespace-nowrap"
+                        className="flex items-center px-4 py-2 bg-primary text-primary-content text-sm rounded-md hover:brightness-90 transition-colors shadow-sm whitespace-nowrap"
                     >
                         <UserPlusIcon className="h-4 w-4 mr-2" />
                         {showAddForm ? 'İptal' : 'Kullanıcı Ekle'}
@@ -139,27 +139,27 @@ export default function UserPage() {
             </div>
 
             {showAddForm && (
-                <form onSubmit={handleAddUser} className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-inner">
+                <form onSubmit={handleAddUser} className="mb-6 p-4 bg-base-200 rounded-lg border border-base-300 shadow-inner">
                     <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
                         <div className="md:col-span-1">
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Ad Soyad</label>
+                            <label className="block text-xs font-medium text-base-content/60 mb-1">Ad Soyad</label>
                             <input type="text" required value={newName} onChange={e => setNewName(e.target.value)}
-                                className="w-full px-3 py-1.5 text-sm border rounded focus:ring-1 focus:ring-blue-500 outline-none" />
+                                className="w-full px-3 py-1.5 text-sm border border-base-300 bg-base-100 text-base-content rounded focus:ring-1 focus:ring-primary outline-none" />
                         </div>
                         <div className="md:col-span-1">
-                            <label className="block text-xs font-medium text-gray-500 mb-1">E-posta</label>
+                            <label className="block text-xs font-medium text-base-content/60 mb-1">E-posta</label>
                             <input type="email" required value={newEmail} onChange={e => setNewEmail(e.target.value)}
-                                className="w-full px-3 py-1.5 text-sm border rounded focus:ring-1 focus:ring-blue-500 outline-none" />
+                                className="w-full px-3 py-1.5 text-sm border border-base-300 bg-base-100 text-base-content rounded focus:ring-1 focus:ring-primary outline-none" />
                         </div>
                         <div className="md:col-span-1">
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Şifre</label>
+                            <label className="block text-xs font-medium text-base-content/60 mb-1">Şifre</label>
                             <input type="password" required value={newPassword} onChange={e => setNewPassword(e.target.value)}
-                                className="w-full px-3 py-1.5 text-sm border rounded focus:ring-1 focus:ring-blue-500 outline-none" />
+                                className="w-full px-3 py-1.5 text-sm border border-base-300 bg-base-100 text-base-content rounded focus:ring-1 focus:ring-primary outline-none" />
                         </div>
                         <div className="md:col-span-1">
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Rol</label>
+                            <label className="block text-xs font-medium text-base-content/60 mb-1">Rol</label>
                             <select value={newRole} onChange={e => setNewRole(e.target.value)}
-                                className="w-full px-3 py-1.5 text-sm border rounded bg-white focus:ring-1 focus:ring-blue-500 outline-none">
+                                className="w-full px-3 py-1.5 text-sm border border-base-300 rounded bg-base-100 text-base-content focus:ring-1 focus:ring-primary outline-none">
                                 <option value="user">Kullanıcı</option>
                                 <option value="driver">Şoför</option>
                                 <option value="admin">Admin</option>
@@ -170,7 +170,7 @@ export default function UserPage() {
                             </select>
                         </div>
                         <div className="md:col-span-1">
-                            <button type="submit" className="w-full px-4 py-1.5 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 transition-colors">
+                            <button type="submit" className="w-full px-4 py-1.5 bg-success text-success-content text-sm font-medium rounded hover:brightness-90 transition-colors">
                                 Kaydet
                             </button>
                         </div>
@@ -180,32 +180,32 @@ export default function UserPage() {
 
             <div className="overflow-x-auto min-h-[300px]">
                 {loading ? (
-                    <div className="flex justify-center items-center py-20 text-gray-500">Yükleniyor...</div>
+                    <div className="flex justify-center items-center py-20 text-base-content/50">Yükleniyor...</div>
                 ) : (
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                    <table className="min-w-full divide-y divide-base-200">
+                        <thead className="bg-base-200">
                             <tr>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İsim</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">E-posta</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">İşlemler</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-base-content/60 uppercase tracking-wider">İsim</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-base-content/60 uppercase tracking-wider">E-posta</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-base-content/60 uppercase tracking-wider">Rol</th>
+                                <th className="px-4 py-3 text-right text-xs font-medium text-base-content/60 uppercase tracking-wider">İşlemler</th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody className="bg-base-100 divide-y divide-base-200">
                             {users.length > 0 ? (
                                 users.map(user => (
-                                    <tr key={user._id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{user.name}</td>
-                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
+                                    <tr key={user._id} className="hover:bg-base-200/50 transition-colors">
+                                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-base-content">{user.name}</td>
+                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-base-content/60">{user.email}</td>
                                         <td className="px-4 py-3 whitespace-nowrap">
                                             <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full border 
-                                                ${user.role === 'admin' ? 'bg-purple-50 text-purple-700 border-purple-200' :
-                                                    user.role === 'amir' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                                                        user.role === 'driver' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                                                            user.role === 'tech' ? 'bg-green-50 text-green-700 border-green-200' :
-                                                               user.role === 'supervisor' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
-                                                               user.role === 'techamir' ? 'bg-teal-50 text-teal-700 border-teal-200' :
-                                                                'bg-gray-50 text-gray-600 border-gray-200'}`}>
+                                                ${user.role === 'admin' ? 'bg-primary/10 text-primary border-primary/30' :
+                                                    user.role === 'amir' ? 'bg-info/10 text-info border-info/30' :
+                                                        user.role === 'driver' ? 'bg-warning/10 text-warning border-warning/30' :
+                                                            user.role === 'tech' ? 'bg-success/10 text-success border-success/30' :
+                                                               user.role === 'supervisor' ? 'bg-secondary/10 text-secondary border-secondary/30' :
+                                                               user.role === 'techamir' ? 'bg-accent/10 text-accent border-accent/30' :
+                                                                'bg-base-300 text-base-content border-base-300'}`}>
                                                 {user.role.toUpperCase()}
                                             </span>
                                         </td>
@@ -213,14 +213,14 @@ export default function UserPage() {
                                             <div className="flex items-center justify-end space-x-2">
                                                 <button
                                                     onClick={() => openEditModal(user)}
-                                                    className="p-1 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded"
+                                                    className="p-1 text-info hover:text-info/80 hover:bg-info/10 rounded"
                                                     title="Düzenle"
                                                 >
                                                     <PencilSquareIcon className="h-4 w-4" />
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(user._id)}
-                                                    className="p-1 text-red-600 hover:text-red-900 hover:bg-red-50 rounded"
+                                                    className="p-1 text-error hover:text-error/80 hover:bg-error/10 rounded"
                                                     title="Sil"
                                                 >
                                                     <TrashIcon className="h-4 w-4" />
@@ -231,7 +231,7 @@ export default function UserPage() {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={4} className="px-4 py-10 text-center text-gray-400">Sonuç bulunamadı.</td>
+                                    <td colSpan={4} className="px-4 py-10 text-center text-base-content/40">Sonuç bulunamadı.</td>
                                 </tr>
                             )}
                         </tbody>
@@ -264,31 +264,31 @@ export default function UserPage() {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-base-100 p-6 text-left align-middle shadow-xl transition-all border border-base-200">
                   <div className="flex justify-between items-center mb-4">
-                    <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
+                    <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-base-content">
                         Kullanıcı Düzenle
                     </Dialog.Title>
-                    <button onClick={() => setIsEditModalOpen(false)} className="text-gray-400 hover:text-gray-500">
+                    <button onClick={() => setIsEditModalOpen(false)} className="text-base-content/40 hover:text-base-content/60">
                         <XMarkIcon className="h-6 w-6" />
                     </button>
                   </div>
                   
                   <div className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Ad Soyad</label>
+                        <label className="block text-sm font-medium text-base-content/60">Ad Soyad</label>
                         <input type="text" value={editName} onChange={e => setEditName(e.target.value)} 
-                            className="mt-1 w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none" />
+                            className="mt-1 w-full px-3 py-2 border border-base-300 bg-base-100 text-base-content rounded-md focus:ring-1 focus:ring-primary outline-none" />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">E-posta</label>
+                        <label className="block text-sm font-medium text-base-content/60">E-posta</label>
                         <input type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} 
-                            className="mt-1 w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none" />
+                            className="mt-1 w-full px-3 py-2 border border-base-300 bg-base-100 text-base-content rounded-md focus:ring-1 focus:ring-primary outline-none" />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Rol</label>
+                        <label className="block text-sm font-medium text-base-content/60">Rol</label>
                         <select value={editRole} onChange={e => setEditRole(e.target.value)} 
-                            className="mt-1 w-full px-3 py-2 border rounded-md bg-white focus:ring-blue-500 focus:border-blue-500 outline-none">
+                            className="mt-1 w-full px-3 py-2 border border-base-300 bg-base-100 text-base-content rounded-md focus:ring-1 focus:ring-primary outline-none">
                             <option value="user">Kullanıcı</option>
                             <option value="driver">Şoför</option>
                             <option value="admin">Admin</option>
@@ -304,14 +304,14 @@ export default function UserPage() {
                   <div className="mt-6 flex justify-end space-x-3">
                     <button
                       type="button"
-                      className="inline-flex justify-center rounded-md border border-transparent bg-gray-100 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-200 focus:outline-none"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-base-200 px-4 py-2 text-sm font-medium text-base-content hover:bg-base-300 focus:outline-none"
                       onClick={() => setIsEditModalOpen(false)}
                     >
                       İptal
                     </button>
                     <button
                       type="button"
-                      className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-primary-content hover:brightness-90 focus:outline-none"
                       onClick={handleUpdateUser}
                     >
                       Güncelle

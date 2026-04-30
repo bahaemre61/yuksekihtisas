@@ -102,15 +102,15 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: {
     ];
 
     const sidebarContent =(
-    <div className="flex flex-col h-full bg-white pt-5 pb-4 shadow-xl">
-      <div className="flex flex-col grow bg-white pt-5 pb-4 shadow-xl overflow-y-auto">
+    <div className="flex flex-col h-full bg-base-100 pt-5 pb-4 shadow-xl border-r border-base-200">
+      <div className="flex flex-col grow pt-5 pb-4 overflow-y-auto">
         <div className="flex items-center shrink-0 px-4">
           <img
             className="h-10 w-auto"
             src={unilogo.src}
             alt="Logo"
           />
-          <span className="ml-3 text-xl font-bold text-gray-800">Talep Sistemi</span>
+          <span className="ml-3 text-xl font-bold text-base-content">Talep Sistemi</span>
         </div>
 
         {!user && (
@@ -132,17 +132,30 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: {
                       key={item.name}
                       href={item.href}
                       className={`
-                        ${isActive ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}
+                        ${isActive ? 'bg-primary/10 text-primary' : 'text-base-content/70 hover:bg-base-200 hover:text-base-content'}
                         group flex items-center px-2 py-2 text-sm font-medium rounded-md
                       `}
                     >
                       <item.icon
                         className={`
-                          ${isActive ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'}
+                          ${isActive ? 'text-primary' : 'text-base-content/50 group-hover:text-base-content/70'}
                           mr-3 shrink-0 h-6 w-6
                         `}
                       />
                       {item.name}
+                      {item.name === 'Ayarlar' && (
+                        <span className="relative ml-2 group/badge">
+                          <span className="inline-flex items-center bg-info text-info-content text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm animate-pulse cursor-default">
+                            YENİ
+                          </span>
+                          {/* Tooltip */}
+                          <span className="absolute left-0 top-6 z-50 hidden group-hover/badge:flex flex-col w-48 bg-base-300 text-base-content text-[11px] rounded-xl shadow-xl p-3 gap-1.5 border border-base-200">
+                            <span className="font-black text-info uppercase tracking-wide text-[10px] mb-1">Yeni Özellikler 🎉</span>
+                            <span className="flex items-start gap-1.5"><span className="text-success mt-0.5">✓</span> Şifre Değiştirme</span>
+                            <span className="flex items-start gap-1.5"><span className="text-success mt-0.5">✓</span> Tema Seçimi (Aydınlık / Karanlık)</span>
+                          </span>
+                        </span>
+                      )}
                     </Link>
                   );
                 }
@@ -153,11 +166,11 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: {
           
         )}
         {user && user.role === UserRole.TECHNICAL && (
-          <div className="border-t border-gray-200 p-4 bg-amber-50/30">
+          <div className="border-t border-base-200 p-4 bg-warning/10">
             <TechNotificationStatus /> 
             <div className="text-center mt-3">
-              <p className="text-[10px] font-black text-amber-600/50 uppercase tracking-widest mb-1 italic">Teknik Servis Hattı</p>
-              <span className="text-[9px] font-black text-amber-700 bg-amber-100 px-3 py-1 rounded-lg border border-amber-200 uppercase tracking-tighter">
+              <p className="text-[10px] font-black text-warning/70 uppercase tracking-widest mb-1 italic">Teknik Servis Hattı</p>
+              <span className="text-[9px] font-black text-warning bg-warning/20 px-3 py-1 rounded-lg border border-warning/30 uppercase tracking-tighter">
                 Anlık Bildirimler Aktif
               </span>
             </div>
@@ -165,20 +178,20 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: {
         )}
         {user && user.role === UserRole.DRIVER && (
           
-    <div className="border-t border-gray-200 p-4">
+    <div className="border-t border-base-200 p-4">
     <DriverNotificationStatus />
       <div className="text-center mb-2">
-        <p className="text-sm font-medium text-gray-700">Durumunuz</p>
+        <p className="text-sm font-medium text-base-content/80">Durumunuz</p>
         {user.driverStatus === 'available' ? (
-          <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">
-            <svg className="-ml-1 mr-1.5 h-2 w-2 text-green-400" fill="currentColor" viewBox="0 0 8 8">
+          <span className="inline-flex items-center rounded-full bg-success/20 px-3 py-1 text-xs font-medium text-success">
+            <svg className="-ml-1 mr-1.5 h-2 w-2 text-success" fill="currentColor" viewBox="0 0 8 8">
               <circle cx={4} cy={4} r={3} />
             </svg>
             Uygun
           </span>
         ) : (
-          <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800">
-            <svg className="-ml-1 mr-1.5 h-2 w-2 text-red-400" fill="currentColor" viewBox="0 0 8 8">
+          <span className="inline-flex items-center rounded-full bg-error/20 px-3 py-1 text-xs font-medium text-error">
+            <svg className="-ml-1 mr-1.5 h-2 w-2 text-error" fill="currentColor" viewBox="0 0 8 8">
               <circle cx={4} cy={4} r={3} />
             </svg>
             Meşgul
@@ -187,15 +200,15 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: {
       </div>
     </div>
         )}
-        <div className="border-t border-gray-200 p-4">
+        <div className="border-t border-base-200 p-4">
             <a href="#" onClick={() => handeLagout(router)} className="group shrink-0 w-full">
               <div className="flex items-center">
                 <div>
-                  <UserIcon className="inline-block h-9 w-9 rounded-full text-gray-400" />
+                  <UserIcon className="inline-block h-9 w-9 rounded-full text-base-content/50" />
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-700 group-hover:text-gray-900">{user?.name || '...'}</p>
-                  <p className="text-xs font-medium text-gray-500 group-hover:text-gray-700 flex items-center">
+                  <p className="text-sm font-medium text-base-content/80 group-hover:text-base-content">{user?.name || '...'}</p>
+                  <p className="text-xs font-medium text-base-content/70 group-hover:text-base-content flex items-center">
                     Çıkış Yap <ArrowLeftEndOnRectangleIcon className='ml-1 h-4 w-4'/>
                   </p>
                 </div>
@@ -220,7 +233,7 @@ return (
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="fixed inset-0 bg-gray-600 bg-opacity-75" />
+            <div className="fixed inset-0 bg-base-content/50 bg-opacity-75" />
           </Transition.Child>
 
           <div className="fixed inset-0 flex z-40">

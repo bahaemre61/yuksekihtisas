@@ -138,34 +138,34 @@ export default function CreateRequestPage() {
   return (
     <div className="max-w-3xl mx-auto">
       {/* AI HIZLI DOLDURMA (Orijinal Tasarımın) */}
-      <div className="bg-linear-to-r from-purple-50 to-indigo-50 border border-purple-200 p-5 rounded-xl mb-6 shadow-sm">
+      <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 p-5 rounded-xl mb-6 shadow-sm">
         <div className="flex items-center mb-2">
-          <SparklesIcon className="h-5 w-5 text-purple-600 mr-2" />
-          <h3 className="font-bold text-purple-800">Yapay Zeka ile Hızlı Doldur</h3>
+          <SparklesIcon className="h-5 w-5 text-primary mr-2" />
+          <h3 className="font-bold text-base-content">Yapay Zeka ile Hızlı Doldur</h3>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
-          <input readOnly type="text" value={aiText} onChange={(e) => setAiText(e.target.value)} className="flex-1 p-3 border border-purple-200 rounded-lg outline-none focus:ring-2 focus:ring-purple-400 text-sm" onKeyDown={(e) => e.key === 'Enter' && handleAiFill()} />
-          <button onClick={handleAiFill} disabled={aiLoading || !aiText.trim()} className="bg-purple-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 transition-all flex items-center justify-center min-w-[140px]">
+          <input readOnly type="text" value={aiText} onChange={(e) => setAiText(e.target.value)} className="flex-1 p-3 bg-base-100 text-base-content border border-primary/20 rounded-lg outline-none focus:ring-2 focus:ring-primary/50 text-sm" onKeyDown={(e) => e.key === 'Enter' && handleAiFill()} />
+          <button onClick={handleAiFill} disabled={aiLoading || !aiText.trim()} className="bg-primary text-primary-content px-5 py-2 rounded-lg font-medium hover:brightness-90 disabled:opacity-50 transition-all flex items-center justify-center min-w-[140px]">
             {aiLoading ? <span className="animate-pulse">Düşünüyor...</span> : "Sihirli Doldur"}
           </button>
         </div>
       </div>
 
-      <div className="bg-white shadow-lg rounded-lg p-6 sm:p-8">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-6 border-b pb-4">Yeni Araç Talep Formu</h2>
+      <div className="bg-base-100 shadow-lg rounded-lg p-6 sm:p-8 border border-base-200">
+        <h2 className="text-2xl font-semibold text-base-content mb-6 border-b border-base-200 pb-4">Yeni Araç Talep Formu</h2>
 
-        {error && <div className="mb-4 bg-red-100 p-4 border border-red-300 text-red-700 rounded-md text-sm font-medium">{error}</div>}
-        {successMessage && <div className="mb-4 bg-green-100 p-4 border border-green-300 text-green-700 rounded-md text-sm font-medium">{successMessage}</div>}
+        {error && <div className="mb-4 bg-error/20 p-4 border border-error/30 text-error rounded-md text-sm font-medium">{error}</div>}
+        {successMessage && <div className="mb-4 bg-success/20 p-4 border border-success/30 text-success rounded-md text-sm font-medium">{successMessage}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-6">
 
           {/* ACİLİYET DURUMU (Orijinal Tasarımın) */}
           {canSetPriority && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Aciliyet Durumu</label>
+              <label className="block text-sm font-medium text-base-content/80 mb-2">Aciliyet Durumu</label>
               <div className="grid grid-cols-2 gap-4">
-                <button type="button" onClick={() => setFormData(p => ({ ...p, priority: 'normal' }))} className={`flex items-center justify-center px-4 py-3 border rounded-lg text-sm font-medium transition-all ${formData.priority === 'normal' ? 'border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-200' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}>Normal Talep</button>
-                <button type="button" onClick={() => setFormData(p => ({ ...p, priority: 'high' }))} className={`flex items-center justify-center px-4 py-3 border rounded-lg text-sm font-medium transition-all ${formData.priority === 'high' ? 'border-red-500 bg-red-50 text-red-700 ring-2 ring-red-200' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
+                <button type="button" onClick={() => setFormData(p => ({ ...p, priority: 'normal' }))} className={`flex items-center justify-center px-4 py-3 border rounded-lg text-sm font-medium transition-all ${formData.priority === 'normal' ? 'border-info bg-info/10 text-info ring-2 ring-info/30' : 'border-base-300 text-base-content/80 hover:bg-base-200'}`}>Normal Talep</button>
+                <button type="button" onClick={() => setFormData(p => ({ ...p, priority: 'high' }))} className={`flex items-center justify-center px-4 py-3 border rounded-lg text-sm font-medium transition-all ${formData.priority === 'high' ? 'border-error bg-error/10 text-error ring-2 ring-error/30' : 'border-base-300 text-base-content/80 hover:bg-base-200'}`}>
                   <ExclamationTriangleIcon className="h-5 w-5 mr-2" /> ACİL DURUM
                 </button>
               </div>
@@ -175,60 +175,60 @@ export default function CreateRequestPage() {
           {/* LOKASYONLAR (Orijinal Tasarımın) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Nereden?</label>
-              <select name="fromLocation" value={formData.fromLocation} onChange={handleInputChange} required className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:ring-blue-500 outline-none">
+              <label className="block text-sm font-medium text-base-content/80">Nereden?</label>
+              <select name="fromLocation" value={formData.fromLocation} onChange={handleInputChange} required className="mt-1 block w-full rounded-lg border border-base-300 bg-base-100 text-base-content px-4 py-3 text-sm focus:ring-primary outline-none">
                 <option value="">{locationsLoading ? 'Yükleniyor...' : 'Seçiniz'}</option>
                 {locations.map((loc, index) => <option key={index} value={loc}>{loc}</option>)}
-                <option value="other" className="font-bold text-blue-600">+ DİĞER (Elle Gir)</option>
+                <option value="other" className="font-bold text-primary">+ DİĞER (Elle Gir)</option>
               </select>
-              {formData.fromLocation === 'other' && <input name="customFrom" value={formData.customFrom} onChange={handleInputChange} placeholder="Kalkış noktası..." className="mt-2 block w-full rounded-lg border border-blue-200 px-4 py-2 text-sm outline-none" required />}
+              {formData.fromLocation === 'other' && <input name="customFrom" value={formData.customFrom} onChange={handleInputChange} placeholder="Kalkış noktası..." className="mt-2 block w-full rounded-lg border border-primary/30 bg-base-100 text-base-content px-4 py-2 text-sm outline-none" required />}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Nereye?</label>
-              <select name="toLocation" value={formData.toLocation} onChange={handleInputChange} required className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:ring-blue-500 outline-none">
+              <label className="block text-sm font-medium text-base-content/80">Nereye?</label>
+              <select name="toLocation" value={formData.toLocation} onChange={handleInputChange} required className="mt-1 block w-full rounded-lg border border-base-300 bg-base-100 text-base-content px-4 py-3 text-sm focus:ring-primary outline-none">
                 <option value="">{locationsLoading ? 'Yükleniyor...' : 'Seçiniz'}</option>
                 {locations.map((loc, index) => <option key={index} value={loc}>{loc}</option>)}
-                <option value="other" className="font-bold text-blue-600">+ DİĞER (Elle Gir)</option>
+                <option value="other" className="font-bold text-primary">+ DİĞER (Elle Gir)</option>
               </select>
-              {formData.toLocation === 'other' && <input name="customTo" value={formData.customTo} onChange={handleInputChange} placeholder="Varış noktası..." className="mt-2 block w-full rounded-lg border border-blue-200 px-4 py-2 text-sm outline-none" required />}
+              {formData.toLocation === 'other' && <input name="customTo" value={formData.customTo} onChange={handleInputChange} placeholder="Varış noktası..." className="mt-2 block w-full rounded-lg border border-primary/30 bg-base-100 text-base-content px-4 py-2 text-sm outline-none" required />}
             </div>
           </div>
 
           {/* --- YENİ EKLENEN: SEYAHAT TİPİ --- */}
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+            <label className="text-sm font-medium text-base-content/80 mb-3 flex items-center gap-2">
               Seyahat Tipi
             </label>
             <div className="grid grid-cols-2 gap-3">
-              <button type="button" onClick={() => setTripType('oneWay')} className={`flex flex-col items-center p-3 border rounded-xl transition-all ${tripType === 'oneWay' ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' : 'border-gray-200 bg-white hover:bg-gray-50'}`}>
+              <button type="button" onClick={() => setTripType('oneWay')} className={`flex flex-col items-center p-3 border rounded-xl transition-all ${tripType === 'oneWay' ? 'border-info bg-info/10 ring-1 ring-info' : 'border-base-300 bg-base-100 hover:bg-base-200'}`}>
                 <span className="text-xl">➡️</span>
-                <span className="text-[10px] font-bold text-gray-700 uppercase">Tek Yön</span>
+                <span className="text-[10px] font-bold text-base-content/80 uppercase">Tek Yön</span>
               </button>
-              <button type="button" onClick={() => setTripType('roundTrip')} className={`flex flex-col items-center p-3 border rounded-xl transition-all ${tripType === 'roundTrip' ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' : 'border-gray-200 bg-white hover:bg-gray-50'}`}>
+              <button type="button" onClick={() => setTripType('roundTrip')} className={`flex flex-col items-center p-3 border rounded-xl transition-all ${tripType === 'roundTrip' ? 'border-info bg-info/10 ring-1 ring-info' : 'border-base-300 bg-base-100 hover:bg-base-200'}`}>
                 <span className="text-xl">🔄</span>
-                <span className="text-[10px] font-bold text-gray-700 uppercase">Gidiş Dönüş</span>
+                <span className="text-[10px] font-bold text-base-content/80 uppercase">Gidiş Dönüş</span>
               </button>
             </div>
           </div>
 
           {/* --- YENİ EKLENEN: ZAMAN ESNEKLİĞİ BUTONLARI --- */}
           <div>
-            <label className=" text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-              <ClockIcon className="h-4 w-4 text-blue-500" /> Hızlı Zaman Seçimi
+            <label className=" text-sm font-medium text-base-content/80 mb-3 flex items-center gap-2">
+              <ClockIcon className="h-4 w-4 text-info" /> Hızlı Zaman Seçimi
             </label>
 
             <div className="grid grid-cols-3 gap-3">
-              <button type="button" onClick={() => setFlexibleTime('morning')} className={`flex flex-col items-center p-3 border rounded-xl transition-all ${formData.startTime.includes('08:30') && formData.endTime.includes('11:59') ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' : 'border-gray-200 bg-white hover:bg-gray-50'}`}>
+              <button type="button" onClick={() => setFlexibleTime('morning')} className={`flex flex-col items-center p-3 border rounded-xl transition-all ${formData.startTime.includes('08:30') && formData.endTime.includes('11:59') ? 'border-info bg-info/10 ring-1 ring-info' : 'border-base-300 bg-base-100 hover:bg-base-200'}`}>
                 <span className="text-xl">🌅</span>
-                <span className="text-[10px] font-bold text-gray-700 uppercase">Öğleden Önce</span>
+                <span className="text-[10px] font-bold text-base-content/80 uppercase">Öğleden Önce</span>
               </button>
-              <button type="button" onClick={() => setFlexibleTime('afternoon')} className={`flex flex-col items-center p-3 border rounded-xl transition-all ${formData.startTime.includes('13:00') && formData.endTime.includes('17:30') ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' : 'border-gray-200 bg-white hover:bg-gray-50'}`}>
+              <button type="button" onClick={() => setFlexibleTime('afternoon')} className={`flex flex-col items-center p-3 border rounded-xl transition-all ${formData.startTime.includes('13:00') && formData.endTime.includes('17:30') ? 'border-info bg-info/10 ring-1 ring-info' : 'border-base-300 bg-base-100 hover:bg-base-200'}`}>
                 <span className="text-xl">☀️</span>
-                <span className="text-[10px] font-bold text-gray-700 uppercase">Öğleden Sonra</span>
+                <span className="text-[10px] font-bold text-base-content/80 uppercase">Öğleden Sonra</span>
               </button>
-              <button type="button" onClick={() => setFlexibleTime('fullDay')} className={`flex flex-col items-center p-3 border rounded-xl transition-all ${formData.startTime.includes('08:30') && formData.endTime.includes('17:30') ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' : 'border-gray-200 bg-white hover:bg-gray-50'}`}>
+              <button type="button" onClick={() => setFlexibleTime('fullDay')} className={`flex flex-col items-center p-3 border rounded-xl transition-all ${formData.startTime.includes('08:30') && formData.endTime.includes('17:30') ? 'border-info bg-info/10 ring-1 ring-info' : 'border-base-300 bg-base-100 hover:bg-base-200'}`}>
                 <span className="text-xl">📅</span>
-                <span className="text-[10px] font-bold text-gray-700 uppercase">Tüm Gün</span>
+                <span className="text-[10px] font-bold text-base-content/80 uppercase">Tüm Gün</span>
               </button>
             </div>
           </div>
@@ -236,30 +236,30 @@ export default function CreateRequestPage() {
           {/* ZAMAN SEÇİMİ (Orijinal) */}
           <div className={`grid grid-cols-1 ${tripType === 'roundTrip' ? 'md:grid-cols-2' : ''} gap-6`}>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Gidiş Zamanı</label>
-              <input type="datetime-local" name="startTime" value={formData.startTime} onChange={handleInputChange} required className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:ring-blue-500" />
+              <label className="block text-sm font-medium text-base-content/80">Gidiş Zamanı</label>
+              <input type="datetime-local" name="startTime" value={formData.startTime} onChange={handleInputChange} required className="mt-1 block w-full rounded-lg border border-base-300 bg-base-100 text-base-content px-4 py-3 outline-none focus:ring-primary" />
             </div>
             {tripType === 'roundTrip' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700">Dönüş Zamanı</label>
-                <input type="datetime-local" name="endTime" value={formData.endTime} onChange={handleInputChange} required className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:ring-blue-500" />
+                <label className="block text-sm font-medium text-base-content/80">Dönüş Zamanı</label>
+                <input type="datetime-local" name="endTime" value={formData.endTime} onChange={handleInputChange} required className="mt-1 block w-full rounded-lg border border-base-300 bg-base-100 text-base-content px-4 py-3 outline-none focus:ring-primary" />
               </div>
             )}
           </div>
 
           {/* AÇIKLAMA VE CHECKBOX (Orijinal) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Açıklama</label>
-            <textarea name="purpose" rows={3} value={formData.purpose} onChange={handleInputChange} required className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:ring-blue-500" placeholder="Talep amacını belirtiniz..." />
+            <label className="block text-sm font-medium text-base-content/80">Açıklama</label>
+            <textarea name="purpose" rows={3} value={formData.purpose} onChange={handleInputChange} required className="mt-1 block w-full rounded-lg border border-base-300 bg-base-100 text-base-content px-4 py-3 outline-none focus:ring-primary" placeholder="Talep amacını belirtiniz..." />
           </div>
 
           <div className="flex items-center">
-            <input id="carry" type="checkbox" name="willCarryItems" checked={formData.willCarryItems} onChange={handleInputChange} className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-            <label htmlFor="carry" className="ml-2 block text-sm font-medium text-gray-800">Eşya veya bagaj taşınacak</label>
+            <input id="carry" type="checkbox" name="willCarryItems" checked={formData.willCarryItems} onChange={handleInputChange} className="h-4 w-4 rounded border-base-300 text-primary focus:ring-primary" />
+            <label htmlFor="carry" className="ml-2 block text-sm font-medium text-base-content">Eşya veya bagaj taşınacak</label>
           </div>
 
-          <div className="border-t pt-6">
-            <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white py-4 rounded-lg text-lg font-bold hover:bg-blue-700 shadow-md transition-all disabled:bg-gray-400">
+          <div className="border-t border-base-200 pt-6">
+            <button type="submit" disabled={loading} className="w-full bg-primary text-primary-content py-4 rounded-lg text-lg font-bold hover:brightness-90 shadow-md transition-all disabled:opacity-50">
               {loading ? "Talebiniz Gönderiliyor..." : "Talebi Oluştur"}
             </button>
           </div>

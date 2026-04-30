@@ -103,30 +103,30 @@ export default function TechnicalAdminPage() {
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-            case 'assigned': return 'bg-blue-100 text-blue-800 border-blue-200';
-            case 'completed': return 'bg-green-100 text-green-800 border-green-200';
-            case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
-            default: return 'bg-gray-100 text-gray-800 border-gray-200';
+            case 'pending': return 'bg-warning/20 text-warning border-warning/30';
+            case 'assigned': return 'bg-info/20 text-info border-info/30';
+            case 'completed': return 'bg-success/20 text-success border-success/30';
+            case 'cancelled': return 'bg-error/20 text-error border-error/30';
+            default: return 'bg-base-200 text-base-content border-base-300';
         }
     };
 
     return (
-        <div className="bg-white shadow-sm rounded-xl overflow-hidden border border-gray-200">
+        <div className="bg-base-100 shadow-sm rounded-xl overflow-hidden border border-base-200">
             {/* 🔎 FİLTRELEME VE BAŞLIK ALANI */}
-            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50/50">
+            <div className="px-6 py-4 border-b border-base-200 bg-base-200/50">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                        <Link href="/dashboard/admin" className="p-2 hover:bg-gray-200 rounded-full transition-colors">
-                            <ArrowLeftIcon className="h-5 w-5 text-gray-600" />
+                        <Link href="/dashboard/admin" className="p-2 hover:bg-base-200 rounded-full transition-colors">
+                            <ArrowLeftIcon className="h-5 w-5 text-base-content/70" />
                         </Link>
-                        <h2 className="text-xl font-bold text-gray-800 uppercase tracking-tight">Teknik Destek Yönetimi</h2>
+                        <h2 className="text-xl font-bold text-base-content uppercase tracking-tight">Teknik Destek Yönetimi</h2>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3">
                         {/* Statü Filtresi */}
-                        <div className="flex items-center gap-2 bg-white border rounded-lg px-3 py-1.5 shadow-sm">
-                            <FunnelIcon className="h-4 w-4 text-gray-400" />
+                        <div className="flex items-center gap-2 bg-base-100 border border-base-200 rounded-lg px-3 py-1.5 shadow-sm">
+                            <FunnelIcon className="h-4 w-4 text-base-content/50" />
                             <select
                                 value={filterStatus}
                                 onChange={(e) => setFilterStatus(e.target.value)}
@@ -143,8 +143,8 @@ export default function TechnicalAdminPage() {
                         <button
                             onClick={() => setShowCancelled(!showCancelled)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all border ${showCancelled
-                                    ? 'bg-red-50 text-red-700 border-red-200 shadow-inner'
-                                    : 'bg-white text-gray-600 border-gray-300 shadow-sm'
+                                    ? 'bg-error/10 text-error border-error/30 shadow-inner'
+                                    : 'bg-base-100 text-base-content/70 border-base-300 shadow-sm hover:bg-base-200'
                                 }`}
                         >
                             {showCancelled ? <EyeIcon className="h-4 w-4" /> : <EyeSlashIcon className="h-4 w-4" />}
@@ -156,46 +156,46 @@ export default function TechnicalAdminPage() {
 
             <div className="overflow-x-auto min-h-[400px]">
                 {loading ? (
-                    <div className="flex justify-center items-center py-20 text-gray-400 animate-pulse font-bold uppercase text-xs">
+                    <div className="flex justify-center items-center py-20 text-base-content/40 animate-pulse font-bold uppercase text-xs">
                         Veriler yükleniyor...
                     </div>
                 ) : (
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                    <table className="min-w-full divide-y divide-base-200">
+                        <thead className="bg-base-200/50">
                             <tr>
-                                <th className="px-6 py-3 text-left text-[10px] font-black text-gray-500 uppercase tracking-widest">Talep Eden</th>
-                                <th className="px-6 py-3 text-left text-[10px] font-black text-gray-500 uppercase tracking-widest">Arıza & Konum</th>
-                                <th className="px-6 py-3 text-left text-[10px] font-black text-gray-500 uppercase tracking-widest">Öncelik</th>
-                                <th className="px-6 py-3 text-left text-[10px] font-black text-gray-500 uppercase tracking-widest">Tarih</th>
-                                <th className="px-6 py-3 text-left text-[10px] font-black text-gray-500 uppercase tracking-widest">Durum</th>
-                                <th className="px-6 py-3 text-left text-[10px] font-black text-gray-500 uppercase tracking-widest">Personel</th>
-                                <th className="px-6 py-3 text-right text-[10px] font-black text-gray-500 uppercase tracking-widest">İşlemler</th>
+                                <th className="px-6 py-3 text-left text-[10px] font-black text-base-content/50 uppercase tracking-widest">Talep Eden</th>
+                                <th className="px-6 py-3 text-left text-[10px] font-black text-base-content/50 uppercase tracking-widest">Arıza & Konum</th>
+                                <th className="px-6 py-3 text-left text-[10px] font-black text-base-content/50 uppercase tracking-widest">Öncelik</th>
+                                <th className="px-6 py-3 text-left text-[10px] font-black text-base-content/50 uppercase tracking-widest">Tarih</th>
+                                <th className="px-6 py-3 text-left text-[10px] font-black text-base-content/50 uppercase tracking-widest">Durum</th>
+                                <th className="px-6 py-3 text-left text-[10px] font-black text-base-content/50 uppercase tracking-widest">Personel</th>
+                                <th className="px-6 py-3 text-right text-[10px] font-black text-base-content/50 uppercase tracking-widest">İşlemler</th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody className="bg-base-100 divide-y divide-base-200">
                             {requests.map((req) => (
                                 <tr
                                     key={req._id}
-                                    className={`hover:bg-gray-50 transition-colors ${req.status === 'cancelled' ? 'opacity-50 grayscale-[0.5] bg-gray-50/50' : ''}`}
+                                    className={`hover:bg-base-200/50 transition-colors ${req.status === 'cancelled' ? 'opacity-50 grayscale-[0.5] bg-base-200/30' : ''}`}
                                 >
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="text-sm font-bold text-gray-900">{req.user?.name || 'Bilinmiyor'}</div>
-                                        <div className="text-[10px] text-gray-500">{req.user?.email}</div>
+                                        <div className="text-sm font-bold text-base-content">{req.user?.name || 'Bilinmiyor'}</div>
+                                        <div className="text-[10px] text-base-content/60">{req.user?.email}</div>
                                     </td>
                                     <td className="px-6 py-4 max-w-[300px]">
-                                        <div className="text-sm text-gray-900 font-bold truncate" title={req.title}>{req.title}</div>
-                                        <div className="text-xs text-gray-500 truncate" title={req.description}>{req.description}</div>
-                                        <div className="text-[10px] text-blue-600 mt-1 font-black uppercase tracking-tighter">{req.location}</div>
+                                        <div className="text-sm text-base-content font-bold truncate" title={req.title}>{req.title}</div>
+                                        <div className="text-xs text-base-content/70 truncate" title={req.description}>{req.description}</div>
+                                        <div className="text-[10px] text-primary mt-1 font-black uppercase tracking-tighter">{req.location}</div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={`px-2 py-0.5 rounded text-[10px] font-black border ${req.priority === 'HIGH' ? 'bg-red-50 text-red-700 border-red-100' :
-                                                req.priority === 'LOW' ? 'bg-green-50 text-green-700 border-green-100' :
-                                                    'bg-yellow-50 text-yellow-700 border-yellow-100'
+                                        <span className={`px-2 py-0.5 rounded text-[10px] font-black border ${req.priority === 'HIGH' ? 'bg-error/20 text-error border-error/30' :
+                                                req.priority === 'LOW' ? 'bg-success/20 text-success border-success/30' :
+                                                    'bg-warning/20 text-warning border-warning/30'
                                             }`}>
                                             {req.priority === 'HIGH' ? 'ACİL' : req.priority === 'LOW' ? 'DÜŞÜK' : 'NORMAL'}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-600 font-medium">
+                                    <td className="px-6 py-4 whitespace-nowrap text-xs text-base-content/80 font-medium">
                                         {new Date(req.createdAt).toLocaleDateString('tr-TR')}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
@@ -203,22 +203,22 @@ export default function TechnicalAdminPage() {
                                             {req.status.toUpperCase()}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 text-xs text-gray-600">
+                                    <td className="px-6 py-4 text-xs text-base-content/80">
                                         {req.technicalStaff && req.technicalStaff.length > 0 ? (
                                             <div className="flex flex-col gap-0.5">
                                                 {req.technicalStaff.map(staff => (
-                                                    <span key={staff._id} className="font-bold text-blue-700">• {staff.name}</span>
+                                                    <span key={staff._id} className="font-bold text-info">• {staff.name}</span>
                                                 ))}
                                             </div>
                                         ) : (
-                                            <span className="text-gray-400 italic">Atanmadı</span>
+                                            <span className="text-base-content/40 italic">Atanmadı</span>
                                         )}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex flex-col gap-2 items-end">
                                         {req.status === 'assigned' && (
                                             <button
                                                 onClick={() => handleUnassign(req._id)}
-                                                className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg hover:bg-indigo-600 hover:text-white transition-all text-[10px] font-black border border-indigo-100"
+                                                className="bg-info/10 text-info px-3 py-1 rounded-lg hover:bg-info hover:text-info-content transition-all text-[10px] font-black border border-info/30"
                                             >
                                                 BOŞA ÇIKAR
                                             </button>
@@ -226,7 +226,7 @@ export default function TechnicalAdminPage() {
                                         {(req.status === 'pending' && isPastDate(req.createdAt)) && (
                                             <button
                                                 onClick={() => handleCancel(req._id)}
-                                                className="px-3 py-1 rounded-lg transition-all text-[10px] font-black border bg-red-50 text-red-600 border-red-200 hover:bg-red-600 hover:text-white ring-1 ring-red-400 animate-pulse"
+                                                className="px-3 py-1 rounded-lg transition-all text-[10px] font-black border bg-error/10 text-error border-error/30 hover:bg-error hover:text-error-content ring-1 ring-error/50 animate-pulse"
                                             >
                                                 İPTAL ET
                                             </button>
@@ -239,7 +239,7 @@ export default function TechnicalAdminPage() {
                 )}
 
                 {!loading && requests.length === 0 && (
-                    <div className="p-20 text-center text-gray-400 font-bold uppercase text-xs tracking-widest">
+                    <div className="p-20 text-center text-base-content/40 font-bold uppercase text-xs tracking-widest">
                         Kriterlere uygun kayıt bulunamadı.
                     </div>
                 )}
