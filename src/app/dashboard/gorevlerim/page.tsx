@@ -41,18 +41,41 @@ export default function DriverTasksPage() {
   const [loading, setLoading] = useState(true);
   const [completedRequests, setCompletedRequests] = useState<string[]>([]);
 
+  // ✅ GÜVENLİ ZAMAN AYIRICI (Tüm eski/yeni cihazlarda %100 çalışır)
+  const getSafeTime = (dateStr: string) => {
+    if (!dateStr) return { h: NaN, m: NaN };
+    
+    // Regex ile 'T' veya boşluktan sonraki saat:dakika kısmını yakala (Örn: "2024-05-15T08:30" -> 08, 30)
+    const timeMatch = dateStr.match(/[T\s](\d{2}):(\d{2})/);
+    if (timeMatch) {
+      return { h: parseInt(timeMatch[1], 10), m: parseInt(timeMatch[2], 10) };
+    }
+
+    // Regex bulamazsa standart parse dene
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+      return { h: d.getHours(), m: d.getMinutes() };
+    }
+
+    return { h: NaN, m: NaN };
+  };
+
+  const formatSafeTimeStr = (dateStr: string) => {
+    const { h, m } = getSafeTime(dateStr);
+    if (isNaN(h) || isNaN(m)) return "--:--";
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+  };
+
   // ✅ ZAMAN KONTROLÜ (Sayısal Karşılaştırma)
   const getFlexTimeLabel = (startTime: string, endTime: string) => {
-    const start = new Date(startTime);
-    const end = new Date(endTime);
-    const sH = start.getHours(); const sM = start.getMinutes();
-    const eH = end.getHours(); const eM = end.getMinutes();
+    const s = getSafeTime(startTime);
+    const e = getSafeTime(endTime);
 
-    if (sH === 8 && sM === 30 && eH === 12 && eM === 0) return { label: "ÖĞLEDEN ÖNCE", color: "bg-warning/20 text-warning border-warning/30", icon: <CloudIcon className="h-3 w-3" /> };
-    if (sH === 13 && sM === 0 && eH === 17 && eM === 30) return { label: "ÖĞLEDEN SONRA", color: "bg-error/20 text-error border-error/30", icon: <SunIcon className="h-3 w-3" /> };
-    if (sH === 8 && sM === 30 && eH === 17 && eM === 30) return { label: "TÜM GÜN", color: "bg-primary/20 text-primary border-primary/30", icon: <CalendarDaysIcon className="h-3 w-3" /> };
+    if (s.h === 8 && s.m === 30 && e.h === 12 && e.m === 0) return { label: "ÖĞLEDEN ÖNCE", color: "bg-warning/20 text-warning border-warning/30", icon: <CloudIcon className="h-3 w-3" /> };
+    if (s.h === 13 && s.m === 0 && e.h === 17 && e.m === 30) return { label: "ÖĞLEDEN SONRA", color: "bg-error/20 text-error border-error/30", icon: <SunIcon className="h-3 w-3" /> };
+    if (s.h === 8 && s.m === 30 && e.h === 17 && e.m === 30) return { label: "TÜM GÜN", color: "bg-primary/20 text-primary border-primary/30", icon: <CalendarDaysIcon className="h-3 w-3" /> };
 
-    return { label: start.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }), color: "bg-info/20 text-info border-info/30", icon: <ClockIcon className="h-3.5 w-3.5" /> };
+    return { label: formatSafeTimeStr(startTime), color: "bg-info/20 text-info border-info/30", icon: <ClockIcon className="h-3.5 w-3.5" /> };
   };
 
   const fetchMyTasks = async () => {
@@ -156,7 +179,7 @@ export default function DriverTasksPage() {
 
                             {/* Gidiş/Esnek Zaman Etiketi */}
                             <span className={`text-[10px] flex items-center gap-1 font-black px-2 py-0.5 rounded-lg border ${timeInfo.color}`}>
-                              {timeInfo.icon} {timeInfo.label}
+                              {timeInfo.icon} {formatTimeSafe(parseDateSafe(req.startTime))}
                             </span>
 
                             {/* DÖNÜŞ ZAMANI VE SEYAHAT TİPİ ETİKETİ */}
@@ -170,7 +193,7 @@ export default function DriverTasksPage() {
                                 {isRoundTrip && (
                                   <span className="text-[10px] text-base-content/50 flex items-center gap-1 font-black uppercase bg-base-200 px-2 py-0.5 rounded-lg border border-base-300">
                                     <ArrowPathRoundedSquareIcon className="h-3.5 w-3.5 text-base-content/50" />
-                                    DÖNÜŞ: {new Date(req.endTime).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                                    DÖNÜŞ: {formatSafeTimeStr(req.endTime)}
                                   </span>
                                 )}
                               </>

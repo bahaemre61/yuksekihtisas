@@ -1,18 +1,22 @@
-'use client'; 
+'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // useEffect eklendi
 import Image from 'next/image';
-import Link from 'next/link';  
+import Link from 'next/link';
 import axios from 'axios';
-import { useRouter } from 'next/navigation'; 
-import uniLogo from '../login/yuksekihtisasuni-logo.png'; 
+import { useRouter, useSearchParams } from 'next/navigation'; // useSearchParams eklendi
+import uniLogo from '../login/yuksekihtisasuni-logo.png';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const router = useRouter(); 
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const callbackUrl = searchParams.get('callbackUrl');
 
   const signIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +28,12 @@ export default function LoginPage() {
         email,
         password,
       });
-      window.location.href = '/dashboard';
+
+      if (callbackUrl) {
+        window.location.href = callbackUrl;
+      } else {
+        window.location.href = '/dashboard';
+      }
 
     } catch (err: any) {
       if (axios.isAxiosError(err) && err.response) {
@@ -38,19 +47,23 @@ export default function LoginPage() {
   };
 
   return (
-    
     <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4 py-12">
       <div className="w-full max-w-md space-y-8">
-
         <div>
           <Image
-            src={uniLogo} 
+            src={uniLogo}
             alt="Logo"
-            width={180} 
-            height={180} 
-            className="mx-auto" 
+            width={180}
+            height={180}
+            className="mx-auto"
           />
         </div>
+
+        {callbackUrl && (
+          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4 rounded">
+            <p className="text-sm text-blue-700">İşleminize devam etmek için lütfen giriş yapın.</p>
+          </div>
+        )}
 
         <h2 className="mt-6 text-center text-3xl font-bold text-gray-800">
           Giriş Yap
@@ -62,7 +75,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        <form className="mt-8 space-y-6" onSubmit={signIn}>        
+        <form className="mt-8 space-y-6" onSubmit={signIn}>
           <div className="rounded-md shadow-sm">
             <input
               id="email-address"

@@ -29,6 +29,7 @@ interface IVehicleRequest {
   endTime: string;
   createdAt: string;
   willCarryItems: boolean;
+  priority?: string;
   assignedDriver?: { name: string; };
 }
 
@@ -70,6 +71,7 @@ export default function MyRequestsPage() {
     willCarryItems: false
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
   const [locations, setLocations] = useState<string[]>([]);
   const [locationsLoading, setLocationsLoading] = useState(true);
 
@@ -151,11 +153,61 @@ export default function MyRequestsPage() {
 
   const closeEditModal = () => {
     setEditingRequest(null);
+    setEditError(null);
   };
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingRequest) return;
+    setEditError(null);
+
+    // ─── Mesai Dönemi Kontrolü (ACİL hariç) ───────────────────────────────
+    const isAcil = editingRequest.priority === 'high';
+    if (!isAcil) {
+      const start = new Date(editFormData.startTime);
+      const now = new Date();
+      const isSameDay = start.toDateString() === now.toDateString();
+
+      if (isSameDay) {
+        const nowMins = now.getHours() * 60 + now.getMinutes();
+        const startMins = start.getHours() * 60 + start.getMinutes();
+
+        const MORNING_START = 8 * 60 + 30;   // 08:30
+        const MORNING_END = 12 * 60;         // 12:00
+        const AFTER_START = 13 * 60;         // 13:00
+        const AFTER_END = 17 * 60 + 30;   // 17:30
+
+        const nowInMorning = nowMins >= MORNING_START && nowMins < MORNING_END;
+        const nowInAfternoon = nowMins >= AFTER_START && nowMins < AFTER_END;
+        const startInMorning = startMins >= MORNING_START && startMins < MORNING_END;
+        const startInAfternoon = startMins >= AFTER_START && startMins < AFTER_END;
+
+        if (nowInMorning && startInMorning) {
+          setEditError(`Sabah mesaisi (08:30–12:00) başladıktan sonra öğleden önce için talep düzenlleyemezsiniz. Şu anki saat: ${now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}.`);
+          return;
+        }
+        if (nowInAfternoon && startInAfternoon) {
+          setEditError(`Öğleden sonra mesaisi (13:00–17:30) başladıktan sonra öğleden sonra için talep düzenlleyemezsiniz. Şu anki saat: ${now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}.`);
+          return;
+        }
+        if (start <= now) {
+          setEditError(`Geçmiş bir saat (${start.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}) için talep düzenleyemezsiniz.`);
+          return;
+        }
+        if (start.getHours() === 12) {
+          setEditError(`Öğle arası (12:00 - 13:00) için talep düzenleyemezsiniz.`);
+          return;
+        }
+      } else if (start < now) {
+        setEditError('Geçmiş bir tarih için talep düzenleyemezsiniz.');
+        return;
+      }
+    }
+
+
+
+
+    // ─────────────────────────────────────────────────────────────────────────
 
     setIsSubmitting(true);
     const payload = {
@@ -165,13 +217,11 @@ export default function MyRequestsPage() {
     };
 
     try {
-      // Backend tarihi UTC istiyor olabilir, veriyi string olarak atıyoruz o otomatik çevirecektir:
       const res = await axios.put(`/api/requests/${editingRequest._id}`, payload);
-
       setRequests(prev => prev.map(r => r._id === editingRequest._id ? { ...r, ...res.data } : r));
       closeEditModal();
     } catch (err: any) {
-      alert("Güncelleme başarısız: " + (err.response?.data?.msg || err.message));
+      setEditError('Güncelleme başarısız: ' + (err.response?.data?.msg || err.message));
     } finally {
       setIsSubmitting(false);
     }
@@ -276,6 +326,11 @@ export default function MyRequestsPage() {
             </div>
 
             <form onSubmit={handleEditSubmit} className="p-4 space-y-4 text-left">
+              {editError && (
+                <div className="bg-error/10 border-l-4 border-error p-3 rounded-md mb-4">
+                  <p className="text-sm font-medium text-error">{editError}</p>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-base-content/80 mb-1">Kullanım Amacı</label>
                 <input

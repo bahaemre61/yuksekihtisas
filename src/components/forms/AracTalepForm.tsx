@@ -102,9 +102,53 @@ export default function CreateRequestPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const hours = new Date(formData.startTime).getHours();
+
+    const start = new Date(formData.startTime);
+    const now = new Date();
+    const isAcil = formData.priority === 'high';
+
+    if (!isAcil) {
+      const isSameDay = start.toDateString() === now.toDateString();
+
+      if (isSameDay) {
+        const nowMins = now.getHours() * 60 + now.getMinutes();
+        const startMins = start.getHours() * 60 + start.getMinutes();
+
+        // Mesai dönemleri (dakika cinsinden)
+        const MORNING_START = 8 * 60 + 30;  // 08:30
+        const MORNING_END   = 12 * 60;       // 12:00
+        const AFTER_START   = 13 * 60;       // 13:00
+        const AFTER_END     = 17 * 60 + 30;  // 17:30
+
+        const nowInMorning    = nowMins >= MORNING_START && nowMins < MORNING_END;
+        const nowInAfternoon  = nowMins >= AFTER_START   && nowMins < AFTER_END;
+        const startInMorning  = startMins >= MORNING_START && startMins < MORNING_END;
+        const startInAfternoon = startMins >= AFTER_START && startMins < AFTER_END;
+
+        if (nowInMorning && startInMorning) {
+          setError(`Sabah mesaisi (08:30–12:00) başladıktan sonra öğleden önce için talep oluşturamazsınız. Şu anki saat: ${now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}. Acil durum varsa "ACİL DURUM" seçeneğini kullanın.`);
+          return;
+        }
+
+        if (nowInAfternoon && startInAfternoon) {
+          setError(`Öğleden sonra mesaisi (13:00–17:30) başladıktan sonra öğleden sonra için talep oluşturamazsınız. Şu anki saat: ${now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}. Acil durum varsa "ACİL DURUM" seçeneğini kullanın.`);
+          return;
+        }
+
+        // Geçmiş saate talep
+        if (start <= now) {
+          setError(`Geçmiş bir saat (${start.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}) için talep oluşturamazsınız.`);
+          return;
+        }
+      } else if (start < now) {
+        setError('Geçmiş bir tarih için talep oluşturamazsınız.');
+        return;
+      }
+    }
+
+    const hours = start.getHours();
     if (hours === 12) {
-      alert("Öğle arası (12:00 - 13:00) için talep oluşturulamaz.");
+      setError("Öğle arası (12:00 - 13:00) için talep oluşturulamaz.");
       return;
     }
     setLoading(true);
@@ -138,7 +182,7 @@ export default function CreateRequestPage() {
   return (
     <div className="max-w-3xl mx-auto">
       {/* AI HIZLI DOLDURMA (Orijinal Tasarımın) */}
-      <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 p-5 rounded-xl mb-6 shadow-sm">
+      <div className="bg-linear-to-r from-primary/10 to-secondary/10 border border-primary/20 p-5 rounded-xl mb-6 shadow-sm">
         <div className="flex items-center mb-2">
           <SparklesIcon className="h-5 w-5 text-primary mr-2" />
           <h3 className="font-bold text-base-content">Yapay Zeka ile Hızlı Doldur</h3>
