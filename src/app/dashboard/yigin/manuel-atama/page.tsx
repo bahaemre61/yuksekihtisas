@@ -30,13 +30,16 @@ export default function ManuelAtamaPage() {
 
                 // 📅 TARİH FİLTRELEME MANTIĞI
                 const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
                 const filteredRequests = reqRes.data.filter((req: any) => {
                     const reqDate = new Date(req.startTime);
-                    // Sadece Yıl, Ay ve Gün eşleşiyorsa listeye al
-                    return reqDate.getDate() === today.getDate() &&
-                        reqDate.getMonth() === today.getMonth() &&
-                        reqDate.getFullYear() === today.getFullYear();
+                    // Bugün ve gelecek tarihli olanları listeye al
+                    return reqDate >= today;
                 });
+
+                // Zamana göre sırala
+                filteredRequests.sort((a: any, b: any) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
 
                 setRequests(filteredRequests);
                 setDrivers(drvRes.data);
@@ -89,7 +92,7 @@ export default function ManuelAtamaPage() {
                             Manuel Atama Paneli
                         </h1>
                         <p className="text-xs text-info font-bold">
-                            📅 Sadece Bugünün Talepleri Listeleniyor ({new Date().toLocaleDateString('tr-TR')})
+                            📅 Bugün ve Gelecek Talepler Listeleniyor ({new Date().toLocaleDateString('tr-TR')})
                         </p>
                     </div>
                 </div>
@@ -105,36 +108,86 @@ export default function ManuelAtamaPage() {
                     <div className="bg-base-100 rounded-xl border border-base-200 overflow-hidden shadow-sm">
                         <div className="p-4 border-b border-base-200 bg-base-200 flex justify-between items-center">
                             <p className="text-xs font-bold text-base-content/60 uppercase tracking-wider">Bekleyen Talepler</p>
-                            <span className="text-[10px] text-base-content/40 font-medium italic">Gelecek tarihli talepler burada görünmez.</span>
+                            <span className="text-[10px] text-base-content/40 font-medium italic">Bugün ve gelecek tarihli talepler.</span>
                         </div>
                         <div className="divide-y divide-base-200 max-h-[600px] overflow-y-auto">
-                            {requests.length > 0 ? (
-                                requests.map((req) => (
-                                    <div
-                                        key={req._id}
-                                        onClick={() => toggleSelection(req._id)}
-                                        className={`p-4 flex items-center gap-4 cursor-pointer transition-all ${selectedIds.includes(req._id) ? 'bg-info/10' : 'hover:bg-base-200/50'}`}
-                                    >
-                                        <div className={`h-5 w-5 rounded border flex items-center justify-center transition-all ${selectedIds.includes(req._id) ? 'bg-info border-info' : 'border-base-300'}`}>
-                                            {selectedIds.includes(req._id) && <CheckIcon className="h-3 w-3 text-info-content" />}
-                                        </div>
-                                        <div className="flex-1">
-                                            <p className="text-sm font-bold text-base-content">{req.requestingUser?.name}</p>
-                                            <p className="text-xs text-base-content/60">{req.fromLocation} ➔ {req.toLocation}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-xs font-bold text-info bg-info/10 px-2 py-0.5 rounded">
-                                                {new Date(req.startTime).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
-                                            </p>
-                                            <p className="text-[9px] text-base-content/40 uppercase font-black mt-1">Aciliyet: Normal</p>
-                                        </div>
+                            {(() => {
+                                const today = new Date();
+                                const todayReqs = requests.filter(req => {
+                                    const reqDate = new Date(req.startTime);
+                                    return reqDate.getDate() === today.getDate() &&
+                                           reqDate.getMonth() === today.getMonth() &&
+                                           reqDate.getFullYear() === today.getFullYear();
+                                });
+                                const upcomingReqs = requests.filter(req => {
+                                    const reqDate = new Date(req.startTime);
+                                    return reqDate.getDate() !== today.getDate() ||
+                                           reqDate.getMonth() !== today.getMonth() ||
+                                           reqDate.getFullYear() !== today.getFullYear();
+                                });
+
+                                return requests.length > 0 ? (
+                                    <>
+                                        {todayReqs.length > 0 && (
+                                            <div className="p-2 bg-base-200/50 text-[10px] font-black text-base-content/50 uppercase text-center tracking-[0.2em] border-b border-base-200 sticky top-0 backdrop-blur-sm z-10">
+                                                Bugün
+                                            </div>
+                                        )}
+                                        {todayReqs.map((req) => (
+                                            <div
+                                                key={req._id}
+                                                onClick={() => toggleSelection(req._id)}
+                                                className={`p-4 flex items-center gap-4 cursor-pointer transition-all ${selectedIds.includes(req._id) ? 'bg-info/10' : 'hover:bg-base-200/50'}`}
+                                            >
+                                                <div className={`h-5 w-5 rounded border flex items-center justify-center transition-all ${selectedIds.includes(req._id) ? 'bg-info border-info' : 'border-base-300'}`}>
+                                                    {selectedIds.includes(req._id) && <CheckIcon className="h-3 w-3 text-info-content" />}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="text-sm font-bold text-base-content">{req.requestingUser?.name}</p>
+                                                    <p className="text-xs text-base-content/60">{req.fromLocation} ➔ {req.toLocation}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-xs font-bold text-info bg-info/10 px-2 py-0.5 rounded">
+                                                        {new Date(req.startTime).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                                                    </p>
+                                                    <p className="text-[9px] text-base-content/40 uppercase font-black mt-1">Aciliyet: Normal</p>
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                        {upcomingReqs.length > 0 && (
+                                            <div className="p-2 bg-base-200/50 text-[10px] font-black text-base-content/50 uppercase text-center tracking-[0.2em] border-y border-base-200 mt-4 sticky top-0 backdrop-blur-sm z-10">
+                                                Gelecek Talepler
+                                            </div>
+                                        )}
+                                        {upcomingReqs.map((req) => (
+                                            <div
+                                                key={req._id}
+                                                onClick={() => toggleSelection(req._id)}
+                                                className={`p-4 flex items-center gap-4 cursor-pointer transition-all ${selectedIds.includes(req._id) ? 'bg-info/10' : 'hover:bg-base-200/50'}`}
+                                            >
+                                                <div className={`h-5 w-5 rounded border flex items-center justify-center transition-all ${selectedIds.includes(req._id) ? 'bg-info border-info' : 'border-base-300'}`}>
+                                                    {selectedIds.includes(req._id) && <CheckIcon className="h-3 w-3 text-info-content" />}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="text-sm font-bold text-base-content">{req.requestingUser?.name}</p>
+                                                    <p className="text-xs text-base-content/60">{req.fromLocation} ➔ {req.toLocation}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-xs font-bold text-warning bg-warning/10 px-2 py-0.5 rounded">
+                                                        {new Date(req.startTime).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' })} {new Date(req.startTime).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                                                    </p>
+                                                    <p className="text-[9px] text-base-content/40 uppercase font-black mt-1">Aciliyet: Normal</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </>
+                                ) : (
+                                    <div className="p-12 text-center text-base-content/40 italic text-sm">
+                                        Bugün veya gelecek için bekleyen herhangi bir talep bulunmuyor.
                                     </div>
-                                ))
-                            ) : (
-                                <div className="p-12 text-center text-base-content/40 italic text-sm">
-                                    Bugün için bekleyen herhangi bir talep bulunmuyor.
-                                </div>
-                            )}
+                                );
+                            })()}
                         </div>
                     </div>
                 </div>

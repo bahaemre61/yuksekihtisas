@@ -290,7 +290,7 @@ export default function MeetingManagement() {
               <div>
                 <label className="block text-sm font-medium text-base-content/80 mb-1.5">Toplantı Yeri</label>
                 <input
-                  placeholder="Örn: Dekanlık Toplantı Salonu"
+                  placeholder="Örn: Tıp Fakültesi Toplantı Salonu 1"
                   className="block w-full rounded-lg border border-base-300 bg-base-100 text-base-content px-4 py-3 text-sm focus:ring-primary outline-none transition-all"
                   value={formData.location}
                   onChange={e => setFormData({ ...formData, location: e.target.value })}
