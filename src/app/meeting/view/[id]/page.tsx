@@ -194,7 +194,7 @@ export default function MeetingViewPage() {
                                                     <td className="px-4 py-3 text-xs font-bold text-base-content/40">{idx + 1}</td>
                                                     <td className="px-4 py-3">
                                                         <span className="font-semibold text-base-content">
-                                                            {att.user?.title} {att.user?.name} {att.user?.surname}
+                                                            {att.user?.title} {att.user?.name} {att.user?.surname} {att.isGuest ? `${att.guestName}` : ''}
                                                         </span>
                                                     </td>
                                                     <td className="px-4 py-3 text-xs text-base-content/60 hidden md:table-cell">

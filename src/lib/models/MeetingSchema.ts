@@ -12,7 +12,9 @@ export const MeetingStatus = {
 export type MeetingStatus = typeof MeetingStatus[keyof typeof MeetingStatus];
 
 interface IAttendee {
-    user: IUser['_id'];
+    user?: IUser['_id'];
+    guestName?: string;
+    isGuest: boolean;
     checkInTime: Date;
 }
 
@@ -64,6 +66,13 @@ const MeetingSchema: Schema<IMeeting> = new Schema({
         user: { 
             type: Schema.Types.ObjectId, 
             ref: 'User' 
+        },
+        guestName: {
+            type: String
+        },
+        isGuest: {
+            type: Boolean,
+            default: false
         },
         checkInTime: { 
             type: Date, 

@@ -6,7 +6,8 @@ export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // Eğer token yoksa ve korunan bir sayfaya gitmeye çalışıyorsa
-    if (!token && (pathname.startsWith('/dashboard') || pathname.startsWith('/meeting'))) {
+    // Misafirlerin toplantıya katılabilmesi için /meeting/join/ yollarını serbest bırakıyoruz
+    if (!token && (pathname.startsWith('/dashboard') || (pathname.startsWith('/meeting') && !pathname.startsWith('/meeting/join')))) {
         // Gidilmek istenen orijinal adresi alıyoruz
         const loginUrl = new URL('/login', request.url);
         // "callbackUrl" parametresi olarak ekliyoruz

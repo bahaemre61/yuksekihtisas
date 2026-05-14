@@ -67,7 +67,13 @@ export default function MeetingManagement() {
     }
   };
 
-  useEffect(() => { fetchMeetings(); }, []);
+  useEffect(() => {
+    fetchMeetings();
+    const interval = setInterval(() => {
+      fetchMeetings();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -202,7 +208,7 @@ export default function MeetingManagement() {
                 <div className="flex flex-wrap gap-2">
                   {meeting.attendees?.map((att: any, idx: number) => (
                     <div key={idx} className="bg-info/10 border border-info/20 px-2.5 py-1 rounded-md text-xs font-medium text-info">
-                      {att.user?.title} {att.user?.name} {att.user?.surname}
+                      {att.isGuest ? `${att.guestName} ` : `${att.user?.title || ''} ${att.user?.name || ''} ${att.user?.surname || ''}`.trim()}
                     </div>
                   ))}
                   {meeting.attendees?.length === 0 && <span className="text-sm italic text-base-content/50">Henüz katılım sağlanmadı...</span>}

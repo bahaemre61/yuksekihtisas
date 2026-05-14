@@ -39,16 +39,16 @@ export async function POST(request: Request) {
         );
 
         if (driver && driver.pushSubscription) {
-          const payload = JSON.stringify({
-        title: '🚨 YENİ GÖREV ATANDI!',
-        body: `${requestIds.length} adet yeni talep listenize eklendi. Hemen kontrol edin.`,
-        url: '/dashboard/gorevlerim'
-      });
-      const response = await webpush.sendNotification(driver.pushSubscription, payload);
-      console.log("Push bildirimi gönderildi:", response.statusCode);
-    }else{
-        console.log("Şoförün bildirim aboneliği yok");
-    }
+            const payload = JSON.stringify({
+                title: '🚨 YENİ GÖREV ATANDI!',
+                body: `${requestIds.length} adet yeni talep listenize eklendi. Hemen kontrol edin.`,
+                url: '/dashboard/gorevlerim'
+            });
+            const response = await webpush.sendNotification(driver.pushSubscription, payload);
+            console.log("Push bildirimi gönderildi:", response.statusCode);
+        } else {
+            console.log("Şoförün bildirim aboneliği yok");
+        }
 
         if (result.modifiedCount === 0) {
             return NextResponse.json({ msg: 'Talepler güncellenemedi (Zaten atanmış olabilir).' }, { status: 400 });
@@ -67,6 +67,7 @@ export async function POST(request: Request) {
                         <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
                             <p><strong>Şoför:</strong> ${driver.name}</p>
                             <p><strong>Güzergah:</strong> ${req.fromLocation} ➔ ${req.toLocation}</p>
+                            <p><strong>Tarih ve Saat:</strong> ${req.startTime.toLocaleString('tr-TR')}</p>
                             <p><strong>Durum:</strong> Şoför Atandı / Hazırlanıyor 🟢</p>
                         </div>
                         <p>Lütfen belirtilen saatte hazır bulununuz.</p>
@@ -96,9 +97,9 @@ export async function POST(request: Request) {
             sendMail(driver.email, driverSubject, driverHtml);
         }
 
-        return NextResponse.json({ 
-            msg: `${result.modifiedCount} adet talep ${driver.name} üzerine atandı ve bildirimler gönderildi.`, 
-            success: true 
+        return NextResponse.json({
+            msg: `${result.modifiedCount} adet talep ${driver.name} üzerine atandı ve bildirimler gönderildi.`,
+            success: true
         }, { status: 200 });
 
     } catch (error) {
