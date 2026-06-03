@@ -11,11 +11,18 @@ export async function GET(request: NextRequest) {
     try {
         await connectToDatabase();
 
-        const meetings = await Meeting.find({ organizer: user.id })
+        const organizedMeetings = await Meeting.find({ organizer: user.id })
             .populate('attendees.user', 'name surname title') 
             .sort({ createdAt: -1 });
 
-        return NextResponse.json({ success: true, meetings }, { status: 200 });
+        const attendedMeetings = await Meeting.find({ 
+            'attendees.user': user.id, 
+            organizer: { $ne: user.id } 
+        })
+            .populate('attendees.user', 'name surname title') 
+            .sort({ createdAt: -1 });
+
+        return NextResponse.json({ success: true, organizedMeetings, attendedMeetings }, { status: 200 });
     } catch (error: any) {
         console.error("Meetings Fetch Error:", error);
         return NextResponse.json({ msg: 'Toplantılar getirilemedi.' }, { status: 500 });

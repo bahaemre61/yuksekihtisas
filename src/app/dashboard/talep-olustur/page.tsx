@@ -3,11 +3,9 @@
 import { useState } from 'react';
 import AracTalepForm from '@/src/components/forms/AracTalepForm';
 import TeknikTalepForm from '@/src/components/forms/TeknikTalepForm';
-import MeetingManagement from '@/src/components/forms/ToplantiForm'; // Yeni bileşenimiz
 
-// State tipine 'meeting' eklendi
 export default function TalepOlusturPage() {
-  const [activeTab, setActiveTab] = useState<'selection' | 'vehicle' | 'technical' | 'meeting'>('selection');
+  const [activeTab, setActiveTab] = useState<'selection' | 'vehicle' | 'technical'>('selection');
 
   const SelectionScreen = () => (
     <div className="flex flex-col items-center justify-center min-h-[60vh]">
@@ -16,8 +14,8 @@ export default function TalepOlusturPage() {
         <p className="text-base-content/70 mt-2 font-medium">Lütfen yapmak istediğiniz işlemi seçiniz.</p>
       </div>
 
-      {/* Grid 3 sütuna çıkarıldı (md:grid-cols-3) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-6xl px-4">
+      {/* Grid 2 sütuna indirildi (md:grid-cols-2) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl px-4">
         
         {/* 1. KUTU: ARAÇ TALEBİ */}
         <div 
@@ -47,25 +45,6 @@ export default function TalepOlusturPage() {
           <p className="text-base-content/70 text-sm">Donanım ve yazılım arızaları için servis kaydı açın.</p>
         </div>
 
-        {/* 3. KUTU: TOPLANTI QR (YENİ) */}
-        <div 
-          onClick={() => setActiveTab('meeting')}
-          className="group bg-base-100 p-8 rounded-2xl shadow-md border-2 border-transparent hover:border-success hover:shadow-xl cursor-pointer transition-all duration-300 flex flex-col items-center text-center"
-        >
-          <div className="w-20 h-20 bg-success/20 rounded-full flex items-center justify-center mb-6 group-hover:bg-success transition-colors">
-            {/* QR ve Toplantı İkonu */}
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-success group-hover:text-success-content">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75v-.75ZM16.5 6.75h.75v.75h-.75v-.75ZM13.5 13.5h.75v.75h-.75v-.75ZM13.5 19.5h.75v.75h-.75v-.75ZM19.5 13.5h.75v.75h-.75v-.75ZM19.5 19.5h.75v.75h-.75v-.75ZM16.5 16.5h.75v.75h-.75v-.75Z" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-bold text-base-content mb-2 flex items-center justify-center gap-2">
-            Toplantı Yönetimi
-            <span className="bg-error/10 text-error text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-black animate-pulse">TEST</span>
-          </h2>
-          <p className="text-base-content/70 text-sm">QR kodlu katılım tutanağı oluşturun ve yönetin.</p>
-        </div>
-
       </div>
     </div>
   );
@@ -89,9 +68,6 @@ export default function TalepOlusturPage() {
       {activeTab === 'selection' && <SelectionScreen />}
       {activeTab === 'vehicle' && <AracTalepForm />}
       {activeTab === 'technical' && <TeknikTalepForm />}
-      
-      {/* Yeni Toplantı Modülü Buraya Gelecek */}
-      {activeTab === 'meeting' && <MeetingManagement />}
     </div>
   );
 }

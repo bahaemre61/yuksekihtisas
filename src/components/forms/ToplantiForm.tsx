@@ -17,7 +17,10 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function MeetingManagement() {
-  const [meetings, setMeetings] = useState([]);
+  const [organizedMeetings, setOrganizedMeetings] = useState([]);
+  const [attendedMeetings, setAttendedMeetings] = useState([]);
+  const [activeTab, setActiveTab] = useState<'organized' | 'attended'>('organized');
+  const [expandedMeetings, setExpandedMeetings] = useState<Record<string, boolean>>({});
   const [showModal, setShowModal] = useState(false);
   const [selectedQR, setSelectedQR] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -34,7 +37,10 @@ export default function MeetingManagement() {
   const fetchMeetings = async () => {
     try {
       const res = await axios.get('/api/meetings');
-      if (res.data.success) setMeetings(res.data.meetings);
+      if (res.data.success) {
+        setOrganizedMeetings(res.data.organizedMeetings || []);
+        setAttendedMeetings(res.data.attendedMeetings || []);
+      }
     } catch (err) {
       console.error("Toplantılar yüklenemedi");
     }
@@ -146,7 +152,7 @@ export default function MeetingManagement() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-base-100 p-6 rounded-lg shadow-sm border border-base-200">
         <div>
           <h1 className="text-2xl font-bold text-base-content">
-            Toplantı Portalı (Test)
+            Toplantı Portalı
           </h1>
           <p className="text-sm text-base-content/70 mt-1">
             QR Katılım & Toplantı Tutanak Sistemi | Not (Katılımcılar telefondan QR Kod okutarak katılmalılar! ve Toplantı bittikten sonra Tutanak yazılmalı)
@@ -160,15 +166,30 @@ export default function MeetingManagement() {
         </button>
       </div>
 
+      {/* TABS */}
+      <div className="flex gap-2 border-b border-base-200 pb-2">
+        <button
+          onClick={() => setActiveTab('organized')}
+          className={`px-4 py-3 font-semibold text-sm rounded-t-xl transition-all ${activeTab === 'organized' ? 'bg-primary text-primary-content shadow-sm' : 'bg-base-200 text-base-content hover:bg-base-300'}`}
+        >
+          Oluşturduğum Toplantılar
+        </button>
+        <button
+          onClick={() => setActiveTab('attended')}
+          className={`px-4 py-3 font-semibold text-sm rounded-t-xl transition-all ${activeTab === 'attended' ? 'bg-primary text-primary-content shadow-sm' : 'bg-base-200 text-base-content hover:bg-base-300'}`}
+        >
+          Katıldığım Toplantılar
+        </button>
+      </div>
 
       {/* MEETINGS GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {meetings.length === 0 ? (
+        {(activeTab === 'organized' ? organizedMeetings : attendedMeetings).length === 0 ? (
           <div className="col-span-full py-16 text-center border-2 border-dashed border-base-300 rounded-xl bg-base-100/50">
             <p className="text-base-content/60 font-medium">Henüz bir toplantı oluşturulmadı</p>
           </div>
         ) : (
-          meetings.map((meeting: any) => (
+          (activeTab === 'organized' ? organizedMeetings : attendedMeetings).map((meeting: any) => (
             <div
               key={meeting._id}
               className="bg-base-100 border border-base-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-5"
@@ -205,47 +226,61 @@ export default function MeetingManagement() {
                   <UsersIcon className="h-4 w-4 text-info" />
                   <span className="text-sm font-semibold text-base-content">Katılımcılar ({meeting.attendees?.length || 0})</span>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {meeting.attendees?.map((att: any, idx: number) => (
+                <div className="flex flex-wrap gap-2 items-center">
+                  {(expandedMeetings[meeting._id] ? meeting.attendees : meeting.attendees?.slice(0, 5))?.map((att: any, idx: number) => (
                     <div key={idx} className="bg-info/10 border border-info/20 px-2.5 py-1 rounded-md text-xs font-medium text-info">
-                      {att.isGuest ? `${att.guestName} ` : `${att.user?.title || ''} ${att.user?.name || ''} ${att.user?.surname || ''}`.trim()}
+                      {att.isGuest ? `${att.guestName}` : `${att.user?.title || ''} ${att.user?.name || ''} ${att.user?.surname || ''}`.trim()}
                     </div>
                   ))}
                   {meeting.attendees?.length === 0 && <span className="text-sm italic text-base-content/50">Henüz katılım sağlanmadı...</span>}
+                  {meeting.attendees?.length > 5 && (
+                    <button
+                      onClick={() => setExpandedMeetings(prev => ({ ...prev, [meeting._id]: !prev[meeting._id] }))}
+                      className="text-[10px] font-bold text-primary bg-primary/10 hover:bg-primary/20 px-2 py-1 rounded-md transition-colors ml-1"
+                    >
+                      {expandedMeetings[meeting._id] ? 'Daha Az Göster' : `Tümünü Göster (+${meeting.attendees.length - 5})`}
+                    </button>
+                  )}
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-3 mt-2">
-                <button
-                  onClick={() => setSelectedQR(meeting.qrSecret)}
-                  className="bg-primary/10 text-primary hover:bg-primary hover:text-primary-content border border-primary/20 p-2.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-2 transition-all"
-                >
-                  <QrCodeIcon className="h-4 w-4" /> QR KODU
-                </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                {activeTab === 'organized' && (
+                  <button
+                    onClick={() => setSelectedQR(meeting.qrSecret)}
+                    className="bg-primary/10 text-primary hover:bg-primary hover:text-primary-content border border-primary/20 p-2.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-2 transition-all"
+                  >
+                    <QrCodeIcon className="h-4 w-4" /> QR KODU
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     setSelectedMeeting(meeting);
                     setMinutesText(meeting.minutes || '');
                     setShowMinutesModal(true);
                   }}
-                  className="bg-base-200 text-base-content hover:bg-base-300 p-2.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-2 transition-all"
+                  className={`bg-base-200 text-base-content hover:bg-base-300 p-2.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-2 transition-all ${activeTab === 'attended' ? 'col-span-1 sm:col-span-2' : ''}`}
                 >
                   <DocumentTextIcon className="h-4 w-4" />
-                  {meeting.minutes ? 'Tutanak Görüntüle' : 'Tutanak Yaz'}
+                  {activeTab === 'organized' && !meeting.minutes ? 'Tutanak Yaz' : 'Tutanak Görüntüle'}
                 </button>
-                <button
-                  onClick={() => copyShareLink(meeting._id)}
-                  className="bg-base-200 text-base-content hover:bg-base-300 p-2.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-2 transition-all"
-                >
-                  <ShareIcon className="h-4 w-4" /> Toplantı Linki
-                </button>
-                <button
-                  onClick={() => handleDelete(meeting._id)}
-                  className="bg-error/10 text-error hover:bg-error hover:text-error-content border border-error/20 p-2.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-2 transition-all"
-                >
-                  <TrashIcon className="h-4 w-4" /> Sil
-                </button>
+                {activeTab === 'organized' && (
+                  <>
+                    <button
+                      onClick={() => copyShareLink(meeting._id)}
+                      className="bg-base-200 text-base-content hover:bg-base-300 p-2.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-2 transition-all"
+                    >
+                      <ShareIcon className="h-4 w-4" /> Toplantı Linki
+                    </button>
+                    <button
+                      onClick={() => handleDelete(meeting._id)}
+                      className="bg-error/10 text-error hover:bg-error hover:text-error-content border border-error/20 p-2.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-2 transition-all"
+                    >
+                      <TrashIcon className="h-4 w-4" /> Sil
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           ))
@@ -348,9 +383,10 @@ export default function MeetingManagement() {
                 <label className="block text-sm font-medium text-base-content/80 mb-1.5">Tutanak Metni</label>
                 <textarea
                   placeholder="Alınan kararlar, görüşülen konular..."
-                  className="block w-full rounded-lg border border-base-300 bg-base-100 text-base-content px-4 py-3 text-sm focus:ring-primary outline-none transition-all min-h-[220px] resize-y"
+                  className={`block w-full rounded-lg border border-base-300 bg-base-100 text-base-content px-4 py-3 text-sm focus:ring-primary outline-none transition-all min-h-[220px] resize-y ${activeTab === 'attended' ? 'opacity-80 bg-base-200' : ''}`}
                   value={minutesText}
                   onChange={e => setMinutesText(e.target.value)}
+                  readOnly={activeTab === 'attended'}
                 />
               </div>
 
@@ -362,14 +398,16 @@ export default function MeetingManagement() {
                 >
                   Kapat
                 </button>
-                <button
-                  type="button"
-                  onClick={handleSaveMinutes}
-                  disabled={loading || !minutesText.trim()}
-                  className="px-6 py-3 rounded-lg font-bold bg-primary text-primary-content hover:brightness-90 shadow-md transition-all disabled:opacity-50 flex items-center gap-2"
-                >
-                  {loading ? 'Kaydediliyor...' : selectedMeeting.minutes ? 'Güncelle & Kaydet' : 'Tutanağı Kaydet & Kapat'}
-                </button>
+                {activeTab === 'organized' && (
+                  <button
+                    type="button"
+                    onClick={handleSaveMinutes}
+                    disabled={loading || !minutesText.trim()}
+                    className="px-6 py-3 rounded-lg font-bold bg-primary text-primary-content hover:brightness-90 shadow-md transition-all disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {loading ? 'Kaydediliyor...' : selectedMeeting.minutes ? 'Güncelle & Kaydet' : 'Tutanağı Kaydet & Kapat'}
+                  </button>
+                )}
               </div>
             </div>
           </div>

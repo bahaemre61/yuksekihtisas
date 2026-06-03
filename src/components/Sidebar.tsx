@@ -21,7 +21,8 @@ import {
   CpuChipIcon,
   WrenchScrewdriverIcon,
   ServerStackIcon,
-  Cog6ToothIcon
+  Cog6ToothIcon,
+  UsersIcon
 } from '@heroicons/react/24/outline';
 import unilogo from "@/src/components/yuksekihtisasuni-logo.png"
 import DriverNotificationStatus from "./notification/DriverNotificationStatus";
@@ -97,6 +98,7 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: {
     { name: 'Teknik Görevlerim', href: '/dashboard/teknikgorevlerim', icon: ServerStackIcon, roles: [UserRole.TECHNICAL,] },
     { name: 'Yönetim Paneli', href: '/dashboard/admin', icon: CommandLineIcon, roles: [UserRole.ADMIN, UserRole.SUPERVISOR] },
     { name: 'Kullanıcılar', href: '/dashboard/kullanicilar', icon: UserIcon, roles: [UserRole.ADMIN] },
+    { name: 'Toplantılar', href: '/dashboard/toplantilar', icon: UsersIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.AMIR, UserRole.TECHNICAL, UserRole.SUPERVISOR, UserRole.TECHAMIR] },
     { name: 'Ayarlar', href: '/dashboard/ayarlar', icon: Cog6ToothIcon, roles: [UserRole.USER, UserRole.AMIR, UserRole.TECHNICAL, UserRole.DRIVER, UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.TECHAMIR] },
   ];
 
@@ -142,19 +144,13 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: {
                         `}
                       />
                       {item.name}
-                      {/* {item.name === 'Ayarlar' && (
+                      {item.name === 'Toplantılar' && (
                         <span className="relative ml-2 group/badge">
                           <span className="inline-flex items-center bg-info text-info-content text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm animate-pulse cursor-default">
                             YENİ
-                          </span> */}
-                      {/* Tooltip */}
-                      {/* <span className="absolute left-0 top-6 z-50 hidden group-hover/badge:flex flex-col w-48 bg-base-300 text-base-content text-[11px] rounded-xl shadow-xl p-3 gap-1.5 border border-base-200">
-                            <span className="font-black text-info uppercase tracking-wide text-[10px] mb-1">Yeni Özellikler 🎉</span>
-                            <span className="flex items-start gap-1.5"><span className="text-success mt-0.5">✓</span> Şifre Değiştirme</span>
-                            <span className="flex items-start gap-1.5"><span className="text-success mt-0.5">✓</span> Tema Seçimi (Aydınlık / Karanlık)</span>
                           </span>
                         </span>
-                      )} */}
+                      )}
                     </Link>
                   );
                 }

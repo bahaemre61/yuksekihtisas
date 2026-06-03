@@ -15,6 +15,7 @@ import {
     CheckCircleIcon,
     ExclamationCircleIcon,
 } from '@heroicons/react/24/outline';
+import unilogo from "@/src/components/yuksekihtisasuni-logo.png";
 
 export default function MeetingViewPage() {
     const { id } = useParams();
@@ -55,17 +56,27 @@ export default function MeetingViewPage() {
 
     return (
         <div className="min-h-screen bg-base-200 py-8 px-4 print:bg-white print:py-0 print:px-0">
+            <style jsx global>{`
+                @media print {
+                    @page {
+                        margin: 0; /* Removes browser header/footer (date, url, page number) */
+                    }
+                    body {
+                        padding: 1cm; /* Adds padding back to prevent content from touching the edges */
+                    }
+                }
+            `}</style>
             <div className="max-w-4xl mx-auto space-y-6 print:space-y-4">
 
                 {/* Üst Aksiyon Çubuğu - Yazdırmada gizle */}
                 <div className="flex items-center justify-between print:hidden">
-                    <button
+                    {/* <button
                         onClick={() => window.history.back()}
                         className="flex items-center gap-2 text-sm font-semibold text-base-content/70 hover:text-base-content transition-colors"
                     >
                         <ChevronLeftIcon className="h-5 w-5" />
                         Geri Dön
-                    </button>
+                    </button> */}
                     <button
                         onClick={() => window.print()}
                         className="flex items-center gap-2 bg-primary text-primary-content px-5 py-2.5 rounded-lg font-semibold text-sm hover:brightness-90 transition-all shadow-sm"
@@ -78,15 +89,46 @@ export default function MeetingViewPage() {
                 {/* Ana Kart */}
                 <div className="bg-base-100 rounded-2xl shadow-sm border border-base-200 overflow-hidden print:shadow-none print:border print:rounded-none">
 
+                    {/* Print Özel Form Başlığı */}
+                    <div className="hidden print:flex w-full border-2 border-black mb-4 bg-white text-black">
+                        {/* Sol Logo */}
+                        <div className="w-[20%] border-r-2 border-black flex items-center justify-center p-2">
+                            <img src={unilogo.src} alt="Logo" className="h-20 w-auto object-contain grayscale" />
+                        </div>
+                        
+                        {/* Orta Başlık */}
+                        <div className="w-[50%] border-r-2 border-black flex flex-col items-center justify-center p-2 text-center">
+                            <h2 className="text-sm font-bold leading-tight">T.C.</h2>
+                            <h2 className="text-sm font-bold leading-tight">YÜKSEK İHTİSAS ÜNİVERSİTESİ</h2>
+                            <h2 className="text-base font-extrabold leading-tight mt-1">TOPLANTI TUTANAK FORMU</h2>
+                        </div>
+                        
+                        {/* Sağ Bilgi Alanı */}
+                        <div className="w-[30%] flex flex-col text-[10px] font-bold divide-y-2 divide-black">
+                            <div className="flex divide-x-2 divide-black h-1/4">
+                                <div className="w-[45%] px-2 py-1 flex items-center">Doküman No</div>
+                                <div className="w-[55%] px-2 py-1 flex items-center">YIU.FRM.001</div>
+                            </div>
+                            <div className="flex divide-x-2 divide-black h-1/4">
+                                <div className="w-[45%] px-2 py-1 flex items-center">Yayın Tarihi</div>
+                                <div className="w-[55%] px-2 py-1 flex items-center">19.09.2025</div>
+                            </div>
+                            <div className="flex divide-x-2 divide-black h-1/4">
+                                <div className="w-[45%] px-2 py-1 flex items-center">Revizyon Tarihi</div>
+                                <div className="w-[55%] px-2 py-1 flex items-center"></div>
+                            </div>
+                            <div className="flex divide-x-2 divide-black h-1/4">
+                                <div className="w-[45%] px-2 py-1 flex items-center">Revizyon No</div>
+                                <div className="w-[55%] px-2 py-1 flex items-center">0</div>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Hero Header */}
-                    <div className="bg-gradient-to-r from-primary/10 via-base-100 to-info/10 border-b border-base-200 px-8 py-8 print:px-6 print:py-6">
+                    <div className="bg-linear-to-r from-primary/10 via-base-100 to-info/10 border-b border-base-200 px-8 py-8 print:px-6 print:py-4 print:border-none print:bg-white print:text-black">
                         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                             <div>
-                                {/* Kurum Başlığı - Sadece Yazdırmada */}
-                                <p className="hidden print:block text-xs font-bold text-base-content/50 uppercase tracking-widest mb-3">
-                                    Yüksek İhtisas Üniversitesi — Toplantı Tutanağı
-                                </p>
-                                <h1 className="text-2xl md:text-3xl font-bold text-base-content leading-tight">
+                                <h1 className="text-2xl md:text-3xl font-bold text-base-content leading-tight print:text-xl print:text-center print:mb-2 print:border-b-2 print:border-black print:pb-2 print:w-full">
                                     {meeting.title}
                                 </h1>
                                 <div className="flex flex-wrap gap-x-5 gap-y-2 mt-3">
@@ -242,7 +284,7 @@ export default function MeetingViewPage() {
                         PDF / Yazdır
                     </button>
                     <button
-                        onClick={() => window.location.href = '/dashboard'}
+                        onClick={() => window.location.href = '/dashboard/toplantilar'}
                         className="flex-1 flex items-center justify-center gap-2 bg-primary text-primary-content px-5 py-3 rounded-xl font-semibold text-sm hover:brightness-90 transition-all shadow-sm"
                     >
                         <ChevronLeftIcon className="h-5 w-5" />
