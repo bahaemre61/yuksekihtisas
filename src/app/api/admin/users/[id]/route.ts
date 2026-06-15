@@ -38,12 +38,17 @@ export async function PUT(request:NextRequest, {params}: {params: Promise<{id : 
 
     try{
         const {id} = await params;
-        const {name, email, role} =await request.json();
+        const {name, email, role, isActive} = await request.json();
+
+        if (id === user.id && isActive === false) {
+            return NextResponse.json({ msg: 'Kendinizi deaktif edemezsiniz.' }, { status: 400 });
+        }
 
         await connectToDatabase();
 
         const updateData: any = {name, email, role};
-        if(role === 'driver') updateData.driverStatus = 'available';
+        if (isActive !== undefined) updateData.isActive = isActive;
+        if (role === 'driver') updateData.driverStatus = 'available';
 
         const updatedUser = await User.findByIdAndUpdate(id, updateData, {new : true}).select('-password');
 

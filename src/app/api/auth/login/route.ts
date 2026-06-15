@@ -21,6 +21,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ msg: 'Geçersiz kimlik bilgileri.' }, { status: 400 });
     }
 
+    if (user.isActive === false) {
+      return NextResponse.json({ msg: 'Hesabınız deaktiftir. Lütfen yöneticinizle iletişime geçin.' }, { status: 400 });
+    }
+
     const payload = {
       id: user.id,
       name: user.name,

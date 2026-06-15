@@ -10,6 +10,7 @@ export const UserRole= {
     AMIR : 'amir',
     SUPERVISOR : 'supervisor',
     TECHAMIR: 'techamir',
+    AKADEMIK: 'akademik',
 } as const;
 
 export type UserRole = typeof UserRole[keyof typeof UserRole];
@@ -23,6 +24,7 @@ export interface IUser extends Document {
     resetPasswordToken?: string;
     resetPasswordExpires?: Date;
     pushSubscription?: any;
+    isActive?: boolean;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -38,6 +40,10 @@ const UserSchema = new Schema<IUser>({
         type: String,
         enum: ['available', 'busy'],
         default : 'available',
+    },
+    isActive: {
+        type: Boolean,
+        default: true,
     },
     pushSubscription: { type: Object },
     resetPasswordToken: { type: String },

@@ -15,7 +15,8 @@ interface IUser {
     _id: string;
     name: string;
     email: string;
-    role: 'user' | 'driver' | 'admin' | 'amir' | 'tech' | 'supervisor' | 'techamir';
+    role: 'user' | 'driver' | 'admin' | 'amir' | 'tech' | 'supervisor' | 'techamir' | 'akademik';
+    isActive?: boolean;
 }
 
 export default function UserPage() {
@@ -34,6 +35,7 @@ export default function UserPage() {
     const [editName, setEditName] = useState('');
     const [editEmail, setEditEmail] = useState('');
     const [editRole, setEditRole] = useState('user');
+    const [editIsActive, setEditIsActive] = useState(true);
 
     // fetchUser artık opsiyonel bir arama parametresi alıyor
     const fetchUser = async (search: string = '') => {
@@ -89,6 +91,7 @@ export default function UserPage() {
         setEditName(user.name);
         setEditEmail(user.email);
         setEditRole(user.role);
+        setEditIsActive(user.isActive !== false);
         setIsEditModalOpen(true);
     };
 
@@ -99,6 +102,7 @@ export default function UserPage() {
                 name: editName,
                 email: editEmail,
                 role: editRole,
+                isActive: editIsActive,
             });
 
             alert("Güncelleme başarılı!");
@@ -167,6 +171,7 @@ export default function UserPage() {
                                 <option value="tech">Teknik</option>
                                 <option value="supervisor">Süpervizör</option>
                                 <option value="techamir">Teknik Amir</option>
+                                <option value="akademik">Akademik</option>
                             </select>
                         </div>
                         <div className="md:col-span-1">
@@ -188,6 +193,7 @@ export default function UserPage() {
                                 <th className="px-4 py-3 text-left text-xs font-medium text-base-content/60 uppercase tracking-wider">İsim</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-base-content/60 uppercase tracking-wider">E-posta</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-base-content/60 uppercase tracking-wider">Rol</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-base-content/60 uppercase tracking-wider">Durum</th>
                                 <th className="px-4 py-3 text-right text-xs font-medium text-base-content/60 uppercase tracking-wider">İşlemler</th>
                             </tr>
                         </thead>
@@ -205,8 +211,15 @@ export default function UserPage() {
                                                             user.role === 'tech' ? 'bg-success/10 text-success border-success/30' :
                                                                user.role === 'supervisor' ? 'bg-secondary/10 text-secondary border-secondary/30' :
                                                                user.role === 'techamir' ? 'bg-accent/10 text-accent border-accent/30' :
+                                                               user.role === 'akademik' ? 'bg-purple-500/10 text-purple-500 border-purple-500/30' :
                                                                 'bg-base-300 text-base-content border-base-300'}`}>
                                                 {user.role.toUpperCase()}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full border 
+                                                ${user.isActive !== false ? 'bg-success/10 text-success border-success/30' : 'bg-error/10 text-error border-error/30'}`}>
+                                                {user.isActive !== false ? 'Aktif' : 'Deaktif'}
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
@@ -296,7 +309,21 @@ export default function UserPage() {
                             <option value="tech">Teknik</option>
                             <option value="supervisor">Genel Sekreterlik</option>
                             <option value="techamir">Teknik Amir</option>
+                            <option value="akademik">Akademik</option>
                         </select>
+                    </div>
+
+                    <div className="flex items-center pt-2">
+                        <input
+                            type="checkbox"
+                            id="editIsActive"
+                            checked={editIsActive}
+                            onChange={(e) => setEditIsActive(e.target.checked)}
+                            className="checkbox checkbox-primary mr-2"
+                        />
+                        <label htmlFor="editIsActive" className="text-sm font-medium text-base-content/70 cursor-pointer select-none">
+                            Hesap Aktif
+                        </label>
                     </div>
                 
                   </div>

@@ -14,10 +14,10 @@ export async function GET(request: NextRequest) {
 
     await connectToDatabase();
 
-    const dbUser = await User.findById(user.id).select('name role driverStatus');
+    const dbUser = await User.findById(user.id).select('name role driverStatus isActive');
 
-    if(!user){
-      return NextResponse.json({msg : 'Yetkisiz : Kullanıcı bulunamadı'}, {status : 401});
+    if(!dbUser || dbUser.isActive === false){
+      return NextResponse.json({msg : 'Yetkisiz : Kullanıcı bulunamadı veya deaktif'}, {status : 401});
     }
 
 

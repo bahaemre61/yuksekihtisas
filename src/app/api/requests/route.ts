@@ -11,6 +11,10 @@ export async function POST(request: NextRequest) {
   const {user, error} = getAuthenticatedUser(request);
       if(error) return error
 
+  if (user.role === UserRole.AKADEMIK) {
+    return NextResponse.json({ msg: 'Yasak: Akademik rolünün araç talebi oluşturma yetkisi yoktur.' }, { status: 403 });
+  }
+
   try {
         const{
             willCarryItems,
