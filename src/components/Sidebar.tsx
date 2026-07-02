@@ -146,9 +146,9 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: {
                       {item.name}
                       {item.name === 'Toplantılar' && (
                         <span className="relative ml-2 group/badge">
-                          <span className="inline-flex items-center bg-info text-info-content text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm animate-pulse cursor-default">
+                          {/* <span className="inline-flex items-center bg-info text-info-content text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm animate-pulse cursor-default">
                             YENİ
-                          </span>
+                          </span> */}
                         </span>
                       )}
                     </Link>

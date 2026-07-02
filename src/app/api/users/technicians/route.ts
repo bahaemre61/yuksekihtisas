@@ -7,7 +7,8 @@ export async function GET() {
     await connectToDatabase();
 
     const technicians = await User.find({ 
-      role: UserRole.TECHNICAL 
+      role: UserRole.TECHNICAL,
+      isActive: { $ne: false }
     }).select('_id name email title'); 
 
     if (technicians.length === 0) {

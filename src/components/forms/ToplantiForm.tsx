@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { QRCodeSVG } from 'qrcode.react';
+import { useTheme } from 'next-themes';
 import {
   PlusIcon,
   QrCodeIcon,
@@ -17,6 +18,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function MeetingManagement() {
+  const { theme } = useTheme();
   const [organizedMeetings, setOrganizedMeetings] = useState([]);
   const [attendedMeetings, setAttendedMeetings] = useState([]);
   const [activeTab, setActiveTab] = useState<'organized' | 'attended'>('organized');
@@ -45,11 +47,12 @@ export default function MeetingManagement() {
       console.error("Toplantılar yüklenemedi");
     }
   };
-  const handleSaveMinutes = async () => {
+  const handleSaveMinutes = async (closeMeeting: boolean = false) => {
     setLoading(true);
     try {
       const res = await axios.patch(`/api/meetings/${selectedMeeting._id}`, {
-        minutes: minutesText
+        minutes: minutesText,
+        closeMeeting
       });
       if (res.data.success) {
         setShowMinutesModal(false);
@@ -373,9 +376,9 @@ export default function MeetingManagement() {
             </h2>
             <p className="text-sm text-base-content/70 mb-6 border-b border-base-200 pb-4">
               <span className="font-semibold text-primary">{selectedMeeting.title}</span>
-              {selectedMeeting.minutes
-                ? ' toplantısının tutanağını aşağıda görüntüleyebilir ve düzenleyebilirsiniz.'
-                : ' toplantısı için alınan kararları ve notları giriniz. Tutanak kaydedildiğinde toplantı kapatılacaktır.'}
+              {selectedMeeting.status === 'closed'
+                ? ' toplantısı kapatılmıştır. Tutanağı aşağıda görüntüleyebilirsiniz.'
+                : ' toplantısı için alınan kararları ve notları giriniz. "Kaydet" butonu ile taslak kaydedebilir, "Kaydet & Kapat" butonu ile toplantıyı kapatabilirsiniz.'}
             </p>
 
             <div className="space-y-5">
@@ -396,17 +399,32 @@ export default function MeetingManagement() {
                   onClick={() => { setShowMinutesModal(false); setMinutesText(''); }}
                   className="px-6 py-3 rounded-lg font-medium bg-base-200 text-base-content hover:bg-base-300 transition-all"
                 >
-                  Kapat
+                  {activeTab === 'organized' ? 'Vazgeç' : 'Kapat'}
                 </button>
                 {activeTab === 'organized' && (
-                  <button
-                    type="button"
-                    onClick={handleSaveMinutes}
-                    disabled={loading || !minutesText.trim()}
-                    className="px-6 py-3 rounded-lg font-bold bg-primary text-primary-content hover:brightness-90 shadow-md transition-all disabled:opacity-50 flex items-center gap-2"
-                  >
-                    {loading ? 'Kaydediliyor...' : selectedMeeting.minutes ? 'Güncelle & Kaydet' : 'Tutanağı Kaydet & Kapat'}
-                  </button>
+                  <>
+                     <button
+                      type="button"
+                      onClick={() => handleSaveMinutes(false)}
+                      disabled={loading || !minutesText.trim()}
+                      className={theme === 'dark'
+                        ? "px-6 py-3 rounded-lg font-bold bg-info/20 text-info border border-info/30 hover:bg-info/30 transition-all disabled:opacity-50 flex items-center gap-2"
+                        : "px-6 py-3 rounded-lg font-bold bg-info text-info-content hover:brightness-90 shadow-md transition-all disabled:opacity-50 flex items-center gap-2"
+                      }
+                    >
+                      {loading ? 'Kaydediliyor...' : 'Kaydet'}
+                    </button>
+                    {selectedMeeting.status !== 'closed' && (
+                      <button
+                        type="button"
+                        onClick={() => handleSaveMinutes(true)}
+                        disabled={loading || !minutesText.trim()}
+                        className="px-6 py-3 rounded-lg font-bold bg-primary text-primary-content hover:brightness-90 shadow-md transition-all disabled:opacity-50 flex items-center gap-2"
+                      >
+                        {loading ? 'Kapatılıyor...' : 'Kaydet & Kapat'}
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             </div>

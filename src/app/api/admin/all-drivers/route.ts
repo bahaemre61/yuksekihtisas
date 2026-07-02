@@ -6,7 +6,8 @@ export async function GET() {
     try {
         await connectToDatabase();
         const drivers = await User.find({ 
-            role: UserRole.DRIVER 
+            role: UserRole.DRIVER,
+            isActive: { $ne: false }
         }).select('name email _id driverStatus');
         
         return NextResponse.json(drivers);

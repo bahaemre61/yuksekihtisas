@@ -16,7 +16,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         const resolvedParams = await params;
         const meetingId = resolvedParams.id;
 
-        const { minutes } = await request.json();
+        const { minutes, closeMeeting } = await request.json();
 
         await connectToDatabase();
 
@@ -31,13 +31,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         }
 
         meeting.minutes = minutes;
-        meeting.status = MeetingStatus.CLOSED;
+        if (closeMeeting) {
+            meeting.status = MeetingStatus.CLOSED;
+        }
 
         await meeting.save();
 
         return NextResponse.json({
             success: true,
-            msg: 'Tutanak kaydedildi ve toplantı başarıyla kapatıldı.'
+            msg: closeMeeting ? 'Tutanak kaydedildi ve toplantı kapatıldı.' : 'Tutanak taslağı kaydedildi.'
         });
 
     } catch (error: any) {
