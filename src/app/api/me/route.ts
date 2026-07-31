@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
 
 
     return NextResponse.json({
+      _id: dbUser._id,
       name: dbUser.name,
       role: dbUser.role,
       driverStatus : dbUser.driverStatus

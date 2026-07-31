@@ -2,12 +2,12 @@
 
 import React, { useEffect, useState, Fragment } from 'react';
 import axios from 'axios';
-import { 
-    TrashIcon, 
-    UserPlusIcon, 
-    PencilSquareIcon, 
-    XMarkIcon, 
-    MagnifyingGlassIcon 
+import {
+    TrashIcon,
+    UserPlusIcon,
+    PencilSquareIcon,
+    XMarkIcon,
+    MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
 import { Dialog, Transition } from '@headlessui/react';
 
@@ -15,14 +15,14 @@ interface IUser {
     _id: string;
     name: string;
     email: string;
-    role: 'user' | 'driver' | 'admin' | 'amir' | 'tech' | 'supervisor' | 'techamir' | 'akademik';
+    role: 'user' | 'driver' | 'admin' | 'amir' | 'tech' | 'supervisor' | 'techamir' | 'akademik' | 'mali_isler';
     isActive?: boolean;
 }
 
 export default function UserPage() {
     const [users, setUsers] = useState<IUser[]>([]);
     const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState(''); 
+    const [searchTerm, setSearchTerm] = useState('');
 
     const [showAddForm, setShowAddForm] = useState(false);
     const [newName, setNewName] = useState('');
@@ -70,7 +70,7 @@ export default function UserPage() {
             alert("Kullanıcı oluşturuldu!");
             setShowAddForm(false);
             setNewName(''); setNewEmail(''); setNewPassword('');
-            fetchUser(searchTerm); 
+            fetchUser(searchTerm);
         } catch (err: any) {
             alert(err.response?.data?.msg || "Hata oluştu");
         }
@@ -117,7 +117,7 @@ export default function UserPage() {
         <div className="bg-base-100 p-6 rounded-lg shadow-lg border border-base-200">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                 <h2 className="text-2xl font-bold text-base-content">Kullanıcı Yönetimi</h2>
-                
+
                 <div className="flex w-full md:w-auto gap-2">
                     <div className="relative grow md:w-64">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -172,6 +172,7 @@ export default function UserPage() {
                                 <option value="supervisor">Süpervizör</option>
                                 <option value="techamir">Teknik Amir</option>
                                 <option value="akademik">Akademik</option>
+                                <option value="mali_isler">Mali İşler</option>
                             </select>
                         </div>
                         <div className="md:col-span-1">
@@ -209,10 +210,10 @@ export default function UserPage() {
                                                     user.role === 'amir' ? 'bg-info/10 text-info border-info/30' :
                                                         user.role === 'driver' ? 'bg-warning/10 text-warning border-warning/30' :
                                                             user.role === 'tech' ? 'bg-success/10 text-success border-success/30' :
-                                                               user.role === 'supervisor' ? 'bg-secondary/10 text-secondary border-secondary/30' :
-                                                               user.role === 'techamir' ? 'bg-accent/10 text-accent border-accent/30' :
-                                                               user.role === 'akademik' ? 'bg-purple-500/10 text-purple-500 border-purple-500/30' :
-                                                                'bg-base-300 text-base-content border-base-300'}`}>
+                                                                user.role === 'supervisor' ? 'bg-secondary/10 text-secondary border-secondary/30' :
+                                                                    user.role === 'techamir' ? 'bg-accent/10 text-accent border-accent/30' :
+                                                                        user.role === 'akademik' ? 'bg-purple-500/10 text-purple-500 border-purple-500/30' :
+                                                                            'bg-base-300 text-base-content border-base-300'}`}>
                                                 {user.role.toUpperCase()}
                                             </span>
                                         </td>
@@ -255,99 +256,100 @@ export default function UserPage() {
             <Transition appear show={isEditModalOpen} as={Fragment}>
                 <Dialog as="div" className="relative z-50" onClose={() => setIsEditModalOpen(false)}>
                     <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <div className="fixed inset-0 bg-black bg-opacity-25" />
-          </Transition.Child>
-
-          <div className="fixed inset-0 overflow-y-auto">
-            <div className="flex min-h-full items-center justify-center p-4 text-center">
-              <Transition.Child
-                as={Fragment}
-                enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
-                leave="ease-in duration-200"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-95"
-              >
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-base-100 p-6 text-left align-middle shadow-xl transition-all border border-base-200">
-                  <div className="flex justify-between items-center mb-4">
-                    <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-base-content">
-                        Kullanıcı Düzenle
-                    </Dialog.Title>
-                    <button onClick={() => setIsEditModalOpen(false)} className="text-base-content/40 hover:text-base-content/60">
-                        <XMarkIcon className="h-6 w-6" />
-                    </button>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-base-content/60">Ad Soyad</label>
-                        <input type="text" value={editName} onChange={e => setEditName(e.target.value)} 
-                            className="mt-1 w-full px-3 py-2 border border-base-300 bg-base-100 text-base-content rounded-md focus:ring-1 focus:ring-primary outline-none" />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-base-content/60">E-posta</label>
-                        <input type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} 
-                            className="mt-1 w-full px-3 py-2 border border-base-300 bg-base-100 text-base-content rounded-md focus:ring-1 focus:ring-primary outline-none" />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-base-content/60">Rol</label>
-                        <select value={editRole} onChange={e => setEditRole(e.target.value)} 
-                            className="mt-1 w-full px-3 py-2 border border-base-300 bg-base-100 text-base-content rounded-md focus:ring-1 focus:ring-primary outline-none">
-                            <option value="user">Kullanıcı</option>
-                            <option value="driver">Şoför</option>
-                            <option value="admin">Admin</option>
-                            <option value="amir">Amir</option>
-                            <option value="tech">Teknik</option>
-                            <option value="supervisor">Genel Sekreterlik</option>
-                            <option value="techamir">Teknik Amir</option>
-                            <option value="akademik">Akademik</option>
-                        </select>
-                    </div>
-
-                    <div className="flex items-center pt-2">
-                        <input
-                            type="checkbox"
-                            id="editIsActive"
-                            checked={editIsActive}
-                            onChange={(e) => setEditIsActive(e.target.checked)}
-                            className="checkbox checkbox-primary mr-2"
-                        />
-                        <label htmlFor="editIsActive" className="text-sm font-medium text-base-content/70 cursor-pointer select-none">
-                            Hesap Aktif
-                        </label>
-                    </div>
-                
-                  </div>
-
-                  <div className="mt-6 flex justify-end space-x-3">
-                    <button
-                      type="button"
-                      className="inline-flex justify-center rounded-md border border-transparent bg-base-200 px-4 py-2 text-sm font-medium text-base-content hover:bg-base-300 focus:outline-none"
-                      onClick={() => setIsEditModalOpen(false)}
+                        as={Fragment}
+                        enter="ease-out duration-300"
+                        enterFrom="opacity-0"
+                        enterTo="opacity-100"
+                        leave="ease-in duration-200"
+                        leaveFrom="opacity-100"
+                        leaveTo="opacity-0"
                     >
-                      İptal
-                    </button>
-                    <button
-                      type="button"
-                      className="inline-flex justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-primary-content hover:brightness-90 focus:outline-none"
-                      onClick={handleUpdateUser}
-                    >
-                      Güncelle
-                    </button>
-                  </div>
-                </Dialog.Panel>
-              </Transition.Child>
-            </div>
-          </div>
+                        <div className="fixed inset-0 bg-black bg-opacity-25" />
+                    </Transition.Child>
+
+                    <div className="fixed inset-0 overflow-y-auto">
+                        <div className="flex min-h-full items-center justify-center p-4 text-center">
+                            <Transition.Child
+                                as={Fragment}
+                                enter="ease-out duration-300"
+                                enterFrom="opacity-0 scale-95"
+                                enterTo="opacity-100 scale-100"
+                                leave="ease-in duration-200"
+                                leaveFrom="opacity-100 scale-100"
+                                leaveTo="opacity-0 scale-95"
+                            >
+                                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-base-100 p-6 text-left align-middle shadow-xl transition-all border border-base-200">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-base-content">
+                                            Kullanıcı Düzenle
+                                        </Dialog.Title>
+                                        <button onClick={() => setIsEditModalOpen(false)} className="text-base-content/40 hover:text-base-content/60">
+                                            <XMarkIcon className="h-6 w-6" />
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-base-content/60">Ad Soyad</label>
+                                            <input type="text" value={editName} onChange={e => setEditName(e.target.value)}
+                                                className="mt-1 w-full px-3 py-2 border border-base-300 bg-base-100 text-base-content rounded-md focus:ring-1 focus:ring-primary outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-base-content/60">E-posta</label>
+                                            <input type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)}
+                                                className="mt-1 w-full px-3 py-2 border border-base-300 bg-base-100 text-base-content rounded-md focus:ring-1 focus:ring-primary outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-base-content/60">Rol</label>
+                                            <select value={editRole} onChange={e => setEditRole(e.target.value)}
+                                                className="mt-1 w-full px-3 py-2 border border-base-300 bg-base-100 text-base-content rounded-md focus:ring-1 focus:ring-primary outline-none">
+                                                <option value="user">Kullanıcı</option>
+                                                <option value="driver">Şoför</option>
+                                                <option value="admin">Admin</option>
+                                                <option value="amir">Amir</option>
+                                                <option value="tech">Teknik</option>
+                                                <option value="supervisor">Genel Sekreterlik</option>
+                                                <option value="techamir">Teknik Amir</option>
+                                                <option value="akademik">Akademik</option>
+                                                <option value="mali_isler">Mali İşler</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="flex items-center pt-2">
+                                            <input
+                                                type="checkbox"
+                                                id="editIsActive"
+                                                checked={editIsActive}
+                                                onChange={(e) => setEditIsActive(e.target.checked)}
+                                                className="checkbox checkbox-primary mr-2"
+                                            />
+                                            <label htmlFor="editIsActive" className="text-sm font-medium text-base-content/70 cursor-pointer select-none">
+                                                Hesap Aktif
+                                            </label>
+                                        </div>
+
+                                    </div>
+
+                                    <div className="mt-6 flex justify-end space-x-3">
+                                        <button
+                                            type="button"
+                                            className="inline-flex justify-center rounded-md border border-transparent bg-base-200 px-4 py-2 text-sm font-medium text-base-content hover:bg-base-300 focus:outline-none"
+                                            onClick={() => setIsEditModalOpen(false)}
+                                        >
+                                            İptal
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="inline-flex justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-primary-content hover:brightness-90 focus:outline-none"
+                                            onClick={handleUpdateUser}
+                                        >
+                                            Güncelle
+                                        </button>
+                                    </div>
+                                </Dialog.Panel>
+                            </Transition.Child>
+                        </div>
+                    </div>
                 </Dialog>
             </Transition>
         </div>

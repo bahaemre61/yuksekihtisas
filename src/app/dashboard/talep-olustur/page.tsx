@@ -1,40 +1,43 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import AracTalepForm from '@/src/components/forms/AracTalepForm';
 import TeknikTalepForm from '@/src/components/forms/TeknikTalepForm';
+import MalzemeTalepForm, { IUser } from '@/src/components/forms/MalzemeTalepForm';
 
 export default function TalepOlusturPage() {
-  const [activeTab, setActiveTab] = useState<'selection' | 'vehicle' | 'technical'>('selection');
-  const [userRole, setUserRole] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'selection' | 'vehicle' | 'technical' | 'material'>('selection');
+  const [currentUser, setCurrentUser] = useState<IUser | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const router = useRouter();
 
   useEffect(() => {
-    const fetchUserRole = async () => {
+    const fetchUser = async () => {
       try {
         const res = await axios.get('/api/me');
-        setUserRole(res.data.role);
+        setCurrentUser(res.data);
       } catch (err) {
         console.error('Kullanıcı bilgisi alınamadı', err);
       } finally {
         setLoading(false);
       }
     };
-    fetchUserRole();
+    fetchUser();
   }, []);
 
-  const isAkademi = userRole === 'akademik';
+  const isAkademi = currentUser?.role === 'akademik';
 
   const SelectionScreen = () => (
     <div className="flex flex-col items-center justify-center min-h-[60vh]">
       <div className="text-center mb-10">
-        <h1 className="text-3xl font-bold text-base-content uppercase tracking-tighter">Portal İşlemleri</h1>
-        <p className="text-base-content/70 mt-2 font-medium">Lütfen yapmak istediğiniz işlemi seçiniz.</p>
+        <h1 className="text-3xl font-black text-base-content uppercase tracking-tight">Yeni Talep Oluşturma Portalı</h1>
+        <p className="text-base-content/70 mt-2 font-medium">Lütfen oluşturmak istediğiniz talep türünü seçiniz.</p>
       </div>
 
-      {/* Grid 2 sütuna indirildi (md:grid-cols-2) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl px-4">
+      {/* Grid 3 sütuna çıkarıldı (md:grid-cols-3) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl px-4">
         
         {/* 1. KUTU: ARAÇ TALEBİ */}
         <div 
@@ -43,10 +46,10 @@ export default function TalepOlusturPage() {
               setActiveTab('vehicle');
             }
           }}
-          className={`group bg-base-100 p-8 rounded-2xl shadow-md border-2 border-transparent transition-all duration-300 flex flex-col items-center text-center ${
+          className={`group bg-base-100 p-8 rounded-3xl shadow-md border-2 border-transparent transition-all duration-300 flex flex-col items-center text-center ${
             isAkademi 
               ? 'opacity-50 cursor-not-allowed border-base-200' 
-              : 'hover:border-info hover:shadow-xl cursor-pointer'
+              : 'hover:border-info hover:shadow-xl cursor-pointer hover:-translate-y-1'
           }`}
         >
           <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 transition-colors ${
@@ -58,7 +61,7 @@ export default function TalepOlusturPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold text-base-content mb-2 flex items-center justify-center gap-2">
+          <h2 className="text-xl font-black text-base-content mb-2 flex items-center justify-center gap-2">
             Araç Talebi
             {isAkademi && (
               <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-error/15 text-error border border-error/25">
@@ -77,15 +80,34 @@ export default function TalepOlusturPage() {
         {/* 2. KUTU: TEKNİK TALEP */}
         <div 
           onClick={() => setActiveTab('technical')}
-          className="group bg-base-100 p-8 rounded-2xl shadow-md border-2 border-transparent hover:border-warning hover:shadow-xl cursor-pointer transition-all duration-300 flex flex-col items-center text-center"
+          className="group bg-base-100 p-8 rounded-3xl shadow-md border-2 border-transparent hover:border-warning hover:shadow-xl cursor-pointer transition-all duration-300 flex flex-col items-center text-center hover:-translate-y-1"
         >
           <div className="w-20 h-20 bg-warning/20 rounded-full flex items-center justify-center mb-6 group-hover:bg-warning transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-warning group-hover:text-warning-content">
               <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 1 1-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 0 0 4.486-6.336l-3.276 3.277a3.004 3.004 0 0 1-2.25-2.25l3.276-3.276a4.5 4.5 0 0 0-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437 1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008Z" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold text-base-content mb-2">Teknik Destek</h2>
+          <h2 className="text-xl font-black text-base-content mb-2">Teknik Destek</h2>
           <p className="text-base-content/70 text-sm">Bilgisayar veya Teknik Yapı arızaları için servis kaydı açın.</p>
+        </div>
+
+        {/* 3. KUTU: MALZEME TALEBİ */}
+        <div 
+          onClick={() => setActiveTab('material')}
+          className="group bg-base-100 p-8 rounded-3xl shadow-md border-2 border-transparent hover:border-primary hover:shadow-xl cursor-pointer transition-all duration-300 flex flex-col items-center text-center hover:-translate-y-1"
+        >
+          <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mb-6 group-hover:bg-primary transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-primary group-hover:text-primary-content">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-black text-base-content mb-2 flex items-center justify-center gap-2">
+            Malzeme Talebi
+            <span className="text-[10px] uppercase font-extrabold tracking-wider px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/25">
+              YENİ
+            </span>
+          </h2>
+          <p className="text-base-content/70 text-sm">Almak istediğiniz malzemenin cinsi, miktarı ve birimi için talep oluşturun.</p>
         </div>
 
       </div>
@@ -115,6 +137,17 @@ export default function TalepOlusturPage() {
           {activeTab === 'selection' && <SelectionScreen />}
           {activeTab === 'vehicle' && <AracTalepForm />}
           {activeTab === 'technical' && <TeknikTalepForm />}
+          {activeTab === 'material' && (
+            <div className="max-w-4xl mx-auto">
+              <MalzemeTalepForm
+                isModal={false}
+                currentUser={currentUser}
+                onSuccess={() => {
+                  router.push('/dashboard/malzemetalepleri');
+                }}
+              />
+            </div>
+          )}
         </>
       )}
     </div>

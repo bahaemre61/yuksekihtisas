@@ -22,16 +22,16 @@ import {
   WrenchScrewdriverIcon,
   ServerStackIcon,
   Cog6ToothIcon,
-  UsersIcon
+  UsersIcon,
+  ShoppingBagIcon
 } from '@heroicons/react/24/outline';
 import unilogo from "@/src/components/yuksekihtisasuni-logo.png"
 import DriverNotificationStatus from "./notification/DriverNotificationStatus";
 import TechNotificationStatus from "./notification/TechNotificationStatus";
 
-const UserRole = { USER: 'user', DRIVER: 'driver', ADMIN: 'admin', AMIR: 'amir', TECHNICAL: 'tech', SUPERVISOR: 'supervisor', TECHAMIR: 'techamir', AKADEMI: 'akademik' } as const;
+const UserRole = { USER: 'user', DRIVER: 'driver', ADMIN: 'admin', AMIR: 'amir', TECHNICAL: 'tech', SUPERVISOR: 'supervisor', TECHAMIR: 'techamir', AKADEMI: 'akademik', KANIT_SORUMLU: 'kanit_sorumlu', RAPORTOR: 'raportor', MALI_ISLER: 'mali_isler' } as const;
 type UserRole = typeof UserRole[keyof typeof UserRole];
 interface IUser { name: string; role: UserRole; driverStatus?: 'available' | 'busy'; }
-
 
 const handeLagout = async (router: any) => {
   try {
@@ -85,21 +85,24 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: {
   }
 
   const navLinks = [
-    { name: 'Ana Sayfa', href: '/dashboard', icon: HomeIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.TECHNICAL, UserRole.AMIR, UserRole.SUPERVISOR, UserRole.TECHAMIR, UserRole.AKADEMI] },
-    { name: 'Yeni Talep Oluştur', href: '/dashboard/talep-olustur', icon: PlusCircleIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.AMIR, UserRole.TECHNICAL, UserRole.SUPERVISOR, UserRole.TECHAMIR, UserRole.AKADEMI] },
-    { name: 'Araç Taleplerim', href: '/dashboard/taleplerim', icon: TruckIcon, roles: [UserRole.USER, UserRole.ADMIN, UserRole.TECHNICAL, UserRole.SUPERVISOR, UserRole.TECHAMIR, UserRole.AMIR] },
-    { name: 'Teknik Taleplerim', href: '/dashboard/tekniktaleplerim', icon: WrenchScrewdriverIcon, roles: [UserRole.USER, UserRole.ADMIN, UserRole.DRIVER, UserRole.AMIR, UserRole.SUPERVISOR, UserRole.AKADEMI] },
+    { name: 'Ana Sayfa', href: '/dashboard', icon: HomeIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.TECHNICAL, UserRole.AMIR, UserRole.SUPERVISOR, UserRole.TECHAMIR, UserRole.AKADEMI, UserRole.KANIT_SORUMLU, UserRole.RAPORTOR, UserRole.MALI_ISLER] },
+    { name: 'Yeni Talep Oluştur', href: '/dashboard/talep-olustur', icon: PlusCircleIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.AMIR, UserRole.TECHNICAL, UserRole.SUPERVISOR, UserRole.TECHAMIR, UserRole.AKADEMI, UserRole.MALI_ISLER] },
+    { name: 'Malzeme Taleplerim', href: '/dashboard/malzemetalepleri', icon: ShoppingBagIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.AMIR, UserRole.TECHNICAL, UserRole.SUPERVISOR, UserRole.TECHAMIR, UserRole.AKADEMI, UserRole.MALI_ISLER] },
+    { name: 'Araç Taleplerim', href: '/dashboard/taleplerim', icon: TruckIcon, roles: [UserRole.USER, UserRole.ADMIN, UserRole.TECHNICAL, UserRole.SUPERVISOR, UserRole.TECHAMIR, UserRole.AMIR, UserRole.MALI_ISLER] },
+    { name: 'Teknik Taleplerim', href: '/dashboard/tekniktaleplerim', icon: WrenchScrewdriverIcon, roles: [UserRole.USER, UserRole.ADMIN, UserRole.DRIVER, UserRole.AMIR, UserRole.SUPERVISOR, UserRole.AKADEMI, UserRole.MALI_ISLER] },
     { name: 'Araç Talep Yığını', href: '/dashboard/yigin', icon: ArchiveBoxIcon, roles: [UserRole.ADMIN, UserRole.SUPERVISOR] },
     { name: 'Teknik Talepler', href: '/dashboard/teknikyigin', icon: CpuChipIcon, roles: [UserRole.ADMIN, UserRole.TECHAMIR] },
-    { name: 'Yapılacak Listem', href: '/dashboard/todo', icon: CheckBadgeIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.AMIR, UserRole.TECHNICAL, UserRole.SUPERVISOR, UserRole.TECHAMIR, UserRole.AKADEMI] },
-    { name: 'Duyurular', href: '/dashboard/duyurular', icon: DocumentTextIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.AMIR, UserRole.TECHNICAL, UserRole.TECHAMIR, UserRole.AKADEMI] },
-    { name: 'Yemek Menüsü', href: '/dashboard/yemek', icon: CalendarIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.AMIR, UserRole.TECHNICAL, UserRole.SUPERVISOR, UserRole.TECHAMIR, UserRole.AKADEMI] },
+    { name: 'Kanıt Oturumları', href: '/dashboard/kanitlar', icon: ClipboardDocumentCheckIcon, roles: [UserRole.ADMIN] },
+
+    // { name: 'Yapılacak Listem', href: '/dashboard/todo', icon: CheckBadgeIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.AMIR, UserRole.TECHNICAL, UserRole.SUPERVISOR, UserRole.TECHAMIR, UserRole.AKADEMI, UserRole.MALI_ISLER] },
+    { name: 'Duyurular', href: '/dashboard/duyurular', icon: DocumentTextIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.AMIR, UserRole.TECHNICAL, UserRole.TECHAMIR, UserRole.AKADEMI, UserRole.MALI_ISLER] },
+    { name: 'Yemek Menüsü', href: '/dashboard/yemek', icon: CalendarIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.AMIR, UserRole.TECHNICAL, UserRole.SUPERVISOR, UserRole.TECHAMIR, UserRole.AKADEMI, UserRole.MALI_ISLER] },
     { name: 'Görevlerim', href: '/dashboard/gorevlerim', icon: ClipboardDocumentCheckIcon, roles: [UserRole.DRIVER,] },
     { name: 'Teknik Görevlerim', href: '/dashboard/teknikgorevlerim', icon: ServerStackIcon, roles: [UserRole.TECHNICAL,] },
     { name: 'Yönetim Paneli', href: '/dashboard/admin', icon: CommandLineIcon, roles: [UserRole.ADMIN, UserRole.SUPERVISOR] },
     { name: 'Kullanıcılar', href: '/dashboard/kullanicilar', icon: UserIcon, roles: [UserRole.ADMIN] },
-    { name: 'Toplantılar', href: '/dashboard/toplantilar', icon: UsersIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.AMIR, UserRole.TECHNICAL, UserRole.SUPERVISOR, UserRole.TECHAMIR, UserRole.AKADEMI] },
-    { name: 'Ayarlar', href: '/dashboard/ayarlar', icon: Cog6ToothIcon, roles: [UserRole.USER, UserRole.AMIR, UserRole.TECHNICAL, UserRole.DRIVER, UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.TECHAMIR, UserRole.AKADEMI] },
+    { name: 'Toplantılar', href: '/dashboard/toplantilar', icon: UsersIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.AMIR, UserRole.TECHNICAL, UserRole.SUPERVISOR, UserRole.TECHAMIR, UserRole.AKADEMI, UserRole.MALI_ISLER] },
+    { name: 'Ayarlar', href: '/dashboard/ayarlar', icon: Cog6ToothIcon, roles: [UserRole.USER, UserRole.AMIR, UserRole.TECHNICAL, UserRole.DRIVER, UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.TECHAMIR, UserRole.AKADEMI, UserRole.MALI_ISLER] },
   ];
 
   const sidebarContent = (
