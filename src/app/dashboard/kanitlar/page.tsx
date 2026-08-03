@@ -117,7 +117,7 @@ export default function KanitlarPage() {
   return (
     <div className="p-4 md:p-8 space-y-8 max-w-7xl mx-auto">
       {/* Sleek Header Banner */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-primary/10 via-base-100 to-secondary/15 p-6 md:p-8 rounded-3xl shadow-sm border border-base-200/80 backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all duration-300 hover:shadow-md">
+      <div className="relative overflow-hidden bg-linear-to-r from-primary/10 via-base-100 to-secondary/15 p-6 md:p-8 rounded-3xl shadow-sm border border-base-200/80 backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all duration-300 hover:shadow-md">
         <div className="space-y-2 relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-extrabold uppercase tracking-wider border border-primary/20 shadow-xs">
             <SparklesIcon className="h-4 w-4 text-primary animate-spin-slow" />
@@ -134,7 +134,7 @@ export default function KanitlarPage() {
         {isSorumluOrAdmin && (
           <button
             onClick={() => setIsNewSessionModalOpen(true)}
-            className="group relative inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-primary to-blue-600 hover:from-primary/95 hover:to-blue-700 text-white font-bold text-sm shadow-xl shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 shrink-0 cursor-pointer overflow-hidden"
+            className="group relative inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl bg-linear-to-r from-primary to-blue-600 hover:from-primary/95 hover:to-blue-700 text-white font-bold text-sm shadow-xl shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 shrink-0 cursor-pointer overflow-hidden"
           >
             <FolderPlusIcon className="h-5 w-5 group-hover:scale-110 transition-transform" />
             <span>Yeni Veri Oturumu Aç</span>

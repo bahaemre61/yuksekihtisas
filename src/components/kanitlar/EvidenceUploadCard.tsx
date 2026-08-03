@@ -27,6 +27,17 @@ export default function EvidenceUploadCard({
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [dynamicTemplates, setDynamicTemplates] = useState<{ id: string; title: string; filename: string; downloadUrl: string }[]>([]);
+
+  React.useEffect(() => {
+    axios.get('/api/evidence/templates')
+      .then((res) => {
+        if (res.data?.templates) {
+          setDynamicTemplates(res.data.templates);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleUploadEvidence = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,7 +85,7 @@ export default function EvidenceUploadCard({
   return (
     <div className="bg-base-100 p-6 rounded-3xl border border-base-200 shadow-sm space-y-6">
       {/* Step 1: Digital Request Form Button */}
-      <div className="p-5 rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-secondary/10 border border-primary/20 space-y-3">
+      <div className="p-5 rounded-2xl bg-linear-to-r from-primary/10 via-primary/5 to-secondary/10 border border-primary/20 space-y-3">
         <div className="flex items-center justify-between">
           <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-primary text-primary-content font-black text-[11px] uppercase tracking-wider shadow-xs">
             Adım 1
@@ -123,41 +134,57 @@ export default function EvidenceUploadCard({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-          <a
-            href="/api/evidence/templates/is-akis"
-            download
-            className="flex items-center justify-between p-2.5 rounded-xl bg-base-100 border border-base-200 hover:border-primary/40 hover:bg-primary/5 transition-all text-xs font-bold text-base-content group"
-          >
-            <span className="truncate">📋 İş Akış Şablonu</span>
-            <ArrowDownTrayIcon className="h-4 w-4 text-primary shrink-0 group-hover:scale-110 transition-transform" />
-          </a>
+          {dynamicTemplates.length > 0 ? (
+            dynamicTemplates.map((tmpl) => (
+              <a
+                key={tmpl.id}
+                href={tmpl.downloadUrl}
+                download={tmpl.filename}
+                className="flex items-center justify-between p-2.5 rounded-xl bg-base-100 border border-base-200 hover:border-primary/40 hover:bg-primary/5 transition-all text-xs font-bold text-base-content group"
+              >
+                <span className="truncate">📄 {tmpl.title}</span>
+                <ArrowDownTrayIcon className="h-4 w-4 text-primary shrink-0 group-hover:scale-110 transition-transform" />
+              </a>
+            ))
+          ) : (
+            <>
+              <a
+                href="/api/evidence/templates/0"
+                download
+                className="flex items-center justify-between p-2.5 rounded-xl bg-base-100 border border-base-200 hover:border-primary/40 hover:bg-primary/5 transition-all text-xs font-bold text-base-content group"
+              >
+                <span className="truncate">📋 Word Şablonu 1</span>
+                <ArrowDownTrayIcon className="h-4 w-4 text-primary shrink-0 group-hover:scale-110 transition-transform" />
+              </a>
 
-          <a
-            href="/api/evidence/templates/gorev-yetki"
-            download
-            className="flex items-center justify-between p-2.5 rounded-xl bg-base-100 border border-base-200 hover:border-primary/40 hover:bg-primary/5 transition-all text-xs font-bold text-base-content group"
-          >
-            <span className="truncate">💼 Görev & Yetki Şablonu</span>
-            <ArrowDownTrayIcon className="h-4 w-4 text-primary shrink-0 group-hover:scale-110 transition-transform" />
-          </a>
+              <a
+                href="/api/evidence/templates/1"
+                download
+                className="flex items-center justify-between p-2.5 rounded-xl bg-base-100 border border-base-200 hover:border-primary/40 hover:bg-primary/5 transition-all text-xs font-bold text-base-content group"
+              >
+                <span className="truncate">💼 Word Şablonu 2</span>
+                <ArrowDownTrayIcon className="h-4 w-4 text-primary shrink-0 group-hover:scale-110 transition-transform" />
+              </a>
 
-          <a
-            href="/api/evidence/templates/rapor"
-            download
-            className="flex items-center justify-between p-2.5 rounded-xl bg-base-100 border border-base-200 hover:border-primary/40 hover:bg-primary/5 transition-all text-xs font-bold text-base-content group"
-          >
-            <span className="truncate">📊 Kalite / Rapor Şablonu</span>
-            <ArrowDownTrayIcon className="h-4 w-4 text-primary shrink-0 group-hover:scale-110 transition-transform" />
-          </a>
+              <a
+                href="/api/evidence/templates/2"
+                download
+                className="flex items-center justify-between p-2.5 rounded-xl bg-base-100 border border-base-200 hover:border-primary/40 hover:bg-primary/5 transition-all text-xs font-bold text-base-content group"
+              >
+                <span className="truncate">📊 Word Şablonu 3</span>
+                <ArrowDownTrayIcon className="h-4 w-4 text-primary shrink-0 group-hover:scale-110 transition-transform" />
+              </a>
 
-          <a
-            href="/api/evidence/templates/prosedur"
-            download
-            className="flex items-center justify-between p-2.5 rounded-xl bg-base-100 border border-base-200 hover:border-primary/40 hover:bg-primary/5 transition-all text-xs font-bold text-base-content group"
-          >
-            <span className="truncate">📄 Standart Prosedür Şablonu</span>
-            <ArrowDownTrayIcon className="h-4 w-4 text-primary shrink-0 group-hover:scale-110 transition-transform" />
-          </a>
+              <a
+                href="/api/evidence/templates/3"
+                download
+                className="flex items-center justify-between p-2.5 rounded-xl bg-base-100 border border-base-200 hover:border-primary/40 hover:bg-primary/5 transition-all text-xs font-bold text-base-content group"
+              >
+                <span className="truncate">📄 Word Şablonu 4</span>
+                <ArrowDownTrayIcon className="h-4 w-4 text-primary shrink-0 group-hover:scale-110 transition-transform" />
+              </a>
+            </>
+          )}
         </div>
       </div>
 

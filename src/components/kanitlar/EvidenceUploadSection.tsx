@@ -41,8 +41,19 @@ export default function EvidenceUploadSection({
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [dynamicTemplates, setDynamicTemplates] = useState<{ id: string; title: string; filename: string; downloadUrl: string }[]>([]);
 
   const isStep1Done = !!completedForm;
+
+  React.useEffect(() => {
+    axios.get('/api/evidence/templates')
+      .then((res) => {
+        if (res.data?.templates) {
+          setDynamicTemplates(res.data.templates);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Form tamamlandığında başlığı otomatik doldur
   React.useEffect(() => {
@@ -297,45 +308,61 @@ export default function EvidenceUploadSection({
               Hazır Word Şablonu İndir
             </h4>
             <p className="text-xs text-base-content/70">
-              Bilgisayarınıza indirip doldurabileceğiniz örnek Word şablonları:
+              Bilgisayarınıza indirip doldurabileceğiniz Word şablonları:
             </p>
 
             <div className="space-y-2 pt-1">
-              <a
-                href="/api/evidence/templates/is-akis"
-                download
-                className="flex items-center justify-between p-2.5 rounded-xl bg-base-200/60 border border-base-200 hover:border-secondary hover:bg-secondary/10 transition-all text-xs font-bold text-base-content group"
-              >
-                <span className="truncate">📋 İş Akış Şablonu</span>
-                <ArrowDownTrayIcon className="h-4 w-4 text-secondary shrink-0 group-hover:scale-110 transition-transform" />
-              </a>
+              {dynamicTemplates.length > 0 ? (
+                dynamicTemplates.map((tmpl) => (
+                  <a
+                    key={tmpl.id}
+                    href={tmpl.downloadUrl}
+                    download={tmpl.filename}
+                    className="flex items-center justify-between p-2.5 rounded-xl bg-base-200/60 border border-base-200 hover:border-secondary hover:bg-secondary/10 transition-all text-xs font-bold text-base-content group"
+                  >
+                    <span className="truncate">📄 {tmpl.title}</span>
+                    <ArrowDownTrayIcon className="h-4 w-4 text-secondary shrink-0 group-hover:scale-110 transition-transform" />
+                  </a>
+                ))
+              ) : (
+                <>
+                  <a
+                    href="/api/evidence/templates/0"
+                    download
+                    className="flex items-center justify-between p-2.5 rounded-xl bg-base-200/60 border border-base-200 hover:border-secondary hover:bg-secondary/10 transition-all text-xs font-bold text-base-content group"
+                  >
+                    <span className="truncate">📋 Word Şablonu 1</span>
+                    <ArrowDownTrayIcon className="h-4 w-4 text-secondary shrink-0 group-hover:scale-110 transition-transform" />
+                  </a>
 
-              <a
-                href="/api/evidence/templates/gorev-yetki"
-                download
-                className="flex items-center justify-between p-2.5 rounded-xl bg-base-200/60 border border-base-200 hover:border-secondary hover:bg-secondary/10 transition-all text-xs font-bold text-base-content group"
-              >
-                <span className="truncate">💼 Görev & Yetki Şablonu</span>
-                <ArrowDownTrayIcon className="h-4 w-4 text-secondary shrink-0 group-hover:scale-110 transition-transform" />
-              </a>
+                  <a
+                    href="/api/evidence/templates/1"
+                    download
+                    className="flex items-center justify-between p-2.5 rounded-xl bg-base-200/60 border border-base-200 hover:border-secondary hover:bg-secondary/10 transition-all text-xs font-bold text-base-content group"
+                  >
+                    <span className="truncate">💼 Word Şablonu 2</span>
+                    <ArrowDownTrayIcon className="h-4 w-4 text-secondary shrink-0 group-hover:scale-110 transition-transform" />
+                  </a>
 
-              <a
-                href="/api/evidence/templates/rapor"
-                download
-                className="flex items-center justify-between p-2.5 rounded-xl bg-base-200/60 border border-base-200 hover:border-secondary hover:bg-secondary/10 transition-all text-xs font-bold text-base-content group"
-              >
-                <span className="truncate">📊 Kalite / Rapor Şablonu</span>
-                <ArrowDownTrayIcon className="h-4 w-4 text-secondary shrink-0 group-hover:scale-110 transition-transform" />
-              </a>
+                  <a
+                    href="/api/evidence/templates/2"
+                    download
+                    className="flex items-center justify-between p-2.5 rounded-xl bg-base-200/60 border border-base-200 hover:border-secondary hover:bg-secondary/10 transition-all text-xs font-bold text-base-content group"
+                  >
+                    <span className="truncate">📊 Word Şablonu 3</span>
+                    <ArrowDownTrayIcon className="h-4 w-4 text-secondary shrink-0 group-hover:scale-110 transition-transform" />
+                  </a>
 
-              <a
-                href="/api/evidence/templates/prosedur"
-                download
-                className="flex items-center justify-between p-2.5 rounded-xl bg-base-200/60 border border-base-200 hover:border-secondary hover:bg-secondary/10 transition-all text-xs font-bold text-base-content group"
-              >
-                <span className="truncate">📄 Prosedür Şablonu</span>
-                <ArrowDownTrayIcon className="h-4 w-4 text-secondary shrink-0 group-hover:scale-110 transition-transform" />
-              </a>
+                  <a
+                    href="/api/evidence/templates/3"
+                    download
+                    className="flex items-center justify-between p-2.5 rounded-xl bg-base-200/60 border border-base-200 hover:border-secondary hover:bg-secondary/10 transition-all text-xs font-bold text-base-content group"
+                  >
+                    <span className="truncate">📄 Word Şablonu 4</span>
+                    <ArrowDownTrayIcon className="h-4 w-4 text-secondary shrink-0 group-hover:scale-110 transition-transform" />
+                  </a>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -41,7 +41,7 @@ export default function SessionCard({
       <div
         className={`absolute top-0 left-0 right-0 h-1 transition-all ${
           isSelected
-            ? 'bg-gradient-to-r from-primary via-blue-500 to-secondary'
+            ? 'bg-linear-to-r from-primary via-blue-500 to-secondary'
             : 'bg-transparent group-hover:bg-primary/30'
         }`}
       />
