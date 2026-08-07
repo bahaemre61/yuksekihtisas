@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import connectToDatabase from '@/src/lib/db';
 import { getAuthenticatedUser } from '@/src/lib/auth';
 import MaterialRequest from '@/src/lib/models/MaterialRequest';
@@ -24,12 +25,25 @@ export async function PUT(
 
     await connectToDatabase();
 
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ msg: 'Geçersiz talep ID.' }, { status: 400 });
+    }
+
     const requestItem = await MaterialRequest.findById(id);
     if (!requestItem) {
       return NextResponse.json({ msg: 'Malzeme talebi bulunamadı.' }, { status: 404 });
     }
 
-    const dbUser = await User.findById(user.id);
+    const isValidUserId = user.id && mongoose.Types.ObjectId.isValid(user.id);
+    let dbUser = null;
+    if (isValidUserId) {
+      try {
+        dbUser = await User.findById(user.id);
+      } catch (e) {
+        console.warn('User findById lookup skipped or failed:', e);
+      }
+    }
+
     const role = dbUser?.role || user.role;
 
     const isAdmin = role === UserRole.ADMIN;
@@ -48,18 +62,18 @@ export async function PUT(
         requestItem.status = 'rejected';
       }
 
-      requestItem.supervisorReviewer = user.id as any;
+      if (isValidUserId) {
+        requestItem.supervisorReviewer = user.id as any;
+      }
       requestItem.supervisorNote = note ? note.trim() : '';
       requestItem.supervisorReviewedAt = new Date();
     }
     // 2. AŞAMA: MALİ İŞLER ONAYI
     else if (requestItem.status === 'pending_mali_isler') {
-      // 2. Aşamayı SADECE Mali İşler yetkisine sahip kullanıcılar onaylayabilir
       if (!isMaliIsler && !isAdmin) {
         return NextResponse.json({ msg: 'Bu talebin 2. Aşamasını sadece Mali İşler yetkisine sahip kullanıcılar onaylayabilir.' }, { status: 403 });
       }
 
-      // Genel Sekreter / 1. Aşama onaylayan kişi ile aynı kişinin 2. aşamayı onaylamasını engelle
       if (requestItem.supervisorReviewer && String(requestItem.supervisorReviewer) === String(user.id) && !isAdmin) {
         return NextResponse.json({ msg: '1. Aşamayı (Genel Sekreterlik) onaylayan kullanıcı 2. aşamayı da onaylayamaz. 2. Aşamayı Mali İşler yetkilisi onaylamalıdır.' }, { status: 403 });
       }
@@ -70,7 +84,9 @@ export async function PUT(
         requestItem.status = 'rejected';
       }
 
-      requestItem.maliIslerReviewer = user.id as any;
+      if (isValidUserId) {
+        requestItem.maliIslerReviewer = user.id as any;
+      }
       requestItem.maliIslerNote = note ? note.trim() : '';
       requestItem.maliIslerReviewedAt = new Date();
     } else {

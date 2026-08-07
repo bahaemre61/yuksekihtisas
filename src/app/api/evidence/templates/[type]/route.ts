@@ -8,97 +8,77 @@ export async function GET(
 ) {
   try {
     const { type: rawType } = await params;
-    const type = decodeURIComponent(rawType);
+    const type = decodeURIComponent(rawType).trim();
 
     const publicDir = path.join(process.cwd(), 'public');
     const templatesDir = path.join(publicDir, 'templates');
 
-    // 1. Tam dosya adı veya doğrudan yol eşleşmesini kontrol et (public/templates/ veya public/)
-    const possibleExactPaths = [
-      path.join(templatesDir, type),
-      path.join(templatesDir, `${type}.docx`),
-      path.join(templatesDir, `${type}.doc`),
-      path.join(publicDir, type),
-      path.join(publicDir, `${type}.docx`),
-      path.join(publicDir, `${type}.doc`),
-    ];
+    // 4 Şablon Eşleşme Haritası
+    const templateConfig: Record<string, { index: number; defaultName: string; title: string; subtitle: string }> = {
+      '0': { index: 0, defaultName: '1_İş_Akış_Şablonu.docx', title: 'İŞ AKIŞ ŞABLONU VE SÜREÇ TANIMI', subtitle: 'Birim İş Akış Adımları ve Onay Süreçleri Formu' },
+      'is-akis': { index: 0, defaultName: '1_İş_Akış_Şablonu.docx', title: 'İŞ AKIŞ ŞABLONU VE SÜREÇ TANIMI', subtitle: 'Birim İş Akış Adımları ve Onay Süreçleri Formu' },
 
-    for (const p of possibleExactPaths) {
-      if (fs.existsSync(p) && fs.statSync(p).isFile()) {
-        const fileBuffer = fs.readFileSync(p);
-        const ext = path.extname(p).toLowerCase();
-        const contentType = ext === '.doc'
-          ? 'application/msword'
-          : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      '1': { index: 1, defaultName: '2_Organizasyon_Şeması_Şablonu_1.docx', title: 'ORGANİZASYON ŞEMASI ŞABLONU 1', subtitle: 'Birim Personel Görev Tanımı ve Yetki Şeması' },
+      'gorev-yetki': { index: 1, defaultName: '2_Organizasyon_Şeması_Şablonu_1.docx', title: 'ORGANİZASYON ŞEMASI ŞABLONU 1', subtitle: 'Birim Personel Görev Tanımı ve Yetki Şeması' },
 
-        const filename = path.basename(p);
+      '2': { index: 2, defaultName: '3_Organizasyon_Şeması_Şablonu_2.docx', title: 'ORGANİZASYON ŞEMASI ŞABLONU 2', subtitle: 'Hiyerarşik Görev ve Birim Şeması Formu' },
+      'rapor': { index: 2, defaultName: '3_Organizasyon_Şeması_Şablonu_2.docx', title: 'ORGANİZASYON ŞEMASI ŞABLONU 2', subtitle: 'Hiyerarşik Görev ve Birim Şeması Formu' },
 
-        return new NextResponse(fileBuffer, {
-          headers: {
-            'Content-Type': contentType,
-            'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
-            'Cache-Control': 'no-cache',
-          },
-        });
-      }
-    }
+      '3': { index: 3, defaultName: '4_Boş_Doküman_Şablonu.docx', title: 'KURUMSAL BOŞ DOKÜMAN ŞABLONU', subtitle: 'Standart Kurumsal Uygulama ve Metin Dokümanı' },
+      'prosedur': { index: 3, defaultName: '4_Boş_Doküman_Şablonu.docx', title: 'KURUMSAL BOŞ DOKÜMAN ŞABLONU', subtitle: 'Standart Kurumsal Uygulama ve Metin Dokümanı' }
+    };
 
-    // 2. Takma adlar (alias) ve indeks sırasına göre eşleşme kontrolü
-    let defaultFilename = 'Ornek_Dokuman_Sablonu.docx';
-    let docTitle = 'GENEL DOKÜMAN ŞABLONU';
-    let docSubtitle = 'Yüksek İhtisas Üniversitesi - Doküman Yönetim Sistemi';
+    const selectedInfo = templateConfig[type] || {
+      index: 0,
+      defaultName: '1_Doküman_Şablonu.docx',
+      title: 'DOKÜMAN ŞABLONU',
+      subtitle: 'Yüksek İhtisas Üniversitesi Doküman Formu'
+    };
 
-    let targetIndex = -1;
-    if (type === 'is-akis' || type === '0') {
-      targetIndex = 0;
-      defaultFilename = 'Is_Akis_Sablonu.docx';
-      docTitle = 'İŞ AKIŞ ŞABLONU VE SÜREÇ TANIMI';
-      docSubtitle = 'Birim İş Akış Adımları ve Onay Süreçleri Formu';
-    } else if (type === 'gorev-yetki' || type === '1') {
-      targetIndex = 1;
-      defaultFilename = 'Gorev_Yetki_ve_Sorumluluklar_Sablonu.docx';
-      docTitle = 'GÖREV, YETKİ VE SORUMLULUKLAR ŞABLONU';
-      docSubtitle = 'Birim Personel Görev Tanımı ve Yetki Matrisi';
-    } else if (type === 'rapor' || type === '2') {
-      targetIndex = 2;
-      defaultFilename = 'Faaliyet_ve_Kalite_Rapor_Sablonu.docx';
-      docTitle = 'FAALİYET VE KALİTE RAPOR ŞABLONU';
-      docSubtitle = 'Dönem Sonu Kalite ve Değerlendirme Raporu';
-    } else if (type === 'prosedur' || type === '3') {
-      targetIndex = 3;
-      defaultFilename = 'Standart_Prosedur_Sablonu.docx';
-      docTitle = 'STANDART UYGULAMA PROSEDÜRÜ ŞABLONU';
-      docSubtitle = 'Kurumsal Prosedür ve Talimat Dokümanı';
-    }
+    let targetFilePath = '';
+    let finalTurkishFileName = selectedInfo.defaultName;
 
-    // public/templates içindeki N. sıradaki dosyayı sunma
     if (fs.existsSync(templatesDir)) {
       const filesInDir = fs.readdirSync(templatesDir).filter(f => {
         const ext = path.extname(f).toLowerCase();
         return ext === '.docx' || ext === '.doc';
       });
 
-      if (targetIndex >= 0 && targetIndex < filesInDir.length) {
-        const filePath = path.join(templatesDir, filesInDir[targetIndex]);
-        const fileBuffer = fs.readFileSync(filePath);
-        const ext = path.extname(filePath).toLowerCase();
-        const contentType = ext === '.doc'
-          ? 'application/msword'
-          : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-
-        const filename = path.basename(filePath);
-
-        return new NextResponse(fileBuffer, {
-          headers: {
-            'Content-Type': contentType,
-            'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
-            'Cache-Control': 'no-cache',
-          },
-        });
+      if (filesInDir.length > 0) {
+        // İndeks veya dosya adına göre eşleştir
+        const targetIndex = Math.min(selectedInfo.index, filesInDir.length - 1);
+        const diskFileName = filesInDir[targetIndex];
+        targetFilePath = path.join(templatesDir, diskFileName);
+        finalTurkishFileName = diskFileName;
       }
     }
 
-    // 3. Klasörde henüz dosya yoksa yedek varsayılan şablon oluştur
+    if (targetFilePath && fs.existsSync(targetFilePath) && fs.statSync(targetFilePath).isFile()) {
+      const fileBuffer = fs.readFileSync(targetFilePath);
+      const ext = path.extname(targetFilePath).toLowerCase();
+      const contentType = ext === '.doc'
+        ? 'application/msword'
+        : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+      const asciiFallback = finalTurkishFileName
+        .replace(/ğ/g, 'g').replace(/Ğ/g, 'G')
+        .replace(/ü/g, 'u').replace(/Ü/g, 'U')
+        .replace(/ş/g, 's').replace(/Ş/g, 'S')
+        .replace(/ı/g, 'i').replace(/İ/g, 'I')
+        .replace(/ö/g, 'o').replace(/Ö/g, 'O')
+        .replace(/ç/g, 'c').replace(/Ç/g, 'C')
+        .replaceAll(/[^a-zA-Z0-9._-]/g, '_');
+
+      return new NextResponse(fileBuffer, {
+        headers: {
+          'Content-Type': contentType,
+          'Content-Disposition': `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(finalTurkishFileName)}`,
+          'Cache-Control': 'no-cache',
+        },
+      });
+    }
+
+    // Yedek XML Şablonu Oluşturma
     const xmlContent = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <?mso-application progid="Word.Document"?>
 <w:wordDocument xmlns:w="http://schemas.microsoft.com/office/word/2003/wordml">
@@ -106,13 +86,13 @@ export async function GET(
     <w:p>
       <w:r>
         <w:rPr><w:b/><w:sz w:val="36"/><w:color w:val="003366"/></w:rPr>
-        <w:t>${docTitle}</w:t>
+        <w:t>${selectedInfo.title}</w:t>
       </w:r>
     </w:p>
     <w:p>
       <w:r>
         <w:rPr><w:i/><w:sz w:val="24"/><w:color w:val="666666"/></w:rPr>
-        <w:t>${docSubtitle}</w:t>
+        <w:t>${selectedInfo.subtitle}</w:t>
       </w:r>
     </w:p>
     <w:p><w:r><w:t>=======================================================</w:t></w:r></w:p>
@@ -138,11 +118,19 @@ export async function GET(
 </w:wordDocument>`;
 
     const buffer = Buffer.from(xmlContent, 'utf-8');
+    const asciiFallback = selectedInfo.defaultName
+      .replace(/ğ/g, 'g').replace(/Ğ/g, 'G')
+      .replace(/ü/g, 'u').replace(/Ü/g, 'U')
+      .replace(/ş/g, 's').replace(/Ş/g, 'S')
+      .replace(/ı/g, 'i').replace(/İ/g, 'I')
+      .replace(/ö/g, 'o').replace(/Ö/g, 'O')
+      .replace(/ç/g, 'c').replace(/Ç/g, 'C')
+      .replaceAll(/[^a-zA-Z0-9._-]/g, '_');
 
     return new NextResponse(buffer, {
       headers: {
         'Content-Type': 'application/msword',
-        'Content-Disposition': `attachment; filename="${defaultFilename}"`,
+        'Content-Disposition': `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(selectedInfo.defaultName)}`,
         'Cache-Control': 'no-cache',
       },
     });

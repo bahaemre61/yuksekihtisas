@@ -41,9 +41,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/.public/.templates
-/.public/evidence_requests
-/.public/evidence_signatures
 /.public/uploads
 /uploads
 /.uploads

@@ -28,7 +28,7 @@ export default function MalzemeTalepleriPage() {
   };
 
   return (
-    <div className="p-4 md:p-8 space-y-8 max-w-7xl mx-auto">
+    <div className="w-full max-w-[1750px] mx-auto p-2 md:p-6 space-y-6">
       {loading ? (
         <div className="flex flex-col items-center justify-center p-16 space-y-4">
           <span className="loading loading-spinner loading-lg text-primary"></span>

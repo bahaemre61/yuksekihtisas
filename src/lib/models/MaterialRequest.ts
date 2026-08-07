@@ -7,12 +7,17 @@ export type MaterialRequestStatus =
   | 'rejected';
 
 export interface IMaterialRequest extends Document {
+  batchId?: string;
   requester: mongoose.Types.ObjectId;
+  location?: string; // Yerleşke
   materialType: string;
   materialName: string;
   quantity: number;
   unit: string;
-  description?: string;
+  description?: string; // Gerekçe Metni
+  specification?: string; // Teknik Şartname Metni
+  specificationFileUrl?: string; // Yüklenen PDF / DOCX Şartname Dosya Bağlantısı
+  specificationFileName?: string; // Şartname Dosya Adı
   status: MaterialRequestStatus;
   supervisorReviewer?: mongoose.Types.ObjectId;
   supervisorNote?: string;
@@ -26,12 +31,17 @@ export interface IMaterialRequest extends Document {
 
 const MaterialRequestSchema = new Schema<IMaterialRequest>(
   {
+    batchId: { type: String, index: true },
     requester: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    location: { type: String, default: 'Balgat Yerleşkesi' },
     materialType: { type: String, required: true },
     materialName: { type: String, required: true },
     quantity: { type: Number, required: true, min: 1 },
     unit: { type: String, required: true },
     description: { type: String, default: '' },
+    specification: { type: String, default: '' },
+    specificationFileUrl: { type: String, default: '' },
+    specificationFileName: { type: String, default: '' },
     status: {
       type: String,
       enum: ['pending_supervisor', 'pending_mali_isler', 'approved', 'rejected'],
@@ -47,8 +57,11 @@ const MaterialRequestSchema = new Schema<IMaterialRequest>(
   { timestamps: true }
 );
 
+if (models && (models as any).MaterialRequest) {
+  delete (models as any).MaterialRequest;
+}
+
 const MaterialRequest =
-  models.MaterialRequest ||
   model<IMaterialRequest>('MaterialRequest', MaterialRequestSchema);
 
 export default MaterialRequest;
