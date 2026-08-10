@@ -8,15 +8,15 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function GET(request: NextRequest) {
     const { user, error } = getAuthenticatedUser(request as any);
-        if (error) return error;
+    if (error) return error;
 
-    if(user.role !== 'admin') {
+    if (user.role !== 'admin' && user.role !== 'supervisor') {
         return NextResponse.json({ error: "Bu içeriğe erişim yetkiniz yok." }, { status: 403 });
     }
 
     try {
         await connectToDatabase();
-        
+
         const allPending = await VehicleRequest.find({ status: 'pending' })
             .populate('requestingUser', 'name')
             .lean();
@@ -91,7 +91,7 @@ VERİLER: ${JSON.stringify(dataForAI)}
                 if (!aiContent) throw new Error("AI boş cevap döndürdü");
 
                 const aiResult = JSON.parse(aiContent);
-                
+
                 // AI'dan gelen grupları zenginleştir
                 const todayGroups = (aiResult.groups || []).map((group: any) => ({
                     ...group,
@@ -99,7 +99,7 @@ VERİLER: ${JSON.stringify(dataForAI)}
                     requests: todayRequests.filter((r: any) => group.ids.includes(r._id.toString())),
                     total: group.ids.length
                 }));
-                
+
                 finalGroups = [...todayGroups];
             } catch (aiErr: any) {
                 console.error("AI Gruplama Hatası:", aiErr.message);
