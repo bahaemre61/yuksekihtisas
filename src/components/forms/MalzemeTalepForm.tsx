@@ -559,7 +559,7 @@ export default function MalzemeTalepForm({
             leaveFrom="opacity-100 scale-100"
             leaveTo="opacity-0 scale-95"
           >
-            <Dialog.Panel className="w-full max-w-3xl bg-base-100 shadow-2xl rounded-3xl p-6 md:p-8 my-8 border border-base-200">
+            <Dialog.Panel className="w-full max-w-3xl max-h-[92vh] overflow-y-auto bg-base-100 shadow-2xl rounded-3xl p-4 sm:p-6 md:p-8 my-4 sm:my-8 border border-base-200">
               {formBody}
             </Dialog.Panel>
           </Transition.Child>

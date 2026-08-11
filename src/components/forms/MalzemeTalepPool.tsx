@@ -466,12 +466,12 @@ export default function MalzemeTalepPool({
   const isMaliIsler = role === 'mali_isler';
 
   return (
-    <div className="w-full bg-base-100 p-6 md:p-8 rounded-3xl border border-base-200 shadow-sm space-y-6">
+    <div className="w-full bg-base-100 p-3.5 sm:p-6 md:p-8 rounded-3xl border border-base-200 shadow-sm space-y-6">
       {/* Header Banner & Controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-base-200 pb-4">
         <div>
-          <h3 className="font-black text-xl text-base-content flex items-center gap-2.5">
-            <ShoppingBagIcon className="h-7 w-7 text-primary" />
+          <h3 className="font-black text-lg sm:text-xl text-base-content flex items-center gap-2.5">
+            <ShoppingBagIcon className="h-6 w-6 sm:h-7 sm:w-7 text-primary" />
             Malzeme Talepleri Havuzu & İş Takibi
           </h3>
           <p className="text-xs text-base-content/70 mt-1">
@@ -479,10 +479,10 @@ export default function MalzemeTalepPool({
           </p>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap w-full md:w-auto justify-end">
           <button
             onClick={fetchRequests}
-            className="btn btn-ghost btn-sm btn-square rounded-xl"
+            className="btn btn-ghost btn-xs sm:btn-sm btn-square rounded-xl"
             title="Listeyi Yenile"
           >
             <ArrowPathIcon className="h-4 w-4" />
@@ -491,29 +491,29 @@ export default function MalzemeTalepPool({
           {/* İndir (CSV / Excel) Butonu */}
           <button
             onClick={handleExportCSV}
-            className="btn btn-outline btn-primary btn-sm gap-1.5 rounded-xl font-bold hover:scale-[1.02] transition-all"
+            className="btn btn-outline btn-primary btn-xs sm:btn-sm gap-1.5 rounded-xl font-bold hover:scale-[1.02] transition-all"
             title="Tüm Listeyi Excel/CSV Formatında İndir"
           >
-            <ArrowDownTrayIcon className="h-4 w-4" />
+            <ArrowDownTrayIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span>Excel / İndir</span>
           </button>
 
           {/* Tümünü Çıktı Al Butonu */}
           <button
             onClick={() => handleOpenPrintModal(undefined)}
-            className="btn btn-primary btn-sm gap-1.5 rounded-xl font-bold shadow-md shadow-primary/20 hover:scale-[1.02] transition-all text-white"
+            className="btn btn-primary btn-xs sm:btn-sm gap-1.5 rounded-xl font-bold shadow-md shadow-primary/20 hover:scale-[1.02] transition-all text-white"
             title="Tüm Talepleri Yazdır / Çıktı Al"
           >
-            <PrinterIcon className="h-4 w-4" />
+            <PrinterIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span>Tümünü Yazdır</span>
           </button>
 
           {onOpenNewFormModal && (
             <button
               onClick={onOpenNewFormModal}
-              className="btn btn-secondary btn-sm gap-1.5 rounded-xl font-bold shadow-md"
+              className="btn btn-secondary btn-xs sm:btn-sm gap-1.5 rounded-xl font-bold shadow-md"
             >
-              <ShoppingBagIcon className="h-4 w-4" />
+              <ShoppingBagIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span>Yeni Talep</span>
             </button>
           )}
@@ -521,15 +521,15 @@ export default function MalzemeTalepPool({
       </div>
 
       {/* SEARCH BAR & STATUS FILTER BAR */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-base-200/50 p-4 rounded-2xl border border-base-200">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-base-200/50 p-3 sm:p-4 rounded-2xl border border-base-200">
         {/* Search Input */}
         <div className="md:col-span-2 relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-base-content/40">
-            <MagnifyingGlassIcon className="h-5 w-5" />
+            <MagnifyingGlassIcon className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
           <input
             type="text"
-            className="input input-bordered input-sm w-full pl-10 rounded-xl font-bold text-xs md:text-sm focus:ring-2 focus:ring-primary/20"
+            className="input input-bordered input-sm w-full pl-9 sm:pl-10 rounded-xl font-bold text-xs md:text-sm focus:ring-2 focus:ring-primary/20"
             placeholder="Kişi adı, e-posta, talep kodu, malzeme veya şartname adına göre arayın..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -569,9 +569,9 @@ export default function MalzemeTalepPool({
           <span className="text-xs font-semibold text-base-content/60">Talepler ve işler yükleniyor...</span>
         </div>
       ) : filteredBatches.length === 0 ? (
-        <div className="p-16 text-center border-2 border-dashed border-base-300 rounded-2xl space-y-3">
-          <ShoppingBagIcon className="h-12 w-12 text-base-content/30 mx-auto" />
-          <p className="text-base font-bold text-base-content/70">
+        <div className="p-12 sm:p-16 text-center border-2 border-dashed border-base-300 rounded-2xl space-y-3">
+          <ShoppingBagIcon className="h-10 w-10 sm:h-12 sm:w-12 text-base-content/30 mx-auto" />
+          <p className="text-sm sm:text-base font-bold text-base-content/70">
             {searchTerm || statusFilter !== 'all'
               ? 'Aramanıza veya filtrenize uygun malzeme talebi / iş bulunamadı.'
               : 'Henüz oluşturulmuş bir malzeme talebi bulunmuyor.'}
@@ -583,13 +583,13 @@ export default function MalzemeTalepPool({
           <table className="table w-full text-xs">
             <thead>
               <tr className="border-b border-base-200 bg-base-200/70 text-base-content/80 font-bold">
-                <th className="font-extrabold p-3 min-w-[150px]">Talep / İş Kodu</th>
-                <th className="font-extrabold p-3 min-w-[150px]">Talep Eden Kişi</th>
-                <th className="font-extrabold p-3 min-w-[220px]">Talep Edilen Malzemeler (Kalemler)</th>
-                <th className="font-extrabold p-3 min-w-[120px]">Tarih</th>
-                <th className="font-extrabold p-3 min-w-[150px]">Genel Onay Durumu</th>
-                <th className="font-extrabold p-3 min-w-[190px]">İnceleyen & Tıklama Logları</th>
-                <th className="font-extrabold p-3 text-right sticky right-0 bg-base-200 z-10 min-w-[230px] shadow-xs">
+                <th className="font-extrabold p-3 min-w-[130px]">Talep / İş Kodu</th>
+                <th className="font-extrabold p-3 min-w-[140px]">Talep Eden Kişi</th>
+                <th className="font-extrabold p-3 min-w-[200px]">Talep Edilen Malzemeler</th>
+                <th className="font-extrabold p-3 min-w-[110px]">Tarih</th>
+                <th className="font-extrabold p-3 min-w-[140px]">Genel Onay Durumu</th>
+                <th className="font-extrabold p-3 min-w-[170px]">İnceleyen & Loglar</th>
+                <th className="font-extrabold p-3 text-right sticky right-0 bg-base-200 z-10 min-w-[130px] shadow-xs">
                   Aksiyonlar
                 </th>
               </tr>
