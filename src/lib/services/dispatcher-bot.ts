@@ -3,7 +3,7 @@ import VehicleRequest, { RequestStatus } from '@/src/lib/models/VehicleRequest';
 import User from '@/src/lib/models/User';
 import { sendMail } from '@/src/lib/mail';
 import webpush from 'web-push';
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export interface IBotLogResult {
   timestamp: string;
@@ -48,14 +48,18 @@ function setupWebPush() {
 }
 
 /**
- * OpenAI GPT Lojistik Dispeçer Gruplama Servisi
+ * Google Gemini API Lojistik Dispeçer Gruplama Servisi
  */
 async function getAIGrouping(todayPending: any[]): Promise<{ title: string; reason: string; ids: string[] }[] | null> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return null;
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.OPENAI_API_KEY;
+  if (!apiKey || apiKey.includes('BURAYA_GEMINI')) return null;
 
   try {
-    const openai = new OpenAI({ apiKey });
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-3.5-flash',
+      generationConfig: { responseMimeType: 'application/json' }
+    });
 
     const dataForAI = todayPending.map((req: any) => ({
       id: req._id.toString(),
@@ -100,20 +104,14 @@ VERİLER: ${JSON.stringify(dataForAI)}
 }
 `;
 
-    const completion = await openai.chat.completions.create({
-      messages: [{ role: 'user', content: prompt }],
-      model: 'gpt-4o-mini',
-      temperature: 0,
-      response_format: { type: 'json_object' }
-    });
-
-    const aiContent = completion.choices[0]?.message?.content;
+    const result = await model.generateContent(prompt);
+    const aiContent = result.response.text();
     if (!aiContent) return null;
 
     const parsed = JSON.parse(aiContent);
     return parsed.groups || null;
   } catch (err: any) {
-    console.warn('OpenAI Dispatcher Bot grouping failed, using fallback:', err.message);
+    console.warn('Gemini Dispatcher Bot grouping failed, using fallback:', err.message);
     return null;
   }
 }
@@ -289,13 +287,14 @@ export async function runScheduledDispatcherBot(
     // Bugünkü talepleri saat dilimine göre filtrele
     const todayPending = pendingRequests.filter((req: any) => {
       if (!req.startTime) return false;
-      const reqDateStr = new Date(req.startTime).toISOString().split('T')[0];
+      const reqDateStr = new Date(req.startTime).toLocaleDateString('en-CA', { timeZone: 'Europe/Istanbul' });
       if (reqDateStr !== todayStr) return false;
 
-      const hours = new Date(req.startTime).getHours();
+      const hourStr = new Date(req.startTime).toLocaleTimeString('tr-TR', { timeZone: 'Europe/Istanbul', hour: '2-digit', hour12: false });
+      const hours = parseInt(hourStr, 10);
 
       if (timeSlot === 'morning') {
-        // Sabah Vardiyası: 08:30 - 12:00 veya Tüm Günlük (08:30-17:30)
+        // Sabah Vardiyası: 08:30 - 12:00
         return hours < 13;
       } else if (timeSlot === 'afternoon') {
         // Öğle Vardiyası: 13:00 - 17:30
@@ -352,7 +351,7 @@ export async function runScheduledDispatcherBot(
     const aiGroups = await getAIGrouping(todayPending);
 
     if (aiGroups && aiGroups.length > 0) {
-      logDetails.push('🧠 Yapay Zeka Lojistik Dispeçeri (OpenAI GPT-4o-mini): Coğrafi yakınlık ve zaman pencerelerine göre akıllı gruplama üretti.');
+      logDetails.push('🧠 Yapay Zeka Lojistik Dispeçeri (Google Gemini API): Coğrafi yakınlık ve zaman pencerelerine göre akıllı gruplama üretti.');
 
       finalGroups = aiGroups.map(g => {
         const groupReqs = todayPending.filter((r: any) => g.ids.includes((r._id as any).toString()));

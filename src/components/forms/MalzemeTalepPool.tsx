@@ -100,6 +100,47 @@ export default function MalzemeTalepPool({
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [printBatch, setPrintBatch] = useState<IBatchGroup | null>(null);
 
+  // Edit Item Modal State (Personelin kendi talebini düzenlemesi için)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<IMaterialRequestData | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    materialName: '',
+    materialType: 'Kırtasiye',
+    quantity: 1,
+    unit: 'Adet',
+    description: '',
+    specification: ''
+  });
+  const [isEditingSubmitting, setIsEditingSubmitting] = useState(false);
+
+  const handleOpenEditModal = (item: IMaterialRequestData) => {
+    setEditingItem(item);
+    setEditFormData({
+      materialName: item.materialName || '',
+      materialType: item.materialType || 'Kırtasiye',
+      quantity: item.quantity || 1,
+      unit: item.unit || 'Adet',
+      description: item.description || '',
+      specification: item.specification || ''
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingItem) return;
+    setIsEditingSubmitting(true);
+    try {
+      await axios.put(`/api/material-requests/${editingItem._id}`, editFormData);
+      alert('Malzeme talebi başarıyla güncellendi!');
+      setIsEditModalOpen(false);
+      fetchRequests();
+    } catch (err: any) {
+      alert(err.response?.data?.msg || 'Düzenleme güncelleme hatası');
+    } finally {
+      setIsEditingSubmitting(false);
+    }
+  };
+
   // Log History Modal State
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [activeLogBatch, setActiveLogBatch] = useState<IBatchGroup | null>(null);
@@ -330,6 +371,31 @@ export default function MalzemeTalepPool({
       alert(err.response?.data?.msg || 'Onay kaydetme hatası');
     } finally {
       setReviewSubmitting(false);
+    }
+  };
+
+  // Toplu Tümünü Onayla Handler
+  const handleBulkApproveBatch = async (batch: IBatchGroup, action: 'approve' | 'reject') => {
+    const actionLabel = action === 'approve' ? 'onaylamak' : 'reddetmek';
+    const confirmMsg = `Bu işe ait (${batch.items.length} adet) malzemelerin TÜMÜNÜ ${actionLabel} istediğinize emin misiniz?`;
+
+    if (!confirm(confirmMsg)) return;
+
+    setLoading(true);
+    try {
+      const res = await axios.post('/api/material-requests/bulk-status', {
+        batchId: batch.batchId,
+        action,
+        note: action === 'approve' ? 'Toplu İşlem Onayı verildi' : 'Toplu Reddedildi'
+      });
+
+      alert(`🎉 ${res.data.msg}`);
+      setIsBatchDetailModalOpen(false);
+      fetchRequests();
+    } catch (err: any) {
+      alert(err.response?.data?.msg || 'Toplu işlem hatası oluştu');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -690,36 +756,15 @@ export default function MalzemeTalepPool({
                       </div>
                     </td>
 
-                    {/* Actions (Sticky Right Edge) */}
-                    <td className="text-right sticky right-0 z-10 transition-colors backdrop-blur-md bg-base-100/90 shadow-l">
-                      <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                        {/* İşlem Yap / İncele Butonu */}
+                    {/* Actions (Sticky Right Edge - Clean & Minimal) */}
+                    <td className="text-right sticky right-0 z-10 transition-colors backdrop-blur-md bg-base-100/90">
+                      <div className="flex items-center justify-end">
                         <button
                           onClick={() => handleOpenInspectModal(batch)}
                           className="btn btn-primary btn-xs font-bold rounded-lg hover:scale-105 transition-all shadow-xs gap-1 whitespace-nowrap"
                           title="Talebi ve Malzemeleri İncele / İşlem Yap"
                         >
                           <EyeIcon className="h-3.5 w-3.5" /> İncele / İşlem Yap
-                        </button>
-
-                        {/* İncelemeyi Bırak Butonu */}
-                        {isCurrentlyInspected && (
-                          <button
-                            onClick={() => handleReleaseInspect(batch)}
-                            className="btn btn-outline btn-warning btn-xs font-bold rounded-lg hover:scale-105 transition-all gap-1 whitespace-nowrap"
-                            title="İncelemeyi Bırak"
-                          >
-                            <ArrowUturnLeftIcon className="h-3.5 w-3.5" /> Bırak
-                          </button>
-                        )}
-
-                        {/* İndir Butonu */}
-                        <button
-                          onClick={() => handleOpenPrintModal(batch)}
-                          className="btn btn-outline btn-secondary btn-xs font-bold rounded-lg hover:scale-105 transition-all gap-1 whitespace-nowrap"
-                          title="Bu İşe Ait Tüm Malzemeleri İndir / Çıktı Al"
-                        >
-                          <ArrowDownTrayIcon className="h-3.5 w-3.5" /> İndir
                         </button>
                       </div>
                     </td>
@@ -756,244 +801,314 @@ export default function MalzemeTalepPool({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-4xl bg-base-100 rounded-3xl p-6 md:p-8 shadow-2xl border border-base-200 space-y-6">
+              <Dialog.Panel className="w-full max-w-5xl max-h-[92vh] bg-base-100 rounded-3xl shadow-2xl border border-base-200 flex flex-col overflow-hidden">
                 {selectedBatch && (() => {
                   const modalSpecItem = selectedBatch.items.find(i => Boolean(i.specificationFileUrl && i.specificationFileUrl.trim()));
                   const modalSpecUrl = modalSpecItem?.specificationFileUrl?.trim();
 
                   return (
-                    <>
-                      {/* Modal Header */}
-                      <div className="flex items-center justify-between border-b border-base-200 pb-4">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="badge badge-primary font-black text-xs">
-                              {selectedBatch.batchId}
-                            </span>
+                    <div className="flex flex-col h-full overflow-hidden">
+                      {/* Fixed Top Header */}
+                      <div className="p-6 pb-4 border-b border-base-200 shrink-0 space-y-4 bg-base-100 z-10">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="badge badge-primary font-black text-xs">
+                                {selectedBatch.batchId}
+                              </span>
+                              <span className="text-xs text-base-content/50 font-bold">
+                                {new Date(selectedBatch.createdAt).toLocaleDateString('tr-TR')}
+                              </span>
+                            </div>
+                            <h3 className="text-xl font-black text-base-content mt-1 flex items-center gap-2">
+                              <ShoppingBagIcon className="h-6 w-6 text-primary" />
+                              Talep Detayları & Satın Alma İnceleme Ekranı
+                            </h3>
                           </div>
-                          <h3 className="text-xl font-black text-base-content mt-1 flex items-center gap-2">
-                            <ShoppingBagIcon className="h-6 w-6 text-primary" />
-                            Talep Detayları & Satın Alma İnceleme Ekranı
-                          </h3>
+                          <button
+                            onClick={() => setIsBatchDetailModalOpen(false)}
+                            className="btn btn-ghost btn-xs btn-square rounded-xl"
+                          >
+                            <XMarkIcon className="h-5 w-5" />
+                          </button>
                         </div>
-                        <button
-                          onClick={() => setIsBatchDetailModalOpen(false)}
-                          className="btn btn-ghost btn-xs btn-square rounded-xl"
-                        >
-                          <XMarkIcon className="h-5 w-5" />
-                        </button>
+
+                        {/* Requester Summary & Quick Controls Toolbar */}
+                        <div className="p-3.5 bg-base-200/60 rounded-2xl border border-base-200 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                          <div className="space-y-0.5">
+                            <div className="text-[11px] font-bold text-base-content/60">Talep Eden Personel</div>
+                            <div className="font-extrabold text-xs md:text-sm text-base-content flex items-center gap-1.5">
+                              <UserCircleIcon className="h-4 w-4 text-primary shrink-0" />
+                              <span>{selectedBatch.requester?.name || 'Kullanıcı'} ({selectedBatch.requester?.email})</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-wrap shrink-0">
+                            {modalSpecUrl && (
+                              <a
+                                href={modalSpecUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-accent btn-xs gap-1.5 rounded-xl font-bold text-white shadow-xs"
+                                title="Yüklenen Teknik Şartname Belgesini İndir / Aç (PDF/Word)"
+                              >
+                                <PaperClipIcon className="h-3.5 w-3.5" />
+                                <span>Şartname Dosyası (PDF/Word)</span>
+                              </a>
+                            )}
+
+                            <button
+                              onClick={() => {
+                                handleReleaseInspect(selectedBatch);
+                                setIsBatchDetailModalOpen(false);
+                              }}
+                              className="btn btn-outline btn-warning btn-xs gap-1.5 rounded-xl font-bold"
+                              title="İncelemeyi Bırak"
+                            >
+                              <ArrowUturnLeftIcon className="h-3.5 w-3.5" />
+                              İncelemeyi Bırak
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setIsBatchDetailModalOpen(false);
+                                handleOpenPrintModal(selectedBatch);
+                              }}
+                              className="btn btn-primary btn-xs gap-1.5 rounded-xl font-bold text-white shadow-xs"
+                            >
+                              <PrinterIcon className="h-3.5 w-3.5" />
+                              İndir / Çıktı Al
+                            </button>
+                            <button
+                              onClick={() => handleOpenLogModal(selectedBatch)}
+                              className="btn btn-outline btn-secondary btn-xs gap-1.5 rounded-xl font-bold"
+                            >
+                              <ClipboardDocumentCheckIcon className="h-3.5 w-3.5" />
+                              Loglar
+                            </button>
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Requester Summary & Controls */}
-                      <div className="p-4 bg-base-200/60 rounded-2xl border border-base-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="space-y-1">
-                          <div className="text-xs font-bold text-base-content/60">Talep Eden Kişi</div>
-                          <div className="font-extrabold text-sm text-base-content flex items-center gap-1.5">
-                            <UserCircleIcon className="h-4 w-4 text-primary" />
-                            {selectedBatch.requester?.name || 'Kullanıcı'} ({selectedBatch.requester?.email})
+                      {/* Scrollable Modal Content Body */}
+                      <div className="p-6 overflow-y-auto flex-1 space-y-6">
+                        {/* Toplu Onay / Reddet Banner */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 bg-base-200/70 p-3.5 rounded-2xl border border-base-200 shadow-xs">
+                          <div className="text-xs font-black text-base-content flex items-center gap-2">
+                            <ShoppingBagIcon className="h-5 w-5 text-primary" />
+                            <span>Talep Edilen Malzemeler ({selectedBatch.items.length} Kalem Ürün)</span>
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {selectedBatch.items.some(i => (isAdmin || isSupervisor) && i.status === 'pending_supervisor') && (
+                              <button
+                                onClick={() => handleBulkApproveBatch(selectedBatch, 'approve')}
+                                className="btn btn-success btn-xs md:btn-sm gap-1.5 rounded-xl font-extrabold text-white shadow-md hover:scale-105 transition-all"
+                                title="Bu işe ait TÜM malzemeleri 1. Aşamada tek tıkla toplu onaylar"
+                              >
+                                <CheckCircleIcon className="h-4 w-4" />
+                                <span>1. Aşama Tümünü Onayla ({selectedBatch.items.filter(i => i.status === 'pending_supervisor').length} Ürün)</span>
+                              </button>
+                            )}
+
+                            {selectedBatch.items.some(i => (isAdmin || isMaliIsler) && i.status === 'pending_mali_isler') && (
+                              <button
+                                onClick={() => handleBulkApproveBatch(selectedBatch, 'approve')}
+                                className="btn btn-success btn-xs md:btn-sm gap-1.5 rounded-xl font-extrabold text-white shadow-md hover:scale-105 transition-all"
+                                title="Bu işe ait TÜM malzemeleri 2. Aşamada (Mali İşler) tek tıkla toplu onaylar"
+                              >
+                                <CheckCircleIcon className="h-4 w-4" />
+                                <span>2. Aşama Tümünü Onayla ({selectedBatch.items.filter(i => i.status === 'pending_mali_isler').length} Ürün)</span>
+                              </button>
+                            )}
+
+                            {selectedBatch.items.some(i => i.status === 'pending_supervisor' || i.status === 'pending_mali_isler') && (
+                              <button
+                                onClick={() => handleBulkApproveBatch(selectedBatch, 'reject')}
+                                className="btn btn-error btn-outline btn-xs md:btn-sm gap-1.5 rounded-xl font-bold hover:scale-105 transition-all"
+                                title="Bu işe ait bekleyen tüm malzemeleri reddeder"
+                              >
+                                <XCircleIcon className="h-4 w-4" />
+                                <span>Tümünü Reddet</span>
+                              </button>
+                            )}
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {modalSpecUrl && (
+                        {/* Scroll-safe Material Items Table */}
+                        <div className="space-y-3">
+                          <div className="overflow-x-auto max-h-[48vh] overflow-y-auto border border-base-200 rounded-2xl relative shadow-xs">
+                            <table className="table table-zebra w-full text-xs">
+                              <thead className="sticky top-0 z-20 bg-base-200/90 backdrop-blur-md shadow-xs">
+                                <tr>
+                                  <th className="font-bold w-10">#</th>
+                                  <th className="font-bold">Malzemenin Cinsi</th>
+                                  <th className="font-bold">Malzeme Adı</th>
+                                  <th className="font-bold">Miktar / Birim</th>
+                                  <th className="font-bold">Durum</th>
+                                  <th className="font-bold text-right">Onay İşlemi</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {selectedBatch.items.map((item, idx) => {
+                                  const canSupervisorApprove =
+                                    (isAdmin || isSupervisor) && item.status === 'pending_supervisor';
+                                  const isSameUserAsSupervisor = item.supervisorReviewer?._id === currentUser?._id;
+                                  const canMaliIslerApprove =
+                                    (isAdmin || isMaliIsler) &&
+                                    item.status === 'pending_mali_isler' &&
+                                    (!isSameUserAsSupervisor || isAdmin);
+
+                                  const isOwner = currentUser?._id && item.requester?._id && String(item.requester._id) === String(currentUser._id);
+                                  const canEdit = (isOwner || isAdmin) && item.status !== 'approved';
+
+                                  return (
+                                    <tr key={item._id}>
+                                      <td className="font-bold text-center">{idx + 1}</td>
+                                      <td>
+                                        <span className="badge badge-ghost badge-sm font-bold">{item.materialType}</span>
+                                      </td>
+                                      <td className="font-bold text-sm text-base-content">{item.materialName}</td>
+                                      <td className="font-black text-primary text-xs">
+                                        {item.quantity} {item.unit}
+                                      </td>
+                                      <td>
+                                        {item.status === 'pending_supervisor' && (
+                                          <span className="text-amber-600 font-bold text-[11px]">1. Aşama Bekliyor</span>
+                                        )}
+                                        {item.status === 'pending_mali_isler' && (
+                                          <span className="text-sky-600 font-bold text-[11px]">Satın Alma Bekliyor</span>
+                                        )}
+                                        {item.status === 'approved' && (
+                                          <span className="text-emerald-600 font-bold text-[11px]">🟢 Onaylandı</span>
+                                        )}
+                                        {item.status === 'rejected' && (
+                                          <span className="text-rose-600 font-bold text-[11px]">🔴 Reddedildi</span>
+                                        )}
+                                      </td>
+                                      <td className="text-right">
+                                        <div className="flex items-center justify-end gap-1 flex-wrap">
+                                          {canEdit && (
+                                            <button
+                                              onClick={() => handleOpenEditModal(item)}
+                                              className="btn btn-warning btn-xs font-bold rounded-lg gap-1"
+                                              title="Talebini Düzenle"
+                                            >
+                                              ✏️ Düzenle
+                                            </button>
+                                          )}
+
+                                          {canSupervisorApprove && (
+                                            <>
+                                              <button
+                                                onClick={() => handleOpenReviewModal(item, 'approve')}
+                                                className="btn btn-primary btn-xs font-bold rounded-lg"
+                                              >
+                                                1. Aşama Onayla
+                                              </button>
+                                              <button
+                                                onClick={() => handleOpenReviewModal(item, 'reject')}
+                                                className="btn btn-error btn-xs text-white font-bold rounded-lg"
+                                              >
+                                                Reddet
+                                              </button>
+                                            </>
+                                          )}
+                                          {canMaliIslerApprove && (
+                                            <>
+                                              <button
+                                                onClick={() => handleOpenReviewModal(item, 'approve')}
+                                                className="btn btn-success btn-xs text-white font-bold rounded-lg"
+                                              >
+                                                2. Aşama Onayla
+                                              </button>
+                                              <button
+                                                onClick={() => handleOpenReviewModal(item, 'reject')}
+                                                className="btn btn-error btn-xs text-white font-bold rounded-lg"
+                                              >
+                                                Reddet
+                                              </button>
+                                            </>
+                                          )}
+                                          {!canEdit && !canSupervisorApprove && !canMaliIslerApprove && (
+                                            <span className="text-[11px] text-base-content/40 italic">Tamamlandı / Yetki Dışı</span>
+                                          )}
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+
+                        {/* Shared Gerekçe & Şartname Display in Inspect Modal */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                          {selectedBatch.items.find(i => i.description)?.description && (
+                            <div className="p-4 bg-base-200/50 rounded-2xl border border-base-200 space-y-1">
+                              <div className="font-extrabold text-xs text-base-content flex items-center gap-1.5">
+                                <DocumentTextIcon className="h-4 w-4 text-primary" />
+                                Talep Gerekçesi / Açıklama:
+                              </div>
+                              <p className="text-xs text-base-content/80 leading-relaxed">
+                                {selectedBatch.items.find(i => i.description)?.description}
+                              </p>
+                            </div>
+                          )}
+
+                          {selectedBatch.items.find(i => i.specification)?.specification && (
+                            <div className="p-4 bg-base-200/50 rounded-2xl border border-base-200 space-y-1">
+                              <div className="font-extrabold text-xs text-base-content flex items-center gap-1.5">
+                                <ClipboardDocumentListIcon className="h-4 w-4 text-secondary" />
+                                Teknik Şartname / Özel Detaylar:
+                              </div>
+                              <p className="text-xs text-base-content/80 leading-relaxed">
+                                {selectedBatch.items.find(i => i.specification)?.specification}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Yüklenen Şartname DOSYASI İndir / Görüntüle Butonu */}
+                        {modalSpecUrl && (
+                          <div className="p-4 bg-accent/10 border border-accent/20 rounded-2xl flex items-center justify-between gap-4">
+                            <div className="space-y-0.5">
+                              <div className="font-extrabold text-xs text-accent flex items-center gap-1.5">
+                                <PaperClipIcon className="h-4 w-4 text-accent" />
+                                Yüklenen Teknik Şartname Dosyası:
+                              </div>
+                              <div className="text-xs font-bold text-base-content">
+                                {selectedBatch.items.find(i => i.specificationFileName)?.specificationFileName || 'Ekli Şartname Belgesi'}
+                              </div>
+                            </div>
+
                             <a
                               href={modalSpecUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="btn btn-accent btn-sm gap-1.5 rounded-xl font-bold text-white shadow-md"
-                              title="Yüklenen Teknik Şartname Belgesini İndir / Aç (PDF/Word)"
+                              className="btn btn-accent btn-sm gap-1.5 font-bold rounded-xl text-white shadow-md shrink-0"
                             >
-                              <PaperClipIcon className="h-4 w-4" />
-                              <span>Şartname Dosyası (PDF/Word)</span>
+                              <ArrowDownTrayIcon className="h-4 w-4" />
+                              Şartname Dosyasını İndir / Aç (PDF/Word)
                             </a>
-                          )}
-
-                          <button
-                            onClick={() => {
-                              handleReleaseInspect(selectedBatch);
-                              setIsBatchDetailModalOpen(false);
-                            }}
-                            className="btn btn-outline btn-warning btn-sm gap-1.5 rounded-xl font-bold"
-                            title="İncelemeyi Bırak"
-                          >
-                            <ArrowUturnLeftIcon className="h-4 w-4" />
-                            İncelemeyi Bırak
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              setIsBatchDetailModalOpen(false);
-                              handleOpenPrintModal(selectedBatch);
-                            }}
-                            className="btn btn-primary btn-sm gap-1.5 rounded-xl font-bold text-white shadow-md"
-                          >
-                            <PrinterIcon className="h-4 w-4" />
-                            Bu İşi İndir / Çıktı Al
-                          </button>
-                          <button
-                            onClick={() => handleOpenLogModal(selectedBatch)}
-                            className="btn btn-outline btn-secondary btn-sm gap-1.5 rounded-xl font-bold"
-                          >
-                            <ClipboardDocumentCheckIcon className="h-4 w-4" />
-                            Loglar
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Material Items Table */}
-                      <div className="space-y-3">
-                        <div className="overflow-x-auto border border-base-200 rounded-2xl">
-                          <table className="table table-zebra w-full text-xs">
-                            <thead>
-                              <tr className="bg-base-200/50">
-                                <th className="font-bold">#</th>
-                                <th className="font-bold">Malzemenin Cinsi</th>
-                                <th className="font-bold">Malzeme Adı</th>
-                                <th className="font-bold">Miktar / Birim</th>
-                                <th className="font-bold">Durum</th>
-                                <th className="font-bold text-right">Onay İşlemi</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {selectedBatch.items.map((item, idx) => {
-                                const canSupervisorApprove =
-                                  (isAdmin || isSupervisor) && item.status === 'pending_supervisor';
-                                const isSameUserAsSupervisor = item.supervisorReviewer?._id === currentUser?._id;
-                                const canMaliIslerApprove =
-                                  (isAdmin || isMaliIsler) &&
-                                  item.status === 'pending_mali_isler' &&
-                                  (!isSameUserAsSupervisor || isAdmin);
-
-                                return (
-                                  <tr key={item._id}>
-                                    <td className="font-bold">{idx + 1}</td>
-                                    <td>
-                                      <span className="badge badge-ghost badge-sm font-bold">{item.materialType}</span>
-                                    </td>
-                                    <td className="font-bold text-sm text-base-content">{item.materialName}</td>
-                                    <td className="font-black text-primary text-xs">
-                                      {item.quantity} {item.unit}
-                                    </td>
-                                    <td>
-                                      {item.status === 'pending_supervisor' && (
-                                        <span className="text-amber-600 font-bold text-[11px]">1. Aşama Bekliyor</span>
-                                      )}
-                                      {item.status === 'pending_mali_isler' && (
-                                        <span className="text-sky-600 font-bold text-[11px]">Satın Alma Bekliyor</span>
-                                      )}
-                                      {item.status === 'approved' && (
-                                        <span className="text-emerald-600 font-bold text-[11px]">🟢 Onaylandı</span>
-                                      )}
-                                      {item.status === 'rejected' && (
-                                        <span className="text-rose-600 font-bold text-[11px]">🔴 Reddedildi</span>
-                                      )}
-                                    </td>
-                                    <td className="text-right">
-                                      {canSupervisorApprove && (
-                                        <div className="flex items-center justify-end gap-1">
-                                          <button
-                                            onClick={() => handleOpenReviewModal(item, 'approve')}
-                                            className="btn btn-primary btn-xs font-bold rounded-lg"
-                                          >
-                                            1. Aşama Onayla
-                                          </button>
-                                          <button
-                                            onClick={() => handleOpenReviewModal(item, 'reject')}
-                                            className="btn btn-error btn-xs text-white font-bold rounded-lg"
-                                          >
-                                            Reddet
-                                          </button>
-                                        </div>
-                                      )}
-                                      {canMaliIslerApprove && (
-                                        <div className="flex items-center justify-end gap-1">
-                                          <button
-                                            onClick={() => handleOpenReviewModal(item, 'approve')}
-                                            className="btn btn-success btn-xs text-white font-bold rounded-lg"
-                                          >
-                                            2. Aşama Onayla
-                                          </button>
-                                          <button
-                                            onClick={() => handleOpenReviewModal(item, 'reject')}
-                                            className="btn btn-error btn-xs text-white font-bold rounded-lg"
-                                          >
-                                            Reddet
-                                          </button>
-                                        </div>
-                                      )}
-                                      {!canSupervisorApprove && !canMaliIslerApprove && (
-                                        <span className="text-[11px] text-base-content/40 italic">Tamamlandı / Yetki Dışı</span>
-                                      )}
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-
-                      {/* Shared Gerekçe & Şartname Display in Inspect Modal */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                        {selectedBatch.items.find(i => i.description)?.description && (
-                          <div className="p-4 bg-base-200/50 rounded-2xl border border-base-200 space-y-1">
-                            <div className="font-extrabold text-xs text-base-content flex items-center gap-1.5">
-                              <DocumentTextIcon className="h-4 w-4 text-primary" />
-                              Talep Gerekçesi / Açıklama:
-                            </div>
-                            <p className="text-xs text-base-content/80 leading-relaxed">
-                              {selectedBatch.items.find(i => i.description)?.description}
-                            </p>
-                          </div>
-                        )}
-
-                        {selectedBatch.items.find(i => i.specification)?.specification && (
-                          <div className="p-4 bg-base-200/50 rounded-2xl border border-base-200 space-y-1">
-                            <div className="font-extrabold text-xs text-base-content flex items-center gap-1.5">
-                              <ClipboardDocumentListIcon className="h-4 w-4 text-secondary" />
-                              Teknik Şartname / Özel Detaylar:
-                            </div>
-                            <p className="text-xs text-base-content/80 leading-relaxed">
-                              {selectedBatch.items.find(i => i.specification)?.specification}
-                            </p>
                           </div>
                         )}
                       </div>
 
-                      {/* Yüklenen Şartname DOSYASI İndir / Görüntüle Butonu */}
-                      {modalSpecUrl && (
-                        <div className="p-4 bg-accent/10 border border-accent/20 rounded-2xl flex items-center justify-between gap-4">
-                          <div className="space-y-0.5">
-                            <div className="font-extrabold text-xs text-accent flex items-center gap-1.5">
-                              <PaperClipIcon className="h-4 w-4 text-accent" />
-                              Yüklenen Teknik Şartname Dosyası:
-                            </div>
-                            <div className="text-xs font-bold text-base-content">
-                              {selectedBatch.items.find(i => i.specificationFileName)?.specificationFileName || 'Ekli Şartname Belgesi'}
-                            </div>
-                          </div>
-
-                          <a
-                            href={modalSpecUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn btn-accent btn-sm gap-1.5 font-bold rounded-xl text-white shadow-md shrink-0"
-                          >
-                            <ArrowDownTrayIcon className="h-4 w-4" />
-                            Şartname Dosyasını İndir / Aç (PDF/Word)
-                          </a>
+                      {/* Fixed Footer Bottom */}
+                      <div className="p-4 px-6 border-t border-base-200 bg-base-200/40 shrink-0 flex items-center justify-between">
+                        <div className="text-xs font-bold text-base-content/60">
+                          Toplam {selectedBatch.items.length} Kalem Malzeme İnceleniyor
                         </div>
-                      )}
-
-                      <div className="flex justify-end pt-4 border-t border-base-200">
                         <button
                           onClick={() => setIsBatchDetailModalOpen(false)}
-                          className="btn btn-ghost btn-sm rounded-xl font-bold"
+                          className="btn btn-primary btn-sm rounded-xl font-bold text-white shadow-md"
                         >
                           Kapat
                         </button>
                       </div>
-                    </>
+                    </div>
                   );
                 })()}
               </Dialog.Panel>
@@ -1271,6 +1386,149 @@ export default function MalzemeTalepPool({
                     </div>
                   );
                 })()}
+              </Dialog.Panel>
+            </Transition.Child>
+          </div>
+        </Dialog>
+      </Transition.Root>
+
+      {/* EDIT MATERIAL ITEM MODAL */}
+      <Transition.Root show={isEditModalOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-50" onClose={() => setIsEditModalOpen(false)}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-base-content/50 backdrop-blur-sm" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 z-10 overflow-y-auto p-4 flex items-center justify-center">
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+            >
+              <Dialog.Panel className="w-full max-w-lg bg-base-100 rounded-3xl p-6 md:p-8 shadow-2xl border border-base-200 space-y-6">
+                <div className="flex items-center justify-between border-b border-base-200 pb-3">
+                  <div>
+                    <h3 className="text-lg font-black text-base-content flex items-center gap-2">
+                      ✏️ Malzeme Talebini Düzenle
+                    </h3>
+                    <p className="text-xs text-base-content/60 mt-0.5">
+                      Talep bilgilerinizi düzenleyip güncelleyebilirsiniz.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="btn btn-ghost btn-xs btn-square rounded-xl"
+                  >
+                    <XMarkIcon className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <div className="space-y-4 text-xs">
+                  <div>
+                    <label className="label font-bold text-base-content">Malzeme Adı *</label>
+                    <input
+                      type="text"
+                      className="input input-bordered w-full rounded-xl text-xs font-bold"
+                      value={editFormData.materialName}
+                      onChange={(e) => setEditFormData({ ...editFormData, materialName: e.target.value })}
+                      placeholder="Örn: A4 Fotokopi Kağıdı"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="label font-bold text-base-content">Malzemenin Cinsi</label>
+                      <select
+                        className="select select-bordered w-full rounded-xl text-xs font-bold"
+                        value={editFormData.materialType}
+                        onChange={(e) => setEditFormData({ ...editFormData, materialType: e.target.value })}
+                      >
+                        <option value="Kırtasiye">Kırtasiye</option>
+                        <option value="Temizlik">Temizlik</option>
+                        <option value="Tıbbi Malzeme">Tıbbi Malzeme</option>
+                        <option value="Teknik / Hırdavat">Teknik / Hırdavat</option>
+                        <option value="Elektronik / BT">Elektronik / BT</option>
+                        <option value="Demirbaş">Demirbaş</option>
+                        <option value="Diğer">Diğer</option>
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="label font-bold text-base-content">Miktar</label>
+                        <input
+                          type="number"
+                          min="1"
+                          className="input input-bordered w-full rounded-xl text-xs font-bold"
+                          value={editFormData.quantity}
+                          onChange={(e) => setEditFormData({ ...editFormData, quantity: Number(e.target.value) })}
+                        />
+                      </div>
+                      <div>
+                        <label className="label font-bold text-base-content">Birim</label>
+                        <input
+                          type="text"
+                          className="input input-bordered w-full rounded-xl text-xs font-bold"
+                          value={editFormData.unit}
+                          onChange={(e) => setEditFormData({ ...editFormData, unit: e.target.value })}
+                          placeholder="Adet, Kutu, Paket"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="label font-bold text-base-content">Talep Gerekçesi / Açıklama</label>
+                    <textarea
+                      className="textarea textarea-bordered w-full rounded-xl text-xs"
+                      rows={2}
+                      value={editFormData.description}
+                      onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                      placeholder="Neden talep edildiği..."
+                    ></textarea>
+                  </div>
+
+                  <div>
+                    <label className="label font-bold text-base-content">Teknik Şartname / Detaylar</label>
+                    <textarea
+                      className="textarea textarea-bordered w-full rounded-xl text-xs"
+                      rows={2}
+                      value={editFormData.specification}
+                      onChange={(e) => setEditFormData({ ...editFormData, specification: e.target.value })}
+                      placeholder="Ölçü, marka, model, standart vb..."
+                    ></textarea>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-base-200">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="btn btn-ghost btn-sm rounded-xl font-bold"
+                  >
+                    İptal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveEdit}
+                    disabled={isEditingSubmitting || !editFormData.materialName.trim()}
+                    className="btn btn-primary btn-sm rounded-xl font-bold text-white shadow-md gap-1"
+                  >
+                    {isEditingSubmitting ? <span className="loading loading-spinner loading-xs"></span> : 'Kaydet ve Güncelle'}
+                  </button>
+                </div>
               </Dialog.Panel>
             </Transition.Child>
           </div>

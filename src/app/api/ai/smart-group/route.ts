@@ -1,10 +1,8 @@
 import { NextResponse, NextRequest } from "next/server";
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import connectToDatabase from "@/src/lib/db";
 import VehicleRequest from "@/src/lib/models/VehicleRequest";
 import { getAuthenticatedUser } from "@/src/lib/auth";
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function GET(request: NextRequest) {
     const { user, error } = getAuthenticatedUser(request as any);
@@ -68,7 +66,7 @@ KRİTİK LOJİSTİK KURALLAR:
 
 VERİLER: ${JSON.stringify(dataForAI)}
 
-İSTEDİĞİM JSON ÇIKTISI:
+İSTEDİĞİM STRICT JSON ÇIKTISI:
 { 
   "groups": [ 
     { 
@@ -80,15 +78,20 @@ VERİLER: ${JSON.stringify(dataForAI)}
 }`;
 
             try {
-                const completion = await openai.chat.completions.create({
-                    messages: [{ role: 'user', content: prompt }],
-                    model: "gpt-4o-mini",
-                    temperature: 0,
-                    response_format: { type: "json_object" },
+                const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.OPENAI_API_KEY;
+                if (!apiKey || apiKey.includes('BURAYA_GEMINI')) {
+                    throw new Error("Gemini API key tanımlanmamış.");
+                }
+
+                const genAI = new GoogleGenerativeAI(apiKey);
+                const model = genAI.getGenerativeModel({
+                    model: "gemini-3.5-flash",
+                    generationConfig: { responseMimeType: "application/json" }
                 });
 
-                const aiContent = completion.choices[0].message.content;
-                if (!aiContent) throw new Error("AI boş cevap döndürdü");
+                const result = await model.generateContent(prompt);
+                const aiContent = result.response.text();
+                if (!aiContent) throw new Error("Gemini AI boş cevap döndürdü");
 
                 const aiResult = JSON.parse(aiContent);
 
@@ -102,11 +105,11 @@ VERİLER: ${JSON.stringify(dataForAI)}
 
                 finalGroups = [...todayGroups];
             } catch (aiErr: any) {
-                console.error("AI Gruplama Hatası:", aiErr.message);
+                console.error("Gemini AI Gruplama Hatası:", aiErr.message);
                 // AI hata verirse bugünküleri tekli grup yap ki sistem çökmesin
                 const fallbackGroups = todayRequests.map((r: any) => ({
                     title: r.toLocation,
-                    reason: "Otomatik Planlama (AI Yedek Mod)",
+                    reason: "Otomatik Planlama (Gemini AI Yedek Mod)",
                     isToday: true,
                     ids: [(r as any)._id.toString()],
                     requests: [r],

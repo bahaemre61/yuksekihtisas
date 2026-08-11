@@ -1,25 +1,23 @@
 import { NextResponse, NextRequest } from "next/server";
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import connectToDatabase from "@/src/lib/db";
 import VehicleRequest from "@/src/lib/models/VehicleRequest";
 import { getAuthenticatedUser } from "@/src/lib/auth";
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function GET(request: NextRequest) {
     try {
         const { user, error } = getAuthenticatedUser(request as any);
         if (error) return error;
 
-        if(user.role !== 'driver'){
+        if (user.role !== 'driver') {
             return NextResponse.json({ error: "Bu içeriğe erişim yetkiniz yok." }, { status: 403 });
         }
 
         await connectToDatabase();
-        
-        const myTasks = await VehicleRequest.find({ 
-            assignedDriver: user.id, 
-            status: 'assigned' 
+
+        const myTasks = await VehicleRequest.find({
+            assignedDriver: user.id,
+            status: 'assigned'
         }).populate('requestingUser', 'name').lean();
 
         if (myTasks.length === 0) return NextResponse.json([]);
@@ -43,7 +41,7 @@ KRİTİK KURALLAR:
 
 VERİLER: ${JSON.stringify(dataForAI)}
 
-İSTEDİĞİM ÇIKTI FORMATI:
+İSTEDİĞİM STRICT JSON ÇIKTISI FORMATI:
 {
   "groups": [
     {
@@ -54,25 +52,28 @@ VERİLER: ${JSON.stringify(dataForAI)}
   ]
 }`;
 
-        const completion = await openai.chat.completions.create({
-            messages: [
-                { role: 'system', content: 'Sen bir lojistik uzmanısın ve sadece JSON formatında yanıt verirsin.' }, 
-                { role: 'user', content: prompt }
-            ],
-            model: "gpt-4o-mini",
-            response_format: { type: "json_object" },
+        const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.OPENAI_API_KEY;
+        if (!apiKey || apiKey.includes('BURAYA_GEMINI')) {
+            throw new Error("Gemini API key tanımlanmamış.");
+        }
+
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({
+            model: "gemini-3.5-flash",
+            generationConfig: { responseMimeType: "application/json" }
         });
 
-        const rawContent = completion.choices[0].message.content;
+        const result = await model.generateContent(prompt);
+        const rawContent = result.response.text();
 
         const parsedData = JSON.parse(rawContent || '{"groups":[]}');
         const aiGroups = parsedData.groups || [];
 
         const enrichedGroups = aiGroups.map((group: any) => {
-            const matchedRequests = myTasks.filter((req: any) => 
+            const matchedRequests = myTasks.filter((req: any) =>
                 group.ids.includes(req._id.toString())
             );
-            
+
             return {
                 title: group.title || "Adsız Sefer",
                 description: group.reason || "",
@@ -97,9 +98,9 @@ VERİLER: ${JSON.stringify(dataForAI)}
 
     } catch (err: any) {
         console.error("KRİTİK HATA (api/ai/driver-group):", err.message);
-        return NextResponse.json({ 
-            error: "Sunucu hatası", 
-            details: err.message 
+        return NextResponse.json({
+            error: "Sunucu hatası",
+            details: err.message
         }, { status: 500 });
     }
 }
