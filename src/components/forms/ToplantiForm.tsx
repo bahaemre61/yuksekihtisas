@@ -403,7 +403,7 @@ export default function MeetingManagement() {
                 </button>
                 {activeTab === 'organized' && (
                   <>
-                     <button
+                    <button
                       type="button"
                       onClick={() => handleSaveMinutes(false)}
                       disabled={loading || !minutesText.trim()}

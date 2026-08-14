@@ -114,7 +114,7 @@ export default function MalzemeTalepForm({
     const selected = e.target.files?.[0];
     if (!selected) return;
 
-    const allowed = ['.pdf', '.doc', '.docx'];
+    const allowed = ['.pdf', '.doc', '.docx', '.rar'];
     const ext = selected.name.substring(selected.name.lastIndexOf('.')).toLowerCase();
 
     if (!allowed.includes(ext)) {
@@ -458,7 +458,7 @@ export default function MalzemeTalepForm({
           <div className="pt-1">
             <label className="block text-xs font-bold text-base-content/80 mb-1.5 flex items-center gap-1">
               <PaperClipIcon className="h-4 w-4 text-accent" />
-              Teknik Şartname Dosyası Yükle (.pdf, .docx, .doc - Opsiyonel)
+              Teknik Şartname Dosyası Yükle (.pdf, .docx, .doc, .rar - Opsiyonel)
             </label>
 
             {specFileUrl ? (
@@ -479,7 +479,7 @@ export default function MalzemeTalepForm({
               <div className="relative border-2 border-dashed border-base-300 hover:border-primary/50 hover:bg-base-100 rounded-xl p-4 text-center transition-all cursor-pointer">
                 <input
                   type="file"
-                  accept=".pdf,.doc,.docx"
+                  accept=".pdf,.doc,.docx,.rar"
                   onChange={handleSpecFileChange}
                   disabled={uploadingSpec}
                   className="absolute inset-0 opacity-0 cursor-pointer z-10"
@@ -493,7 +493,7 @@ export default function MalzemeTalepForm({
                 ) : (
                   <div className="flex items-center justify-center gap-2 text-xs font-bold text-base-content/70">
                     <CloudArrowUpIcon className="h-5 w-5 text-primary" />
-                    <span>PDF veya Word Şartname Dosyası Seçin (.pdf, .docx)</span>
+                    <span>PDF veya Word Şartname Dosyası Seçin (.pdf, .docx, .rar)</span>
                   </div>
                 )}
               </div>

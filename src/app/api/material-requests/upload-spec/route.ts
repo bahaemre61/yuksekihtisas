@@ -23,12 +23,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ msg: 'Şartname dosyası maksimum 25MB olabilir.' }, { status: 400 });
     }
 
-    const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx'];
+    const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx', '.rar'];
     const ext = path.extname(file.name).toLowerCase();
 
     if (!ALLOWED_EXTENSIONS.includes(ext)) {
       return NextResponse.json(
-        { msg: 'Şartname sadece PDF (.pdf) veya Word (.doc, .docx) formatında yüklenebilir.' },
+        { msg: 'Şartname sadece PDF (.pdf) veya Word (.doc, .docx) formatında yüklenebilir. Birden fazla şartname için Sıkıştırıp(rarlayıp) göndermeniz gerekmektedir.' },
         { status: 400 }
       );
     }
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     const uploadDir = path.join(process.cwd(), 'uploads');
     try {
       await mkdir(uploadDir, { recursive: true });
-    } catch {}
+    } catch { }
 
     const filePath = path.join(uploadDir, safeFilename);
     await writeFile(filePath, buffer);

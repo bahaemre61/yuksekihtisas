@@ -11,6 +11,12 @@ export async function POST(req: NextRequest) {
 
 async function handleAutoAssign(req: NextRequest) {
   try {
+    const authHeader = req.headers.get('authorizatoin');
+    const expectedSecret = process.env.CRON_SECRET;
+
+    if (expectedSecret && authHeader !== `Bearer ${expectedSecret}`) {
+      return NextResponse.json({ success: false, error: 'Yetkisiz Erişim (Unauthorized Cron Call)' }, { status: 401 })
+    }
     const { searchParams } = new URL(req.url);
     const requestedSlot = searchParams.get('slot'); // 'morning' | 'afternoon' | 'all'
     const force = searchParams.get('force') === 'true';

@@ -95,14 +95,14 @@ export default function MeetingViewPage() {
                         <div className="w-[20%] border-r-2 border-black flex items-center justify-center p-2">
                             <img src={unilogo.src} alt="Logo" className="h-20 w-auto object-contain grayscale" />
                         </div>
-                        
+
                         {/* Orta Başlık */}
                         <div className="w-[50%] border-r-2 border-black flex flex-col items-center justify-center p-2 text-center">
                             <h2 className="text-sm font-bold leading-tight">T.C.</h2>
                             <h2 className="text-sm font-bold leading-tight">YÜKSEK İHTİSAS ÜNİVERSİTESİ</h2>
                             <h2 className="text-base font-extrabold leading-tight mt-1">TOPLANTI TUTANAK FORMU</h2>
                         </div>
-                        
+
                         {/* Sağ Bilgi Alanı */}
                         <div className="w-[30%] flex flex-col text-[10px] font-bold divide-y-2 divide-black">
                             <div className="flex divide-x-2 divide-black h-1/4">

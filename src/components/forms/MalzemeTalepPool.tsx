@@ -643,11 +643,11 @@ export default function MalzemeTalepPool({
                             target="_blank"
                             rel="noopener noreferrer"
                             className="btn btn-accent btn-xs gap-1 font-bold text-[10px] rounded-lg shadow-xs hover:scale-105 transition-all text-white"
-                            title={specFileName || 'Teknik Şartname Dosyasını İndir / Oku (PDF/Word)'}
+                            title={specFileName || 'Teknik Şartname Dosyasını İndir / Oku (PDF/Word/RAR)'}
                             onClick={(e) => e.stopPropagation()}
                           >
                             <PaperClipIcon className="h-3 w-3" />
-                            <span>Şartname Dosyası (PDF/Word)</span>
+                            <span>Şartname Dosyası (PDF/Word/RAR)</span>
                           </a>
                         )}
                         {hasSpecText && !hasSpecFile && (
@@ -853,7 +853,7 @@ export default function MalzemeTalepPool({
                                 title="Yüklenen Teknik Şartname Belgesini İndir / Aç (PDF/Word)"
                               >
                                 <PaperClipIcon className="h-3.5 w-3.5" />
-                                <span>Şartname Dosyası (PDF/Word)</span>
+                                <span>Şartname Dosyası (PDF/Word/RAR)</span>
                               </a>
                             )}
 
@@ -1090,7 +1090,7 @@ export default function MalzemeTalepPool({
                               className="btn btn-accent btn-sm gap-1.5 font-bold rounded-xl text-white shadow-md shrink-0"
                             >
                               <ArrowDownTrayIcon className="h-4 w-4" />
-                              Şartname Dosyasını İndir / Aç (PDF/Word)
+                              Şartname Dosyasını İndir / Aç (PDF/Word/RAR)
                             </a>
                           </div>
                         )}
@@ -1335,7 +1335,7 @@ export default function MalzemeTalepPool({
                               className="btn btn-accent btn-xs gap-1.5 font-bold rounded-xl text-white shadow-xs w-full py-2 flex items-center justify-center"
                             >
                               <PaperClipIcon className="h-4 w-4" />
-                              {itemSpecName || 'Ekli Şartname Dosyasını İndir / Oku (PDF/Word)'}
+                              {itemSpecName || 'Ekli Şartname Dosyasını İndir / Oku (PDF/Word/RAR)'}
                             </a>
                           </div>
                         )}
@@ -1678,7 +1678,7 @@ export default function MalzemeTalepPool({
                               {sharedSpec && <div className="text-gray-700 leading-relaxed mb-1">{sharedSpec}</div>}
                               {sharedSpecFileUrl && (
                                 <div className="font-bold text-blue-700 underline flex items-center gap-1 pt-1 border-t border-gray-200">
-                                  📄 Ekli Şartname Dosyası: {sharedSpecFileName || 'Dosyayı İndir (PDF/Word)'}
+                                  📄 Ekli Şartname Dosyası: {sharedSpecFileName || 'Dosyayı İndir (PDF/Word/RAR)'}
                                 </div>
                               )}
                             </div>
