@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateGeminiJson } from "@/src/lib/gemini";
 import connectToDatabase from "@/src/lib/db";
 import VehicleRequest from "@/src/lib/models/VehicleRequest";
 import { getAuthenticatedUser } from "@/src/lib/auth";
@@ -78,32 +78,21 @@ VERİLER: ${JSON.stringify(dataForAI)}
 }`;
 
             try {
-                const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.OPENAI_API_KEY;
-                if (!apiKey || apiKey.includes('BURAYA_GEMINI')) {
-                    throw new Error("Gemini API key tanımlanmamış.");
+                const aiResult = await generateGeminiJson<{ groups: any[] }>(prompt);
+
+                if (aiResult?.groups && Array.isArray(aiResult.groups) && aiResult.groups.length > 0) {
+                    // AI'dan gelen grupları zenginleştir
+                    const todayGroups = aiResult.groups.map((group: any) => ({
+                        ...group,
+                        isToday: true,
+                        requests: todayRequests.filter((r: any) => group.ids.includes(r._id.toString())),
+                        total: group.ids.length
+                    }));
+
+                    finalGroups = [...todayGroups];
+                } else {
+                    throw new Error("Gemini AI gruplama sonucu boş döndü");
                 }
-
-                const genAI = new GoogleGenerativeAI(apiKey);
-                const model = genAI.getGenerativeModel({
-                    model: "gemini-3.5-flash",
-                    generationConfig: { responseMimeType: "application/json" }
-                });
-
-                const result = await model.generateContent(prompt);
-                const aiContent = result.response.text();
-                if (!aiContent) throw new Error("Gemini AI boş cevap döndürdü");
-
-                const aiResult = JSON.parse(aiContent);
-
-                // AI'dan gelen grupları zenginleştir
-                const todayGroups = (aiResult.groups || []).map((group: any) => ({
-                    ...group,
-                    isToday: true,
-                    requests: todayRequests.filter((r: any) => group.ids.includes(r._id.toString())),
-                    total: group.ids.length
-                }));
-
-                finalGroups = [...todayGroups];
             } catch (aiErr: any) {
                 console.error("Gemini AI Gruplama Hatası:", aiErr.message);
                 // AI hata verirse bugünküleri tekli grup yap ki sistem çökmesin

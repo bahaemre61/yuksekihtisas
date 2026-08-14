@@ -3,7 +3,6 @@ import VehicleRequest, { RequestStatus } from '@/src/lib/models/VehicleRequest';
 import User from '@/src/lib/models/User';
 import { sendMail } from '@/src/lib/mail';
 import webpush from 'web-push';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export interface IBotLogResult {
   timestamp: string;
@@ -47,20 +46,13 @@ function setupWebPush() {
   }
 }
 
+import { generateGeminiJson } from '@/src/lib/gemini';
+
 /**
  * Google Gemini API Lojistik Dispeçer Gruplama Servisi
  */
 async function getAIGrouping(todayPending: any[]): Promise<{ title: string; reason: string; ids: string[] }[] | null> {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.OPENAI_API_KEY;
-  if (!apiKey || apiKey.includes('BURAYA_GEMINI')) return null;
-
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-3.5-flash',
-      generationConfig: { responseMimeType: 'application/json' }
-    });
-
     const dataForAI = todayPending.map((req: any) => ({
       id: req._id.toString(),
       passenger: req.requestingUser?.name || 'Kullanıcı',
@@ -104,12 +96,8 @@ VERİLER: ${JSON.stringify(dataForAI)}
 }
 `;
 
-    const result = await model.generateContent(prompt);
-    const aiContent = result.response.text();
-    if (!aiContent) return null;
-
-    const parsed = JSON.parse(aiContent);
-    return parsed.groups || null;
+    const result = await generateGeminiJson<{ groups: { title: string; reason: string; ids: string[] }[] }>(prompt);
+    return result?.groups || null;
   } catch (err: any) {
     console.warn('Gemini Dispatcher Bot grouping failed, using fallback:', err.message);
     return null;
