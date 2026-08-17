@@ -1,14 +1,14 @@
 'use client';
 
-import { useState,FormEvent, ChangeEvent, useEffect } from "react";
-import { useRouter } from 'next/navigation'; 
+import { useState, FormEvent, ChangeEvent, useEffect } from "react";
+import { useRouter } from 'next/navigation';
 import { ExclamationTriangleIcon, CheckCircleIcon, ClockIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 
 export default function TeknikTalepForm() {
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-  
+
   // --- YENİ EKLENEN KISIM: İLÇELER STATE'İ ---
   const [locations, setLocations] = useState<string[]>([]);
   const [locationsLoading, setLocationsLoading] = useState(true);
@@ -18,48 +18,44 @@ export default function TeknikTalepForm() {
 
 
   useEffect(() => {
-  const checkUserRole = async () => {
-    try {
-      const res = await fetch('/api/me'); 
-      const data = await res.json();
-      
+    const checkUserRole = async () => {
+      try {
+        const res = await fetch('/api/me');
+        const data = await res.json();
 
-      if (data.role === 'admin' || data.role === 'amir' || data.role === 'ADMIN' || data.role === 'AMIR' || data.role === 'TECHAMIR' || data.role === 'techamir' || data.role === 'SUPERVISOR' || data.role === 'supervisor') {
-        setCanSelectHighPriority(true);
+
+        if (data.role === 'admin' || data.role === 'amir' || data.role === 'ADMIN' || data.role === 'AMIR' || data.role === 'TECHAMIR' || data.role === 'techamir' || data.role === 'SUPERVISOR' || data.role === 'supervisor') {
+          setCanSelectHighPriority(true);
+        }
+      } catch (error) {
+        console.error('Yetki kontrolü yapılamadı', error);
       }
-    } catch (error) {
-      console.error('Yetki kontrolü yapılamadı', error);
-    }
-  };
+    };
 
-  checkUserRole();
-}, []);
+    checkUserRole();
+  }, []);
 
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     location: '',
+    customLocation: '',
     priority: 'MEDIUM',
   });
 
-    const [file, setFile] = useState<File | null>(null);
+  const [file, setFile] = useState<File | null>(null);
 
-   useEffect(() => {
+  useEffect(() => {
     const fetchLocations = async () => {
       try {
         const res = await fetch('/api/locations');
-        
+
         if (!res.ok) {
-           throw new Error('Veri çekilemedi.');
+          throw new Error('Veri çekilemedi.');
         }
 
         const result = await res.json();
-        
-        // --- DEĞİŞİKLİK BURADA ---
-        // Eskiden: if (result.success && Array.isArray(result.data))
-        // Yeni: Sadece result.data'nın bir dizi (Array) olup olmadığına bakıyoruz.
-        // Çünkü sizin API'niz 'success' değil 'msg' gönderiyor.
-        
+
         if (Array.isArray(result.data)) {
           setLocations(result.data);
         } else {
@@ -77,19 +73,19 @@ export default function TeknikTalepForm() {
     fetchLocations();
   }, []);
 
-    const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
-    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
 
       const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
       if (!allowedTypes.includes(selectedFile.type)) {
         setMessage({ type: 'error', text: 'Sadece JPG, PNG veya WEBP formatında resim yükleyebilirsiniz.' });
-        e.target.value = ''; 
+        e.target.value = '';
         setFile(null);
         return;
       }
@@ -97,28 +93,36 @@ export default function TeknikTalepForm() {
       const maxSize = 5 * 1024 * 1024;
       if (selectedFile.size > maxSize) {
         setMessage({ type: 'error', text: 'Dosya boyutu 5MB\'dan büyük olamaz.' });
-        e.target.value = ''; 
+        e.target.value = '';
         setFile(null);
         return;
       }
 
-    
       setFile(selectedFile);
-      setMessage(null); 
+      setMessage(null);
     }
   };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
+
+    const finalLocation = formData.location === 'other' ? formData.customLocation.trim() : formData.location;
+    if (!finalLocation) {
+      setMessage({ type: 'error', text: 'Lütfen geçerli bir yerleşke seçin veya girin.' });
+      setLoading(false);
+      return;
+    }
+
     try {
       const dataToSend = new FormData();
-      
+
       dataToSend.append('title', formData.title);
       dataToSend.append('description', formData.description);
-      dataToSend.append('location', formData.location);
+      dataToSend.append('location', finalLocation);
       dataToSend.append('priority', formData.priority);
-      
+
       if (file) {
         dataToSend.append('screenshot', file);
       }
@@ -135,16 +139,18 @@ export default function TeknikTalepForm() {
       }
 
       setMessage({ type: 'success', text: 'Talep başarıyla oluşturuldu!' });
-      
+
       setFormData({
         title: '',
         description: '',
         location: '',
+        customLocation: '',
         priority: 'MEDIUM',
       });
       setFile(null);
-      (document.getElementById('fileInput') as HTMLInputElement).value = '';
-      
+      const fileInput = document.getElementById('fileInput') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
+
       setTimeout(() => {
         router.push('/dashboard/tekniktaleplerim');
       }, 2000);
@@ -167,7 +173,7 @@ export default function TeknikTalepForm() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        
+
         {/* Başlık */}
         <div>
           <label className="block text-sm font-medium text-base-content/80 mb-1">Konu Başlığı</label>
@@ -182,7 +188,7 @@ export default function TeknikTalepForm() {
           />
         </div>
 
-        {/* İlçe Seçimi (API'den Gelen Data) */}
+        {/* Yerleşke Seçimi */}
         <div>
           <label className="block text-sm font-medium text-base-content/80 mb-1">Yerleşke</label>
           <select
@@ -194,42 +200,32 @@ export default function TeknikTalepForm() {
             className="w-full border border-base-300 rounded-md p-2 bg-base-100 disabled:bg-base-200"
           >
             <option value="">{locationsLoading ? 'Yükleniyor...' : 'Seçiniz'}</option>
+
             {/* Dinamik Listeleme */}
             {!locationsLoading && locations.map((loc, index) => (
               <option key={index} value={loc}>
                 {loc}
               </option>
             ))}
+            <option value="other" className="font-bold text-primary">+ DİĞER (Elle Gir)</option>
           </select>
+          {formData.location === 'other' && (
+            <input
+              type="text"
+              name="customLocation"
+              value={formData.customLocation}
+              onChange={handleInputChange}
+              placeholder="Yerleşke / Konum giriniz..."
+              className="mt-2 block w-full rounded-lg border border-primary/30 bg-base-100 text-base-content px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
+              required
+            />
+          )}
         </div>
-
-        {/* Aciliyet Durumu */}
-         {/* <div>
-          <label className="block text-sm font-medium text-base-content/80 mb-1">Aciliyet Durumu</label>
-          <div className="flex gap-4 mt-2">
-            {['LOW', 'MEDIUM', 'HIGH'].map((prio) => (
-              <label key={prio} className="flex items-center space-x-2 cursor-pointer border p-3 rounded-md hover:bg-base-200 w-full transition-colors">
-                <input
-                  type="radio"
-                  name="priority"
-                  value={prio}
-                  checked={formData.priority === prio}
-                  onChange={handleInputChange}
-                  className="text-orange-600 focus:ring-orange-500"
-                />
-                <span className={`font-semibold ${
-                  prio === 'HIGH' ? 'text-red-600' : prio === 'MEDIUM' ? 'text-yellow-600' : 'text-green-600'
-                }`}>
-                  {prio === 'HIGH' ? 'Yüksek' : prio === 'MEDIUM' ? 'Orta' : 'Düşük'}
-                </span>
-              </label>
-            ))}
-          </div> */}
-          <div>
+        <div>
           <label className="block text-sm font-medium text-base-content/80 mb-3">Aciliyet Durumu</label>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            
+
             {/* DÜŞÜK ÖNCELİK */}
             <button
               type="button"
@@ -281,18 +277,18 @@ export default function TeknikTalepForm() {
               ) : (
                 <ExclamationTriangleIcon className={`h-5 w-5 mr-2 ${formData.priority === 'HIGH' ? 'text-error' : 'text-base-content/50'}`} />
               )}
-              
+
               ACİL DURUM
-              
+
               {!canSelectHighPriority && (
-                 <span className="absolute -top-2 -right-2 bg-base-300 text-base-content/70 text-[9px] px-1.5 py-0.5 rounded-full">
-                    Sadece Amir
-                 </span>
+                <span className="absolute -top-2 -right-2 bg-base-300 text-base-content/70 text-[9px] px-1.5 py-0.5 rounded-full">
+                  Sadece Amir
+                </span>
               )}
             </button>
 
           </div>
-          
+
           {/* Bilgilendirme Metni */}
           <p className="text-xs text-base-content/60 mt-2 flex items-center gap-1">
             <span className="text-error font-bold">*</span>
@@ -335,9 +331,8 @@ export default function TeknikTalepForm() {
         <button
           type="submit"
           disabled={loading}
-          className={`w-full text-primary-content font-bold py-3 px-4 rounded-md transition duration-300 ${
-            loading ? 'bg-base-300 text-base-content/50 cursor-not-allowed' : 'bg-primary hover:brightness-90'
-          }`}
+          className={`w-full text-primary-content font-bold py-3 px-4 rounded-md transition duration-300 ${loading ? 'bg-base-300 text-base-content/50 cursor-not-allowed' : 'bg-primary hover:brightness-90'
+            }`}
         >
           {loading ? 'Gönderiliyor...' : 'Teknik Talep Oluştur'}
         </button>
