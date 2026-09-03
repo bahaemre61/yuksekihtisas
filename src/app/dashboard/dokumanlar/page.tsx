@@ -13,15 +13,15 @@ import {
   DocumentTextIcon
 } from '@heroicons/react/24/outline';
 
-import { IUser } from '@/src/components/kanitlar/UserMultiSelect';
-import SessionCard, { IEvidenceSession } from '@/src/components/kanitlar/SessionCard';
-import NewSessionModal from '@/src/components/kanitlar/NewSessionModal';
-import AssignUsersModal from '@/src/components/kanitlar/AssignUsersModal';
-import DocumentRequestModal from '@/src/components/kanitlar/DocumentRequestModal';
-import EvidenceUploadSection, { ICompletedFormInfo } from '@/src/components/kanitlar/EvidenceUploadSection';
-import EvidenceTable, { IEvidence } from '@/src/components/kanitlar/EvidenceTable';
-import ReviewPanel from '@/src/components/kanitlar/ReviewPanel';
-import UserRoleManagement from '@/src/components/kanitlar/UserRoleManagement';
+import { IUser } from '@/src/components/dokumanlar/UserMultiSelect';
+import SessionCard, { IEvidenceSession } from '@/src/components/dokumanlar/SessionCard';
+import NewSessionModal from '@/src/components/dokumanlar/NewSessionModal';
+import AssignUsersModal from '@/src/components/dokumanlar/AssignUsersModal';
+import DocumentRequestModal from '@/src/components/dokumanlar/DocumentRequestModal';
+import EvidenceUploadSection, { ICompletedFormInfo } from '@/src/components/dokumanlar/EvidenceUploadSection';
+import EvidenceTable, { IEvidence } from '@/src/components/dokumanlar/EvidenceTable';
+import ReviewPanel from '@/src/components/dokumanlar/ReviewPanel';
+import UserRoleManagement from '@/src/components/dokumanlar/UserRoleManagement';
 
 export default function KanitlarPage() {
   const [currentUser, setCurrentUser] = useState<IUser | null>(null);
@@ -121,13 +121,13 @@ export default function KanitlarPage() {
         <div className="space-y-2 relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-extrabold uppercase tracking-wider border border-primary/20 shadow-xs">
             <SparklesIcon className="h-4 w-4 text-primary animate-spin-slow" />
-            Kanıt Portalı
+            Döküman
           </div>
           <h1 className="text-2xl md:text-3xl font-black tracking-tight text-base-content">
-            Kanıt Yönetimi & Oturum Alanı
+            Döküman Talep ve Yükleme Sistemi
           </h1>
           <p className="text-xs md:text-sm text-base-content/70 max-w-2xl leading-relaxed">
-            Veri girme oturumlarını başlatın, dijital doküman talep formlarını doldurun ve kanıtlarınızı güvenle yükleyin.
+            Veri girme oturumlarını başlatın, dijital doküman talep formlarını doldurun ve dökümanlarınızı güvenle yükleyin.
           </p>
         </div>
 
@@ -170,7 +170,7 @@ export default function KanitlarPage() {
           }`}
         >
           <CloudArrowUpIcon className="h-5 w-5 group-hover:scale-110 transition-transform" />
-          <span>Kanıt Yükle & Doküman Formu</span>
+          <span>Döküman Yükle & Doküman Formu</span>
           {selectedSession && (
             <span className="hidden sm:inline text-xs font-medium opacity-80 max-w-[140px] truncate">
               ({selectedSession.title})

@@ -74,9 +74,7 @@ export default function UserRoleManagement({
           >
             <option value="kanit_sorumlu">Kanıt / Alan Sorumlusu (Amir)</option>
             <option value="raportor">Raportör (İncelemeci)</option>
-            <option value="mali_isler">Mali İşler Sorumlusu</option>
             <option value="user">Normal Kullanıcı (Veri Giriş)</option>
-            <option value="admin">Admin (Tam Yetkili)</option>
           </select>
         </div>
 
