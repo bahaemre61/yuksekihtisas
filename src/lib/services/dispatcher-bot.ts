@@ -176,8 +176,11 @@ export async function runUrgentDispatcherBot(requestId: string): Promise<IBotLog
         });
         await webpush.sendNotification(chosenDriver.pushSubscription, payload);
         logDetails.push(`📱 Push bildirimi gönderildi: ${chosenDriver.name}`);
-      } catch (e) {
+      } catch (e: any) {
         console.warn('Push notification error:', e);
+        if (e.statusCode === 403 || e.statusCode === 410 || e.statusCode === 404) {
+          User.findByIdAndUpdate(chosenDriver._id, { $unset: { pushSubscription: "" } }).catch(console.error);
+        }
       }
     }
 
@@ -417,8 +420,11 @@ export async function runScheduledDispatcherBot(
               url: '/dashboard/gorevlerim'
             });
             await webpush.sendNotification(chosenDriver.pushSubscription, payload);
-          } catch (e) {
+          } catch (e: any) {
             console.warn('Push error:', e);
+            if (e.statusCode === 403 || e.statusCode === 410 || e.statusCode === 404) {
+              User.findByIdAndUpdate(chosenDriver._id, { $unset: { pushSubscription: "" } }).catch(console.error);
+            }
           }
         }
 

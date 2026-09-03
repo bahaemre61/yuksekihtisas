@@ -39,13 +39,22 @@ export async function POST(request: Request) {
         );
 
         if (driver && driver.pushSubscription) {
-            const payload = JSON.stringify({
-                title: '🚨 YENİ GÖREV ATANDI!',
-                body: `${requestIds.length} adet yeni talep listenize eklendi. Hemen kontrol edin.`,
-                url: '/dashboard/gorevlerim'
-            });
-            const response = await webpush.sendNotification(driver.pushSubscription, payload);
-            console.log("Push bildirimi gönderildi:", response.statusCode);
+            try {
+                const payload = JSON.stringify({
+                    title: '🚨 YENİ GÖREV ATANDI!',
+                    body: `${requestIds.length} adet yeni talep listenize eklendi. Hemen kontrol edin.`,
+                    url: '/dashboard/gorevlerim'
+                });
+                const response = await webpush.sendNotification(driver.pushSubscription, payload);
+                console.log("Push bildirimi gönderildi:", response.statusCode);
+            } catch (pushErr: any) {
+                console.warn(`⚠️ ${driver.name} için Push bildirimi gönderilemedi:`, pushErr.message);
+                // VAPID uyuşmazlığı (403) veya aboneliğin süresinin dolması (410/404) durumunda eski kaydı temizle
+                if (pushErr.statusCode === 403 || pushErr.statusCode === 410 || pushErr.statusCode === 404) {
+                    console.log(`🧹 ${driver.name} kullanıcısının geçersiz push aboneliği temizleniyor...`);
+                    await User.findByIdAndUpdate(driverId, { $unset: { pushSubscription: "" } });
+                }
+            }
         } else {
             console.log("Şoförün bildirim aboneliği yok");
         }

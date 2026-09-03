@@ -92,7 +92,7 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: {
     { name: 'Teknik Taleplerim', href: '/dashboard/tekniktaleplerim', icon: WrenchScrewdriverIcon, roles: [UserRole.USER, UserRole.ADMIN, UserRole.DRIVER, UserRole.AMIR, UserRole.SUPERVISOR, UserRole.AKADEMI, UserRole.MALI_ISLER] },
     { name: 'Araç Talep Yığını', href: '/dashboard/yigin', icon: ArchiveBoxIcon, roles: [UserRole.ADMIN, UserRole.SUPERVISOR] },
     { name: 'Teknik Talepler', href: '/dashboard/teknikyigin', icon: CpuChipIcon, roles: [UserRole.ADMIN, UserRole.TECHAMIR] },
-    { name: 'Dökümanlar', href: '/dashboard/kanitlar', icon: ClipboardDocumentCheckIcon, roles: [UserRole.ADMIN] },
+    { name: 'Dökümanlar', href: '/dashboard/dokumanlar', icon: ClipboardDocumentCheckIcon, roles: [UserRole.ADMIN] },
 
     // { name: 'Yapılacak Listem', href: '/dashboard/todo', icon: CheckBadgeIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.AMIR, UserRole.TECHNICAL, UserRole.SUPERVISOR, UserRole.TECHAMIR, UserRole.AKADEMI, UserRole.MALI_ISLER] },
     { name: 'Duyurular', href: '/dashboard/duyurular', icon: DocumentTextIcon, roles: [UserRole.USER, UserRole.DRIVER, UserRole.ADMIN, UserRole.AMIR, UserRole.TECHNICAL, UserRole.TECHAMIR, UserRole.AKADEMI, UserRole.MALI_ISLER] },

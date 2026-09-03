@@ -60,6 +60,10 @@ export async function PUT(request: NextRequest) {
                         console.log(`🚀 ${staff.name} bildirim sonucu:`, res.statusCode);
                     } catch (err: any) {
                         console.error(`❌ ${staff.name} gönderim hatası:`, err.message);
+                        if (err.statusCode === 403 || err.statusCode === 410 || err.statusCode === 404) {
+                            console.log(`🧹 ${staff.name} kullanıcısının geçersiz push aboneliği temizleniyor...`);
+                            await User.findByIdAndUpdate(staff._id, { $unset: { pushSubscription: "" } });
+                        }
                     }
                 } else {
                     console.log(`⚠️ ${staff.name} için abonelik verisi (pushSubscription) BULUNAMADI!`);
