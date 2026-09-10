@@ -35,12 +35,14 @@ export interface IMaterialRequestData {
   materialName: string;
   quantity: number;
   unit: string;
+  givenQuantity?: number;
+  remainingQuantity?: number;
   description?: string;
   specification?: string;
   specificationFileUrl?: string;
   specificationFileName?: string;
   location?: string;
-  status: 'pending_supervisor' | 'pending_mali_isler' | 'approved' | 'rejected';
+  status: 'pending_supervisor' | 'pending_mali_isler' | 'partially_delivered' | 'approved' | 'rejected';
   supervisorReviewer?: IUser;
   supervisorNote?: string;
   supervisorReviewedAt?: string;
@@ -56,7 +58,7 @@ export interface IBatchGroup {
   location?: string;
   createdAt: string;
   items: IMaterialRequestData[];
-  status: 'pending_supervisor' | 'pending_mali_isler' | 'approved' | 'rejected';
+  status: 'pending_supervisor' | 'pending_mali_isler' | 'partially_delivered' | 'approved' | 'rejected';
 }
 
 export interface IActionLog {
@@ -88,6 +90,21 @@ export default function MalzemeTalepPool({
   // Batch Detail / Action Modal State
   const [isBatchDetailModalOpen, setIsBatchDetailModalOpen] = useState(false);
   const [selectedBatch, setSelectedBatch] = useState<IBatchGroup | null>(null);
+
+  // Satın Alma Depodan Verilen & Kalan Miktarları Yönetim State'i
+  const [itemGivenQuantities, setItemGivenQuantities] = useState<Record<string, number>>({});
+  const [modalGivenQuantity, setModalGivenQuantity] = useState<number>(0);
+
+  const handleGivenQuantityChange = (itemId: string, rawVal: string, maxQty: number) => {
+    if (rawVal === '') {
+      setItemGivenQuantities((prev) => ({ ...prev, [itemId]: 0 }));
+      return;
+    }
+    const parsed = Number(rawVal);
+    if (isNaN(parsed)) return;
+    const clamped = Math.max(0, Math.min(parsed, maxQty));
+    setItemGivenQuantities((prev) => ({ ...prev, [itemId]: clamped }));
+  };
 
   // Individual Review Modal State
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -261,6 +278,8 @@ export default function MalzemeTalepPool({
         group.status = 'pending_supervisor';
       } else if (activeStatuses.includes('pending_mali_isler')) {
         group.status = 'pending_mali_isler';
+      } else if (activeStatuses.includes('partially_delivered')) {
+        group.status = 'partially_delivered';
       } else if (activeStatuses.every(s => s === 'approved')) {
         group.status = 'approved';
       } else {
@@ -301,9 +320,26 @@ export default function MalzemeTalepPool({
     );
   });
 
+  // Veriler güncellendiğinde açık olan seçili işi de senkronize et
+  useEffect(() => {
+    if (selectedBatch) {
+      const updated = groupedBatches.find(b => b.batchId === selectedBatch.batchId);
+      if (updated) {
+        setSelectedBatch(updated);
+      }
+    }
+  }, [groupedBatches]);
+
   // Open "İşlem Yap / İncele" Modal
   const handleOpenInspectModal = (batch: IBatchGroup) => {
     setSelectedBatch(batch);
+    // Malzemelerin mevcut verilen miktarlarını yerel state'e yükle
+    const initialMap: Record<string, number> = {};
+    batch.items.forEach((item) => {
+      initialMap[item._id] = item.givenQuantity ?? 0;
+    });
+    setItemGivenQuantities(initialMap);
+
     setIsBatchDetailModalOpen(true);
     recordActionLog(batch.batchId, 'INSPECT', `"${batch.items.length} Kalem Malzeme" İşlem Yap / İncele butonuna tıklandı`);
   };
@@ -342,6 +378,8 @@ export default function MalzemeTalepPool({
     setReviewItem(item);
     setReviewAction(action);
     setReviewNote('');
+    const currentGiven = itemGivenQuantities[item._id] !== undefined ? itemGivenQuantities[item._id] : (item.givenQuantity ?? 0);
+    setModalGivenQuantity(currentGiven);
     setIsReviewModalOpen(true);
   };
 
@@ -351,16 +389,30 @@ export default function MalzemeTalepPool({
     try {
       await axios.put(`/api/material-requests/${reviewItem._id}/status`, {
         action: reviewAction,
-        note: reviewNote
+        note: reviewNote,
+        givenQuantity: modalGivenQuantity
       });
+
+      // Yerel state'i güncelle
+      setItemGivenQuantities((prev) => ({ ...prev, [reviewItem._id]: modalGivenQuantity }));
 
       // Record review log
       if (selectedBatch) {
+        const remainingQty = Math.max(0, reviewItem.quantity - modalGivenQuantity);
+        const isSecondStage = reviewItem.status === 'pending_mali_isler' || reviewItem.status === 'partially_delivered' || reviewItem.status === 'approved';
+        const detailMsg = reviewAction === 'approve'
+          ? (isSecondStage
+            ? (remainingQty === 0
+              ? `${reviewItem.materialName} tamamlandı ve onaylandı (Tümü teslim edildi)`
+              : `${reviewItem.materialName} için kısmi teslimat yapıldı (Depodan Verilen: ${modalGivenQuantity} ${reviewItem.unit}, Kalan Satın Alınacak: ${remainingQty} ${reviewItem.unit})`)
+            : `${reviewItem.materialName} için 1. Aşama Onayı verildi`)
+          : `${reviewItem.materialName} için Reddet kararı verildi`;
+
         await axios.post('/api/material-requests/log', {
           batchId: selectedBatch.batchId,
           requestId: reviewItem._id,
           action: reviewAction === 'approve' ? 'REVIEW_APPROVE' : 'REVIEW_REJECT',
-          actionDetails: `${reviewItem.materialName} için ${reviewAction === 'approve' ? 'Onay verildi' : 'Reddet kararı verildi'}`
+          actionDetails: detailMsg
         });
       }
 
@@ -383,10 +435,16 @@ export default function MalzemeTalepPool({
 
     setLoading(true);
     try {
+      const itemsData = batch.items.map((item) => ({
+        id: item._id,
+        givenQuantity: itemGivenQuantities[item._id] !== undefined ? itemGivenQuantities[item._id] : (item.givenQuantity ?? 0)
+      }));
+
       const res = await axios.post('/api/material-requests/bulk-status', {
         batchId: batch.batchId,
         action,
-        note: action === 'approve' ? 'Toplu İşlem Onayı verildi' : 'Toplu Reddedildi'
+        note: action === 'approve' ? 'Toplu İşlem Onayı verildi' : 'Toplu Reddedildi',
+        itemsData
       });
 
       alert(`🎉 ${res.data.msg}`);
@@ -414,8 +472,10 @@ export default function MalzemeTalepPool({
       'E-Posta',
       'Malzemenin Cinsi',
       'Malzeme Adı',
-      'Miktar',
+      'Talep Edilen Miktar',
       'Birim',
+      'Depodan Verilen Miktar',
+      'Kalan (Satın Alınacak) Miktar',
       'Gerekçe / Açıklama',
       'Teknik Şartname Metni',
       'Şartname Dosya Bağlantısı',
@@ -426,10 +486,13 @@ export default function MalzemeTalepPool({
     const rows = listToExport.map((item) => {
       let statusText = '1. Aşama Bekliyor';
       if (item.status === 'pending_mali_isler') statusText = '2. Aşama (Satın Alma) Bekliyor';
-      if (item.status === 'approved') statusText = 'Tam Onaylandı';
+      if (item.status === 'partially_delivered') statusText = 'Kısmi Verildi (Satın Alınıyor)';
+      if (item.status === 'approved') statusText = 'Tamamlandı (Onaylandı)';
       if (item.status === 'rejected') statusText = 'Reddedildi';
 
       const createdDate = item.createdAt ? new Date(item.createdAt).toLocaleDateString('tr-TR') : '';
+      const given = item.givenQuantity || 0;
+      const remaining = item.remainingQuantity !== undefined ? item.remainingQuantity : Math.max(0, (item.quantity || 0) - given);
 
       return [
         `"${item.batchId || ''}"`,
@@ -439,6 +502,8 @@ export default function MalzemeTalepPool({
         `"${(item.materialName || '').replace(/"/g, '""')}"`,
         `"${item.quantity || 0}"`,
         `"${(item.unit || '').replace(/"/g, '""')}"`,
+        `"${given}"`,
+        `"${remaining}"`,
         `"${(item.description || '').replace(/"/g, '""')}"`,
         `"${(item.specification || '').replace(/"/g, '""')}"`,
         `"${(item.specificationFileUrl || '').replace(/"/g, '""')}"`,
@@ -557,7 +622,8 @@ export default function MalzemeTalepPool({
             <option value="all">Tüm İşler / Talepler ({groupedBatches.length})</option>
             <option value="pending_supervisor">1. Aşama Bekleyenler</option>
             <option value="pending_mali_isler">2. Aşama (Satın Alma) Bekleyenler</option>
-            <option value="approved">Tam Onaylananlar</option>
+            <option value="partially_delivered">Kısmi Teslim Edilenler (Satın Alma Bekleyenler)</option>
+            <option value="approved">Tamamlananlar / Onaylananlar</option>
             <option value="rejected">Reddedilenler</option>
           </select>
         </div>
@@ -621,6 +687,8 @@ export default function MalzemeTalepPool({
                 let rowBgClass = 'hover:bg-base-200/50 transition-colors';
                 if (batch.status === 'approved') {
                   rowBgClass = 'border-l-4 border-l-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/10 hover:bg-emerald-50/40 transition-colors';
+                } else if (batch.status === 'partially_delivered') {
+                  rowBgClass = 'border-l-4 border-l-indigo-500 bg-indigo-50/25 dark:bg-indigo-950/15 hover:bg-indigo-50/40 transition-colors';
                 } else if (batch.status === 'rejected') {
                   rowBgClass = 'border-l-4 border-l-rose-500 bg-rose-50/20 dark:bg-rose-950/10 hover:bg-rose-50/40 transition-colors';
                 } else if (isCurrentlyInspected) {
@@ -673,13 +741,32 @@ export default function MalzemeTalepPool({
 
                     {/* Malzemelerin Özeti */}
                     <td>
-                      <div className="space-y-1">
-                        {batch.items.slice(0, 3).map((item) => (
-                          <div key={item._id} className="text-xs font-semibold text-base-content/90 flex items-center gap-1.5">
-                            <span className="text-primary font-bold">• {item.materialName}</span>
-                            <span className="text-base-content/60 text-[11px]">({item.quantity} {item.unit})</span>
-                          </div>
-                        ))}
+                      <div className="space-y-1.5">
+                        {batch.items.slice(0, 3).map((item) => {
+                          const hasGiven = item.givenQuantity !== undefined && item.givenQuantity > 0;
+                          const isApproved = item.status === 'approved';
+                          const givenVal = item.givenQuantity || 0;
+                          const remainingVal = item.remainingQuantity !== undefined ? item.remainingQuantity : Math.max(0, item.quantity - givenVal);
+
+                          return (
+                            <div key={item._id} className="text-xs font-semibold text-base-content/90 space-y-0.5">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-primary font-bold">• {item.materialName}</span>
+                                <span className="text-base-content/60 text-[11px]">({item.quantity} {item.unit})</span>
+                              </div>
+                              {(hasGiven || isApproved) && (
+                                <div className="flex items-center gap-1 flex-wrap pl-2.5">
+                                  <span className="badge badge-info badge-xs font-black text-[10px] text-white">
+                                    📦 Depodan: {givenVal} {item.unit}
+                                  </span>
+                                  <span className={`badge badge-xs font-black text-[10px] ${remainingVal > 0 ? 'badge-warning text-warning-content' : 'badge-success text-white'}`}>
+                                    {remainingVal > 0 ? `🛒 Kalan: ${remainingVal} ${item.unit}` : '✓ Tamamı Depodan'}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                         {batch.items.length > 3 && (
                           <div className="text-[11px] font-bold text-secondary">
                             +{batch.items.length - 3} malzeme daha var...
@@ -708,9 +795,14 @@ export default function MalzemeTalepPool({
                           <BanknotesIcon className="h-3.5 w-3.5" /> 2. Aşama (Satın Alma) Bekliyor
                         </span>
                       )}
+                      {batch.status === 'partially_delivered' && (
+                        <span className="bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 px-2.5 py-1 rounded-full font-black text-[11px] inline-flex items-center gap-1 shadow-xs">
+                          <ClockIcon className="h-3.5 w-3.5" /> 📦 Kısmi Verildi (Satın Alınıyor)
+                        </span>
+                      )}
                       {batch.status === 'approved' && (
                         <span className="bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-2.5 py-1 rounded-full font-bold text-[11px] inline-flex items-center gap-1 shadow-xs">
-                          <CheckCircleIcon className="h-3.5 w-3.5" /> Onaylandı
+                          <CheckCircleIcon className="h-3.5 w-3.5" /> Tamamlandı (Teslim Edildi)
                         </span>
                       )}
                       {batch.status === 'rejected' && (
@@ -892,6 +984,45 @@ export default function MalzemeTalepPool({
 
                       {/* Scrollable Modal Content Body */}
                       <div className="p-6 overflow-y-auto flex-1 space-y-6">
+                        {/* Depo & Satın Alma Dağıtım İcmal Kartı */}
+                        {/* {(() => {
+                          const totalRequested = selectedBatch.items.reduce((acc, i) => acc + i.quantity, 0);
+                          const totalGiven = selectedBatch.items.reduce((acc, i) => {
+                            const g = itemGivenQuantities[i._id] !== undefined ? itemGivenQuantities[i._id] : (i.givenQuantity || 0);
+                            return acc + g;
+                          }, 0);
+                          const totalRemaining = selectedBatch.items.reduce((acc, i) => {
+                            const g = itemGivenQuantities[i._id] !== undefined ? itemGivenQuantities[i._id] : (i.givenQuantity || 0);
+                            return acc + Math.max(0, i.quantity - g);
+                          }, 0);
+
+                          return (
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-base-200/50 rounded-2xl border border-base-200">
+                              <div className="flex items-center gap-3 px-3.5 py-2.5 bg-base-100 rounded-xl border border-base-200 shadow-2xs">
+                                <span className="text-xl">📋</span>
+                                <div>
+                                  <div className="text-[10px] font-bold text-base-content/50 uppercase tracking-wide">Toplam Talep Edilen</div>
+                                  <div className="text-sm font-black text-base-content">{totalRequested} Kalem/Birim</div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3 px-3.5 py-2.5 bg-sky-500/10 rounded-xl border border-sky-500/20 shadow-2xs">
+                                <span className="text-xl">📦</span>
+                                <div>
+                                  <div className="text-[10px] font-bold text-sky-700 dark:text-sky-300 uppercase tracking-wide">Depodan Verilen / Karşılanan</div>
+                                  <div className="text-sm font-black text-sky-800 dark:text-sky-200">{totalGiven} Birim Verildi</div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3 px-3.5 py-2.5 bg-amber-500/10 rounded-xl border border-amber-500/20 shadow-2xs">
+                                <span className="text-xl">🛒</span>
+                                <div>
+                                  <div className="text-[10px] font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wide">Satın Alınacak Kalan</div>
+                                  <div className="text-sm font-black text-amber-800 dark:text-amber-200">{totalRemaining} Birim Temin Edilecek</div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()} */}
+
                         {/* Toplu Onay / Reddet Banner */}
                         <div className="flex flex-wrap items-center justify-between gap-3 bg-base-200/70 p-3.5 rounded-2xl border border-base-200 shadow-xs">
                           <div className="text-xs font-black text-base-content flex items-center gap-2">
@@ -911,18 +1042,18 @@ export default function MalzemeTalepPool({
                               </button>
                             )}
 
-                            {selectedBatch.items.some(i => (isAdmin || isMaliIsler) && i.status === 'pending_mali_isler') && (
+                            {selectedBatch.items.some(i => (isAdmin || isMaliIsler) && (i.status === 'pending_mali_isler' || i.status === 'partially_delivered')) && (
                               <button
                                 onClick={() => handleBulkApproveBatch(selectedBatch, 'approve')}
                                 className="btn btn-success btn-xs md:btn-sm gap-1.5 rounded-xl font-extrabold text-white shadow-md hover:scale-105 transition-all"
-                                title="Bu işe ait TÜM malzemeleri 2. Aşamada (Mali İşler) tek tıkla toplu onaylar"
+                                title="Bu işe ait malzemeleri 2. Aşamada (Mali İşler/Satın Alma) girilen miktarlara göre toplu işleme alır"
                               >
                                 <CheckCircleIcon className="h-4 w-4" />
-                                <span>2. Aşama Tümünü Onayla ({selectedBatch.items.filter(i => i.status === 'pending_mali_isler').length} Ürün)</span>
+                                <span>2. Aşama Tümünü İşle ({selectedBatch.items.filter(i => i.status === 'pending_mali_isler' || i.status === 'partially_delivered').length} Ürün)</span>
                               </button>
                             )}
 
-                            {selectedBatch.items.some(i => i.status === 'pending_supervisor' || i.status === 'pending_mali_isler') && (
+                            {selectedBatch.items.some(i => i.status === 'pending_supervisor' || i.status === 'pending_mali_isler' || i.status === 'partially_delivered') && (
                               <button
                                 onClick={() => handleBulkApproveBatch(selectedBatch, 'reject')}
                                 className="btn btn-error btn-outline btn-xs md:btn-sm gap-1.5 rounded-xl font-bold hover:scale-105 transition-all"
@@ -941,22 +1072,35 @@ export default function MalzemeTalepPool({
                             <table className="table table-zebra w-full text-xs">
                               <thead className="sticky top-0 z-20 bg-base-200/90 backdrop-blur-md shadow-xs">
                                 <tr>
-                                  <th className="font-bold w-10">#</th>
+                                  <th className="font-bold w-8 text-center">#</th>
                                   <th className="font-bold">Malzemenin Cinsi</th>
                                   <th className="font-bold">Malzeme Adı</th>
-                                  <th className="font-bold">Miktar / Birim</th>
-                                  <th className="font-bold">Durum</th>
+                                  <th className="font-bold text-center">Talep Edilen</th>
+                                  <th className="font-bold text-center min-w-[130px]">
+                                    <span className="flex items-center justify-center gap-1 text-primary">
+                                      <span>Verilen (Depo)</span>
+                                    </span>
+                                  </th>
+                                  <th className="font-bold text-center min-w-[150px]">
+                                    <span className="flex items-center justify-center gap-1 text-amber-600">
+                                      <span>Kalan (Satın Alınacak)</span>
+                                    </span>
+                                  </th>
+                                  <th className="font-bold text-center">Durum</th>
                                   <th className="font-bold text-right">Onay İşlemi</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {selectedBatch.items.map((item, idx) => {
+                                  const currentGiven = itemGivenQuantities[item._id] !== undefined ? itemGivenQuantities[item._id] : (item.givenQuantity || 0);
+                                  const currentRemaining = Math.max(0, item.quantity - currentGiven);
+
                                   const canSupervisorApprove =
                                     (isAdmin || isSupervisor) && item.status === 'pending_supervisor';
                                   const isSameUserAsSupervisor = item.supervisorReviewer?._id === currentUser?._id;
                                   const canMaliIslerApprove =
                                     (isAdmin || isMaliIsler) &&
-                                    item.status === 'pending_mali_isler' &&
+                                    (item.status === 'pending_mali_isler' || item.status === 'partially_delivered' || (item.status === 'approved' && currentRemaining > 0)) &&
                                     (!isSameUserAsSupervisor || isAdmin);
 
                                   const isOwner = currentUser?._id && item.requester?._id && String(item.requester._id) === String(currentUser._id);
@@ -969,18 +1113,58 @@ export default function MalzemeTalepPool({
                                         <span className="badge badge-ghost badge-sm font-bold">{item.materialType}</span>
                                       </td>
                                       <td className="font-bold text-sm text-base-content">{item.materialName}</td>
-                                      <td className="font-black text-primary text-xs">
-                                        {item.quantity} {item.unit}
+                                      <td className="font-black text-center text-xs">
+                                        <span className="badge badge-outline font-extrabold text-base-content/90 text-xs px-2.5 py-1.5">
+                                          {item.quantity} {item.unit}
+                                        </span>
                                       </td>
-                                      <td>
+                                      <td className="text-center">
+                                        {canMaliIslerApprove ? (
+                                          <div className="flex items-center justify-center gap-1">
+                                            <input
+                                              type="number"
+                                              min={0}
+                                              max={item.quantity}
+                                              value={itemGivenQuantities[item._id] !== undefined ? itemGivenQuantities[item._id] : (item.givenQuantity || 0)}
+                                              onChange={(e) => handleGivenQuantityChange(item._id, e.target.value, item.quantity)}
+                                              className="input input-bordered input-xs w-16 text-center font-black text-primary border-primary/50 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg bg-base-100"
+                                              title={`Depodan verilecek adedi giriniz (En fazla ${item.quantity})`}
+                                            />
+                                            <span className="text-[11px] font-semibold text-base-content/60">{item.unit}</span>
+                                          </div>
+                                        ) : (
+                                          <div className="flex items-center justify-center">
+                                            <span className={`badge badge-sm font-black ${(item.givenQuantity || 0) > 0 ? 'badge-info text-white' : 'badge-ghost text-base-content/60'}`}>
+                                              📦 {item.givenQuantity || 0} {item.unit} Verildi
+                                            </span>
+                                          </div>
+                                        )}
+                                      </td>
+                                      <td className="text-center">
+                                        <div className="flex items-center justify-center">
+                                          {currentRemaining === 0 ? (
+                                            <span className="badge badge-success badge-sm font-black text-white shadow-xs">
+                                              ✓ 0 {item.unit} (Tamamı Depodan)
+                                            </span>
+                                          ) : (
+                                            <span className="badge badge-warning badge-sm font-black text-warning-content shadow-xs">
+                                              🛒 {currentRemaining} {item.unit} Satın Alınacak
+                                            </span>
+                                          )}
+                                        </div>
+                                      </td>
+                                      <td className="text-center">
                                         {item.status === 'pending_supervisor' && (
                                           <span className="text-amber-600 font-bold text-[11px]">1. Aşama Bekliyor</span>
                                         )}
                                         {item.status === 'pending_mali_isler' && (
                                           <span className="text-sky-600 font-bold text-[11px]">Satın Alma Bekliyor</span>
                                         )}
+                                        {item.status === 'partially_delivered' && (
+                                          <span className="text-indigo-600 font-black text-[11px]">📦 Kısmi Verildi ({item.remainingQuantity !== undefined ? item.remainingQuantity : currentRemaining} Satın Alınacak)</span>
+                                        )}
                                         {item.status === 'approved' && (
-                                          <span className="text-emerald-600 font-bold text-[11px]">🟢 Onaylandı</span>
+                                          <span className="text-emerald-600 font-bold text-[11px]">🟢 Tamamlandı (Onaylandı)</span>
                                         )}
                                         {item.status === 'rejected' && (
                                           <span className="text-rose-600 font-bold text-[11px]">🔴 Reddedildi</span>
@@ -1018,9 +1202,10 @@ export default function MalzemeTalepPool({
                                             <>
                                               <button
                                                 onClick={() => handleOpenReviewModal(item, 'approve')}
-                                                className="btn btn-success btn-xs text-white font-bold rounded-lg"
+                                                className={`btn btn-xs text-white font-bold rounded-lg ${currentRemaining === 0 ? 'btn-success' : 'btn-info'}`}
+                                                title={currentRemaining === 0 ? 'Tümü teslim edildi, tamamla ve onayla' : 'Kısmi teslimatı kaydet / güncelle'}
                                               >
-                                                2. Aşama Onayla
+                                                {currentRemaining === 0 ? '✓ Tamamla ve Onayla' : '📦 Teslim Et / Güncelle'}
                                               </button>
                                               <button
                                                 onClick={() => handleOpenReviewModal(item, 'reject')}
@@ -1347,14 +1532,65 @@ export default function MalzemeTalepPool({
                           {reviewAction === 'approve' ? (
                             reviewItem.status === 'pending_supervisor' ? (
                               <span className="text-primary">🟢 1. Aşama Onay Ver (Satın Almaya Aktar)</span>
+                            ) : (reviewItem.quantity - modalGivenQuantity === 0) ? (
+                              <span className="text-emerald-600">🟢 2. Aşama Tamamlandı (Tümü Teslim Edildi - Onayla)</span>
                             ) : (
-                              <span className="text-emerald-600">🟢 2. Aşama Satın Alma Tam Onay Ver</span>
+                              <span className="text-indigo-600">📦 Kısmi Teslimat Olarak Kaydet ({modalGivenQuantity} Verildi, {Math.max(0, reviewItem.quantity - modalGivenQuantity)} Satın Alınacak)</span>
                             )
                           ) : (
                             <span className="text-rose-600">🔴 Talebi Reddet</span>
                           )}
                         </div>
                       </div>
+
+                      {reviewAction === 'approve' && (reviewItem.status === 'pending_mali_isler' || reviewItem.status === 'partially_delivered' || reviewItem.status === 'approved') && (
+                        <div className="p-3.5 bg-sky-500/10 rounded-2xl border border-sky-500/20 space-y-2.5">
+                          <div className="flex items-center justify-between text-xs font-black text-sky-800 dark:text-sky-300">
+                            <span>📦 Malzeme Temin Dağılımı</span>
+                            <span className="badge badge-primary badge-sm font-bold">Talep: {reviewItem.quantity} {reviewItem.unit}</span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3 pt-1">
+                            <div>
+                              <label className="label text-[11px] font-bold py-0.5 text-base-content/70">
+                                Depodan Verilen
+                              </label>
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={reviewItem.quantity}
+                                  value={modalGivenQuantity}
+                                  onChange={(e) => {
+                                    if (e.target.value === '') {
+                                      setModalGivenQuantity(0);
+                                      return;
+                                    }
+                                    const parsed = Number(e.target.value);
+                                    if (isNaN(parsed)) return;
+                                    const clamped = Math.max(0, Math.min(parsed, reviewItem.quantity));
+                                    setModalGivenQuantity(clamped);
+                                  }}
+                                  className="input input-bordered input-sm w-full font-black text-primary rounded-xl"
+                                  placeholder="0"
+                                />
+                                <span className="text-xs font-bold text-base-content/60">{reviewItem.unit}</span>
+                              </div>
+                              <span className="text-[10px] text-base-content/50 mt-0.5 block">Depo stoğundan verilecek</span>
+                            </div>
+
+                            <div>
+                              <label className="label text-[11px] font-bold py-0.5 text-base-content/70">
+                                Kalan (Satın Alınacak)
+                              </label>
+                              <div className="h-8 flex items-center px-3 bg-base-100 border border-base-300 rounded-xl font-black text-xs text-amber-600">
+                                {Math.max(0, reviewItem.quantity - modalGivenQuantity)} {reviewItem.unit}
+                              </div>
+                              <span className="text-[10px] text-base-content/50 mt-0.5 block">Satın alma birimi temin edecek</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       <div>
                         <label className="label text-xs font-bold">Değerlendirme / Bütçe Notu (Opsiyonel)</label>
@@ -1378,9 +1614,20 @@ export default function MalzemeTalepPool({
                         <button
                           onClick={handleSaveReview}
                           disabled={reviewSubmitting}
-                          className="btn btn-primary btn-sm gap-1 rounded-xl font-bold shadow-md"
+                          className={`btn btn-sm gap-1 rounded-xl font-bold shadow-md text-white ${reviewAction === 'reject'
+                              ? 'btn-error'
+                              : reviewItem.status === 'pending_supervisor' || reviewItem.quantity - modalGivenQuantity === 0
+                                ? 'btn-success'
+                                : 'btn-info'
+                            }`}
                         >
-                          {reviewSubmitting ? <span className="loading loading-spinner loading-xs"></span> : 'Onayla ve Kaydet'}
+                          {reviewSubmitting ? (
+                            <span className="loading loading-spinner loading-xs"></span>
+                          ) : reviewAction === 'approve' && (reviewItem.status === 'pending_mali_isler' || reviewItem.status === 'partially_delivered' || reviewItem.status === 'approved') ? (
+                            reviewItem.quantity - modalGivenQuantity === 0 ? '✓ Tamamla ve Onayla' : '📦 Kısmi Teslimatı Kaydet'
+                          ) : (
+                            'Onayla ve Kaydet'
+                          )}
                         </button>
                       </div>
                     </div>
@@ -1634,15 +1881,21 @@ export default function MalzemeTalepPool({
                               <th className="border border-gray-300 p-2 font-bold w-8 text-center">#</th>
                               <th className="border border-gray-300 p-2 font-bold">Malzemenin Cinsi</th>
                               <th className="border border-gray-300 p-2 font-bold">Malzeme Adı / Tanımı</th>
-                              <th className="border border-gray-300 p-2 font-bold text-center">Miktar / Birim</th>
+                              <th className="border border-gray-300 p-2 font-bold text-center">Talep Edilen</th>
+                              <th className="border border-gray-300 p-2 font-bold text-center">Depodan Verilen</th>
+                              <th className="border border-gray-300 p-2 font-bold text-center">Kalan (Satın Alınacak)</th>
                               <th className="border border-gray-300 p-2 font-bold text-center">Durum</th>
                             </tr>
                           </thead>
                           <tbody>
                             {printItems.map((item, idx) => {
+                              const given = item.givenQuantity || 0;
+                              const remaining = item.remainingQuantity !== undefined ? item.remainingQuantity : Math.max(0, item.quantity - given);
+
                               let statusLabel = '1. Aşama Bekliyor';
                               if (item.status === 'pending_mali_isler') statusLabel = 'Satın Alma Bekliyor';
-                              if (item.status === 'approved') statusLabel = 'Tam Onaylandı';
+                              if (item.status === 'partially_delivered') statusLabel = `Kısmen Verildi (${remaining} Satın Alınacak)`;
+                              if (item.status === 'approved') statusLabel = 'Tamamlandı (Onaylandı)';
                               if (item.status === 'rejected') statusLabel = 'Reddedildi';
 
                               return (
@@ -1652,6 +1905,12 @@ export default function MalzemeTalepPool({
                                   <td className="border border-gray-300 p-2 font-bold text-gray-900">{item.materialName}</td>
                                   <td className="border border-gray-300 p-2 text-center font-bold">
                                     {item.quantity} {item.unit}
+                                  </td>
+                                  <td className="border border-gray-300 p-2 text-center font-bold text-blue-900">
+                                    {given} {item.unit}
+                                  </td>
+                                  <td className="border border-gray-300 p-2 text-center font-bold text-amber-900">
+                                    {remaining} {item.unit}
                                   </td>
                                   <td className="border border-gray-300 p-2 text-center font-bold">
                                     {statusLabel}

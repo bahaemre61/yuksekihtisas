@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       return error || NextResponse.json({ msg: 'Yetkisiz erişim' }, { status: 401 });
     }
 
-    const { batchId, action, note } = await req.json(); // action: 'approve' | 'reject'
+    const { batchId, action, note, itemsData } = await req.json(); // action: 'approve' | 'reject', itemsData?: Array<{ id: string, givenQuantity: number }>
 
     if (!batchId || !['approve', 'reject'].includes(action)) {
       return NextResponse.json({ msg: 'Geçersiz parametreler: batchId ve geçerli bir action gerekli.' }, { status: 400 });
@@ -64,12 +64,29 @@ export async function POST(req: NextRequest) {
         updatedCount++;
       }
       // 2. AŞAMA: MALİ İŞLER ONAYI
-      else if (item.status === 'pending_mali_isler') {
+      else if (item.status === 'pending_mali_isler' || item.status === 'partially_delivered' || (item.status === 'approved' && (item.remainingQuantity || 0) > 0)) {
         if (!isMaliIsler && !isAdmin) continue;
         if (item.supervisorReviewer && String(item.supervisorReviewer) === String(user.id) && !isAdmin) continue;
 
+        // Toplu işlemde girilen givenQuantity değerlerini al
+        let given = item.givenQuantity || 0;
+        if (Array.isArray(itemsData)) {
+          const matchData = itemsData.find((d: any) => String(d.id) === String(item._id));
+          if (matchData && matchData.givenQuantity !== undefined && matchData.givenQuantity !== null && matchData.givenQuantity !== '') {
+            const parsed = Number(matchData.givenQuantity);
+            given = isNaN(parsed) ? 0 : Math.max(0, Math.min(parsed, item.quantity));
+          }
+        }
+        item.givenQuantity = given;
+        const remaining = Math.max(0, item.quantity - given);
+        item.remainingQuantity = remaining;
+
         if (action === 'approve') {
-          item.status = 'approved' as any;
+          if (remaining === 0) {
+            item.status = 'approved' as any;
+          } else {
+            item.status = 'partially_delivered' as any;
+          }
         } else {
           item.status = 'rejected' as any;
         }

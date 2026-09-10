@@ -30,14 +30,22 @@ export async function POST(request:NextRequest) {
     }
 
     try{
-        const {title, content, priority} = await request.json();
+        const {title, content, priority, link, href} = await request.json();
 
         if(!title || !content){
             return NextResponse.json({msg: 'Başlık ve içerik zorunludur'}, {status : 403});
         }
         await connectToDatabase();
 
-        const newAnnouncement = new Announcement({title, content, priority});
+        const url = (link || href || '').trim();
+
+        const newAnnouncement = new Announcement({
+            title: title.trim(),
+            content: content.trim(),
+            priority: priority || 'normal',
+            link: url,
+            href: url
+        });
         await newAnnouncement.save();
 
         return NextResponse.json(newAnnouncement, {status : 201});

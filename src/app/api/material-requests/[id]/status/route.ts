@@ -17,7 +17,7 @@ export async function PUT(
 
     const { id } = await params;
     const body = await req.json();
-    const { action, note } = body; // action: 'approve' | 'reject'
+    const { action, note, givenQuantity } = body; // action: 'approve' | 'reject'
 
     if (!['approve', 'reject'].includes(action)) {
       return NextResponse.json({ msg: 'Geçersiz işlem: approve veya reject olmalıdır.' }, { status: 400 });
@@ -69,7 +69,11 @@ export async function PUT(
       requestItem.supervisorReviewedAt = new Date();
     }
     // 2. AŞAMA: MALİ İŞLER ONAYI
-    else if (requestItem.status === 'pending_mali_isler') {
+    else if (
+      requestItem.status === 'pending_mali_isler' ||
+      requestItem.status === 'partially_delivered' ||
+      (requestItem.status === 'approved' && (requestItem.remainingQuantity || 0) > 0)
+    ) {
       if (!isMaliIsler && !isAdmin) {
         return NextResponse.json({ msg: 'Bu talebin 2. Aşamasını sadece Mali İşler yetkisine sahip kullanıcılar onaylayabilir.' }, { status: 403 });
       }
@@ -78,8 +82,24 @@ export async function PUT(
         return NextResponse.json({ msg: '1. Aşamayı (Genel Sekreterlik) onaylayan kullanıcı 2. aşamayı da onaylayamaz. 2. Aşamayı Mali İşler yetkilisi onaylamalıdır.' }, { status: 403 });
       }
 
+      // Satın Alma Depodan Verilen & Kalan Hesaplaması
+      let given = requestItem.givenQuantity || 0;
+      if (givenQuantity !== undefined && givenQuantity !== null && givenQuantity !== '') {
+        const parsed = Number(givenQuantity);
+        given = isNaN(parsed) ? 0 : Math.max(0, Math.min(parsed, requestItem.quantity));
+      }
+      const remaining = Math.max(0, requestItem.quantity - given);
+
+      requestItem.givenQuantity = given;
+      requestItem.remainingQuantity = remaining;
+
       if (action === 'approve') {
-        requestItem.status = 'approved'; // Tam onaylandı
+        // Kalan 0 olana kadar 'approved' gözükmesin, kısmi teslimatta kalsın
+        if (remaining === 0) {
+          requestItem.status = 'approved'; // Tam onaylandı / Tamamlandı
+        } else {
+          requestItem.status = 'partially_delivered'; // Kısmen Verildi (Satın alma bekleniyor)
+        }
       } else {
         requestItem.status = 'rejected';
       }

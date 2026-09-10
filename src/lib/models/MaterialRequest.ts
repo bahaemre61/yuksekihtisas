@@ -3,6 +3,7 @@ import mongoose, { Document, Schema, models, model } from 'mongoose';
 export type MaterialRequestStatus =
   | 'pending_supervisor'
   | 'pending_mali_isler'
+  | 'partially_delivered'
   | 'approved'
   | 'rejected';
 
@@ -14,6 +15,8 @@ export interface IMaterialRequest extends Document {
   materialName: string;
   quantity: number;
   unit: string;
+  givenQuantity?: number; // Depodan Verilen Miktar
+  remainingQuantity?: number; // Satın Alınacak / Verilecek Kalan Miktar
   description?: string; // Gerekçe Metni
   specification?: string; // Teknik Şartname Metni
   specificationFileUrl?: string; // Yüklenen PDF / DOCX Şartname Dosya Bağlantısı
@@ -38,13 +41,15 @@ const MaterialRequestSchema = new Schema<IMaterialRequest>(
     materialName: { type: String, required: true },
     quantity: { type: Number, required: true, min: 1 },
     unit: { type: String, required: true },
+    givenQuantity: { type: Number, default: 0, min: 0 },
+    remainingQuantity: { type: Number, default: 0, min: 0 },
     description: { type: String, default: '' },
     specification: { type: String, default: '' },
     specificationFileUrl: { type: String, default: '' },
     specificationFileName: { type: String, default: '' },
     status: {
       type: String,
-      enum: ['pending_supervisor', 'pending_mali_isler', 'approved', 'rejected'],
+      enum: ['pending_supervisor', 'pending_mali_isler', 'partially_delivered', 'approved', 'rejected'],
       default: 'pending_supervisor',
     },
     supervisorReviewer: { type: Schema.Types.ObjectId, ref: 'User' },

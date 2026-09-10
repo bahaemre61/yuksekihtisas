@@ -26,6 +26,12 @@ export async function GET(req: NextRequest) {
       query.requester = user.id;
     }
 
+    // Geçmişte kalanı 0 olmadan approved yapılmış kayıtları kısmi teslimata geçir
+    await MaterialRequest.updateMany(
+      { status: 'approved', remainingQuantity: { $gt: 0 } },
+      { $set: { status: 'partially_delivered' } }
+    );
+
     const requests = await MaterialRequest.find(query)
       .populate('requester', 'name email role')
       .populate('supervisorReviewer', 'name email role')
@@ -56,8 +62,37 @@ export async function POST(req: NextRequest) {
     const currentYear = new Date().getFullYear();
     const academicPeriod = `${currentYear}${currentYear + 1}`; // Örn: 20262027
 
-    const existingBatches = await MaterialRequest.distinct('batchId');
-    const seqNum = String(existingBatches.length + 1).padStart(2, '0');
+    // Bölgeler (TIP, BLGT, BGLC, MRKZ vb.) farklı dahi olsa sayı global olarak daima artmalıdır (örn: 20262027-xx-TIP -> 20262027-(xx+1)-BLGT)
+    const existingBatches: (string | null)[] = await MaterialRequest.distinct('batchId');
+    let maxSeq = 0;
+
+    for (const bId of existingBatches) {
+      if (!bId || typeof bId !== 'string') continue;
+      const parts = bId.split('-');
+      if (parts.length >= 2) {
+        const num = parseInt(parts[1], 10);
+        if (!isNaN(num) && num > maxSeq) {
+          maxSeq = num;
+        }
+      }
+    }
+
+    let candidateSeq = maxSeq + 1;
+    // Çakışma olmaması için herhangi bir bölgede bu numaranın kullanılıp kullanılmadığını doğrula
+    while (
+      existingBatches.some(
+        (b) =>
+          b &&
+          typeof b === 'string' &&
+          (b.startsWith(`${academicPeriod}-${String(candidateSeq).padStart(2, '0')}-`) ||
+            b.startsWith(`${academicPeriod}-${candidateSeq}-`) ||
+            b.includes(`-${String(candidateSeq).padStart(2, '0')}-`))
+      )
+    ) {
+      candidateSeq++;
+    }
+
+    const seqNum = String(candidateSeq).padStart(2, '0');
 
     let locCode = 'TIP';
     const upperLoc = locationVal.toUpperCase();
@@ -124,6 +159,8 @@ export async function POST(req: NextRequest) {
         specification: item.specification ? item.specification.trim() : specNote,
         specificationFileUrl: item.specificationFileUrl ? item.specificationFileUrl.trim() : specFileUrl,
         specificationFileName: item.specificationFileName ? item.specificationFileName.trim() : specFileName,
+        givenQuantity: 0,
+        remainingQuantity: Number(item.quantity),
         status: 'pending_supervisor',
       }));
 
@@ -158,6 +195,8 @@ export async function POST(req: NextRequest) {
       materialName: materialName.trim(),
       quantity: Number(quantity),
       unit: unit.trim(),
+      givenQuantity: 0,
+      remainingQuantity: Number(quantity),
       description: description ? description.trim() : '',
       specification: specification ? specification.trim() : '',
       specificationFileUrl: specificationFileUrl ? specificationFileUrl.trim() : '',

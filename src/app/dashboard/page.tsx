@@ -15,7 +15,8 @@ import {
   ClockIcon,
   CheckCircleIcon,
   XCircleIcon,
-  BanknotesIcon
+  BanknotesIcon,
+  ArrowTopRightOnSquareIcon
 } from '@heroicons/react/24/outline';
 
 enum RequestStatus {
@@ -45,6 +46,8 @@ interface IMaterialRequest {
   materialType: string;
   quantity: number;
   unit: string;
+  givenQuantity?: number;
+  remainingQuantity?: number;
   status: 'pending_supervisor' | 'pending_mali_isler' | 'approved' | 'rejected';
   createdAt: string;
 }
@@ -53,6 +56,8 @@ interface IAnnouncement {
   _id: string;
   title: string;
   priority: 'normal' | 'urgent';
+  link?: string;
+  href?: string;
   createdAt: string;
 }
 
@@ -287,13 +292,23 @@ export default function DashboardHome() {
               ) : (
                 recentMaterialRequests.map((req) => (
                   <div key={req._id} className="flex items-center justify-between p-3 hover:bg-base-200 rounded-lg transition-colors border-b border-base-200 last:border-0">
-                    <div>
+                    <div className="space-y-0.5">
                       <p className="font-medium text-base-content">
                         {req.materialName} <span className="text-xs text-base-content/60">({req.quantity} {req.unit})</span>
                       </p>
                       <p className="text-xs text-base-content/60">
                         {req.materialType} • {new Date(req.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
                       </p>
+                      {(Boolean(req.givenQuantity && req.givenQuantity > 0) || req.status === 'approved') && (
+                        <div className="flex items-center gap-1.5 pt-0.5 flex-wrap">
+                          <span className="badge badge-info badge-xs font-black text-[10px] text-white">
+                            📦 Depodan: {req.givenQuantity || 0} {req.unit}
+                          </span>
+                          <span className={`badge badge-xs font-black text-[10px] ${(req.remainingQuantity || 0) > 0 ? 'badge-warning text-warning-content' : 'badge-success text-white'}`}>
+                            {(req.remainingQuantity || 0) > 0 ? `🛒 Kalan: ${req.remainingQuantity} ${req.unit}` : '✓ Tamamı Depodan'}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <MaterialStatusBadge status={req.status} />
                   </div>
@@ -355,18 +370,39 @@ export default function DashboardHome() {
                   Yeni duyuru yok.
                 </p>
               ) : (
-                announcements.map((ann) => (
-                  <div
-                    key={ann._id}
-                    className={`text-sm pb-3 border-b border-base-200 last:border-0 last:pb-0 ${ann.priority === 'urgent' ? 'bg-error/10 p-2 rounded border-l-2 border-error' : ''
+                announcements.map((ann) => {
+                  const targetUrl = ann.link || ann.href;
+                  const formattedUrl = targetUrl
+                    ? (/^https?:\/\//i.test(targetUrl.trim()) ? targetUrl.trim() : `https://${targetUrl.trim()}`)
+                    : '';
+
+                  return (
+                    <div
+                      key={ann._id}
+                      className={`text-sm pb-3 border-b border-base-200 last:border-0 last:pb-0 ${
+                        ann.priority === 'urgent' ? 'bg-error/10 p-2 rounded border-l-2 border-error' : ''
                       }`}
-                  >
-                    <p className="font-medium text-base-content truncate">{ann.title}</p>
-                    <p className="text-xs text-base-content/60 mt-1">
-                      {new Date(ann.createdAt).toLocaleDateString('tr-TR')}
-                    </p>
-                  </div>
-                ))
+                    >
+                      {targetUrl ? (
+                        <a
+                          href={formattedUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-base-content hover:text-primary hover:underline flex items-center gap-1 group"
+                          title="Bağlantıyı aç"
+                        >
+                          <span className="truncate">{ann.title}</span>
+                          <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5 text-primary/70 shrink-0 group-hover:text-primary" />
+                        </a>
+                      ) : (
+                        <p className="font-medium text-base-content truncate">{ann.title}</p>
+                      )}
+                      <p className="text-xs text-base-content/60 mt-1">
+                        {new Date(ann.createdAt).toLocaleDateString('tr-TR')}
+                      </p>
+                    </div>
+                  );
+                })
               )}
             </div>
             <div className="mt-3 text-right">
