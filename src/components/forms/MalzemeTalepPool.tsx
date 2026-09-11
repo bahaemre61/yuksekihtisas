@@ -129,17 +129,22 @@ export default function MalzemeTalepPool({
     specification: ''
   });
   const [isEditingSubmitting, setIsEditingSubmitting] = useState(false);
+  const [isEditCustomUnit, setIsEditCustomUnit] = useState(false);
+
+  const UNIT_OPTIONS = ['Adet', 'Paket', 'Kutu', 'Koli', 'Top', 'Metre', 'Litre', 'Kg'];
 
   const handleOpenEditModal = (item: IMaterialRequestData) => {
     setEditingItem(item);
+    const currentUnit = item.unit || 'Adet';
     setEditFormData({
       materialName: item.materialName || '',
       materialType: item.materialType || 'Kırtasiye',
       quantity: item.quantity || 1,
-      unit: item.unit || 'Adet',
+      unit: currentUnit,
       description: item.description || '',
       specification: item.specification || ''
     });
+    setIsEditCustomUnit(!UNIT_OPTIONS.includes(currentUnit));
     setIsEditModalOpen(true);
   };
 
@@ -320,6 +325,46 @@ export default function MalzemeTalepPool({
     );
   });
 
+  // Her işin en son inceleme durumunu (inceleniyor / bırakıldı / hiç) tek yerden hesapla
+  const inspectionStatusMap = React.useMemo(() => {
+    const map: Record<string, { status: 'inspecting' | 'released' | 'none'; inspectorName: string }> = {};
+    groupedBatches.forEach((batch) => {
+      const logData = logsMap[batch.batchId];
+      const inspectLogs = logData ? logData.logs.filter((l) => l.action === 'INSPECT' || l.action === 'RELEASE_INSPECT') : [];
+      inspectLogs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      const latest = inspectLogs[0];
+      map[batch.batchId] = {
+        status: latest ? (latest.action === 'INSPECT' ? 'inspecting' : 'released') : 'none',
+        inspectorName: latest?.userName || ''
+      };
+    });
+    return map;
+  }, [groupedBatches, logsMap]);
+
+  // Yönetim Özeti: Durumlara göre iş sayıları (hızlı izleme / raporlama için)
+  const dashboardStats = React.useMemo(() => {
+    const counts = {
+      total: groupedBatches.length,
+      pending_supervisor: 0,
+      pending_mali_isler: 0,
+      partially_delivered: 0,
+      approved: 0,
+      rejected: 0,
+      inspecting: 0
+    };
+    groupedBatches.forEach((b) => {
+      counts[b.status]++;
+      if (inspectionStatusMap[b.batchId]?.status === 'inspecting') counts.inspecting++;
+    });
+    return counts;
+  }, [groupedBatches, inspectionStatusMap]);
+
+  // Aktif arama/filtre varsa raporlar (Excel/Yazdır) sadece görüntülenen listeyi kapsar
+  const hasActiveFilter = statusFilter !== 'all' || searchTerm.trim() !== '';
+  const reportItems = React.useMemo(() => {
+    return hasActiveFilter ? filteredBatches.flatMap((b) => b.items) : requests;
+  }, [hasActiveFilter, filteredBatches, requests]);
+
   // Veriler güncellendiğinde açık olan seçili işi de senkronize et
   useEffect(() => {
     if (selectedBatch) {
@@ -459,7 +504,7 @@ export default function MalzemeTalepPool({
 
   // Export CSV Function
   const handleExportCSV = () => {
-    const listToExport = printBatch ? printBatch.items : requests;
+    const listToExport = printBatch ? printBatch.items : reportItems;
 
     if (listToExport.length === 0) {
       alert('İndirilecek malzeme talebi bulunamadı.');
@@ -549,28 +594,29 @@ export default function MalzemeTalepPool({
             onClick={fetchRequests}
             className="btn btn-ghost btn-xs sm:btn-sm btn-square rounded-xl"
             title="Listeyi Yenile"
+            aria-label="Listeyi Yenile"
           >
             <ArrowPathIcon className="h-4 w-4" />
           </button>
 
-          {/* İndir (CSV / Excel) Butonu */}
+          {/* İndir (CSV / Excel) Butonu - Aktif filtre varsa sadece görüntülenen listeyi indirir */}
           <button
             onClick={handleExportCSV}
             className="btn btn-outline btn-primary btn-xs sm:btn-sm gap-1.5 rounded-xl font-bold hover:scale-[1.02] transition-all"
-            title="Tüm Listeyi Excel/CSV Formatında İndir"
+            title={hasActiveFilter ? 'Görüntülenen (Filtrelenmiş) Listeyi Excel/CSV Olarak İndir' : 'Tüm Listeyi Excel/CSV Formatında İndir'}
           >
             <ArrowDownTrayIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span>Excel / İndir</span>
+            <span>{hasActiveFilter ? `Filtrelenmiş İndir (${reportItems.length})` : 'Excel / İndir'}</span>
           </button>
 
-          {/* Tümünü Çıktı Al Butonu */}
+          {/* Çıktı Al Butonu - Aktif filtre varsa sadece görüntülenen listeyi yazdırır */}
           <button
             onClick={() => handleOpenPrintModal(undefined)}
             className="btn btn-primary btn-xs sm:btn-sm gap-1.5 rounded-xl font-bold shadow-md shadow-primary/20 hover:scale-[1.02] transition-all text-white"
-            title="Tüm Talepleri Yazdır / Çıktı Al"
+            title={hasActiveFilter ? 'Görüntülenen (Filtrelenmiş) Talepleri Yazdır / Çıktı Al' : 'Tüm Talepleri Yazdır / Çıktı Al'}
           >
             <PrinterIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span>Tümünü Yazdır</span>
+            <span>{hasActiveFilter ? `Filtrelenmiş Yazdır (${reportItems.length})` : 'Tümünü Yazdır'}</span>
           </button>
 
           {onOpenNewFormModal && (
@@ -582,6 +628,111 @@ export default function MalzemeTalepPool({
               <span>Yeni Talep</span>
             </button>
           )}
+        </div>
+      </div>
+
+      {/* YÖNETİM ÖZETİ - Duruma göre tek bakışta iş sayısı, tıklayarak filtrele */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h4 className="text-xs font-extrabold text-base-content/70 uppercase tracking-wide flex items-center gap-1.5">
+            <ClipboardDocumentCheckIcon className="h-4 w-4 text-primary" />
+            Yönetim Özeti
+          </h4>
+          {dashboardStats.inspecting > 0 && (
+            <span className="badge badge-sm bg-violet-500/10 text-violet-600 border border-violet-500/20 font-bold gap-1">
+              <EyeIcon className="h-3 w-3" /> Şu An İncelenen: {dashboardStats.inspecting}
+            </span>
+          )}
+        </div>
+
+        <div
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5"
+          role="group"
+          aria-label="Duruma göre iş sayısı özeti - filtrelemek için bir karta tıklayın"
+        >
+          <button
+            type="button"
+            onClick={() => setStatusFilter('all')}
+            aria-pressed={statusFilter === 'all'}
+            title="Tümünü göster"
+            className={`flex items-center gap-2.5 p-3 rounded-2xl border text-left transition-all hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary/40 ${statusFilter === 'all' ? 'bg-primary/15 border-primary/40 ring-2 ring-primary/30' : 'bg-primary/5 border-primary/20 hover:bg-primary/10'}`}
+          >
+            <ShoppingBagIcon className="h-5 w-5 text-primary shrink-0" />
+            <div>
+              <div className="text-lg font-black text-primary leading-none">{dashboardStats.total}</div>
+              <div className="text-[10px] font-bold text-primary/80 uppercase tracking-wide">Toplam İş</div>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setStatusFilter(statusFilter === 'pending_supervisor' ? 'all' : 'pending_supervisor')}
+            aria-pressed={statusFilter === 'pending_supervisor'}
+            title="1. Aşamada onay bekleyen işleri göster"
+            className={`flex items-center gap-2.5 p-3 rounded-2xl border text-left transition-all hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-amber-500/40 ${statusFilter === 'pending_supervisor' ? 'bg-amber-500/15 border-amber-500/40 ring-2 ring-amber-500/30' : 'bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10'}`}
+          >
+            <ClockIcon className="h-5 w-5 text-amber-600 shrink-0" />
+            <div>
+              <div className="text-lg font-black text-amber-700 dark:text-amber-400 leading-none">{dashboardStats.pending_supervisor}</div>
+              <div className="text-[10px] font-bold text-amber-700/80 dark:text-amber-400/80 uppercase tracking-wide">1. Aşama Bekleyen</div>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setStatusFilter(statusFilter === 'pending_mali_isler' ? 'all' : 'pending_mali_isler')}
+            aria-pressed={statusFilter === 'pending_mali_isler'}
+            title="2. Aşamada (Satın Alma) bekleyen işleri göster"
+            className={`flex items-center gap-2.5 p-3 rounded-2xl border text-left transition-all hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-sky-500/40 ${statusFilter === 'pending_mali_isler' ? 'bg-sky-500/15 border-sky-500/40 ring-2 ring-sky-500/30' : 'bg-sky-500/5 border-sky-500/20 hover:bg-sky-500/10'}`}
+          >
+            <BanknotesIcon className="h-5 w-5 text-sky-600 shrink-0" />
+            <div>
+              <div className="text-lg font-black text-sky-700 dark:text-sky-400 leading-none">{dashboardStats.pending_mali_isler}</div>
+              <div className="text-[10px] font-bold text-sky-700/80 dark:text-sky-400/80 uppercase tracking-wide">2. Aşama Bekleyen</div>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setStatusFilter(statusFilter === 'partially_delivered' ? 'all' : 'partially_delivered')}
+            aria-pressed={statusFilter === 'partially_delivered'}
+            title="Kısmi teslim edilen (satın alma bekleyen) işleri göster"
+            className={`flex items-center gap-2.5 p-3 rounded-2xl border text-left transition-all hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-indigo-500/40 ${statusFilter === 'partially_delivered' ? 'bg-indigo-500/15 border-indigo-500/40 ring-2 ring-indigo-500/30' : 'bg-indigo-500/5 border-indigo-500/20 hover:bg-indigo-500/10'}`}
+          >
+            <ClockIcon className="h-5 w-5 text-indigo-600 shrink-0" />
+            <div>
+              <div className="text-lg font-black text-indigo-700 dark:text-indigo-400 leading-none">{dashboardStats.partially_delivered}</div>
+              <div className="text-[10px] font-bold text-indigo-700/80 dark:text-indigo-400/80 uppercase tracking-wide">Kısmi Teslim</div>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setStatusFilter(statusFilter === 'approved' ? 'all' : 'approved')}
+            aria-pressed={statusFilter === 'approved'}
+            title="Tamamlanan (onaylanan) işleri göster"
+            className={`flex items-center gap-2.5 p-3 rounded-2xl border text-left transition-all hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-emerald-500/40 ${statusFilter === 'approved' ? 'bg-emerald-500/15 border-emerald-500/40 ring-2 ring-emerald-500/30' : 'bg-emerald-500/5 border-emerald-500/20 hover:bg-emerald-500/10'}`}
+          >
+            <CheckCircleIcon className="h-5 w-5 text-emerald-600 shrink-0" />
+            <div>
+              <div className="text-lg font-black text-emerald-700 dark:text-emerald-400 leading-none">{dashboardStats.approved}</div>
+              <div className="text-[10px] font-bold text-emerald-700/80 dark:text-emerald-400/80 uppercase tracking-wide">Tamamlanan</div>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setStatusFilter(statusFilter === 'rejected' ? 'all' : 'rejected')}
+            aria-pressed={statusFilter === 'rejected'}
+            title="Reddedilen işleri göster"
+            className={`flex items-center gap-2.5 p-3 rounded-2xl border text-left transition-all hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-rose-500/40 ${statusFilter === 'rejected' ? 'bg-rose-500/15 border-rose-500/40 ring-2 ring-rose-500/30' : 'bg-rose-500/5 border-rose-500/20 hover:bg-rose-500/10'}`}
+          >
+            <XCircleIcon className="h-5 w-5 text-rose-600 shrink-0" />
+            <div>
+              <div className="text-lg font-black text-rose-700 dark:text-rose-400 leading-none">{dashboardStats.rejected}</div>
+              <div className="text-[10px] font-bold text-rose-700/80 dark:text-rose-400/80 uppercase tracking-wide">Reddedilen</div>
+            </div>
+          </button>
         </div>
       </div>
 
@@ -675,13 +826,10 @@ export default function MalzemeTalepPool({
                 const hasSpecText = Boolean(specTextItem?.specification);
 
                 // İnceleme durumları kontrolü (En son inceleme/bırakma logu)
-                const inspectLogs = logData.logs ? logData.logs.filter(l => l.action === 'INSPECT' || l.action === 'RELEASE_INSPECT') : [];
-                inspectLogs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-                const latestInspectLog = inspectLogs.length > 0 ? inspectLogs[0] : null;
-
-                const isCurrentlyInspected = latestInspectLog?.action === 'INSPECT';
-                const isReleased = latestInspectLog?.action === 'RELEASE_INSPECT';
-                const lastInspectorName = latestInspectLog?.userName || '';
+                const inspectionInfo = inspectionStatusMap[batch.batchId] || { status: 'none' as const, inspectorName: '' };
+                const isCurrentlyInspected = inspectionInfo.status === 'inspecting';
+                const isReleased = inspectionInfo.status === 'released';
+                const lastInspectorName = inspectionInfo.inspectorName;
 
                 // Yenilenmiş Kibar Renk Tasarımı
                 let rowBgClass = 'hover:bg-base-200/50 transition-colors';
@@ -883,7 +1031,7 @@ export default function MalzemeTalepPool({
             <div className="fixed inset-0 bg-base-content/40 backdrop-blur-md" />
           </Transition.Child>
 
-          <div className="fixed inset-0 z-10 overflow-y-auto p-4 flex items-center justify-center">
+          <div className="fixed inset-0 z-10 overflow-y-auto p-2 flex items-center justify-center">
             <Transition.Child
               as={Fragment}
               enter="ease-out duration-300"
@@ -893,7 +1041,7 @@ export default function MalzemeTalepPool({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-5xl max-h-[92vh] bg-base-100 rounded-3xl shadow-2xl border border-base-200 flex flex-col overflow-hidden">
+              <Dialog.Panel className="w-full max-w-[96vw] max-h-[97vh] bg-base-100 rounded-3xl shadow-2xl border border-base-200 flex flex-col overflow-hidden">
                 {selectedBatch && (() => {
                   const modalSpecItem = selectedBatch.items.find(i => Boolean(i.specificationFileUrl && i.specificationFileUrl.trim()));
                   const modalSpecUrl = modalSpecItem?.specificationFileUrl?.trim();
@@ -920,6 +1068,7 @@ export default function MalzemeTalepPool({
                           <button
                             onClick={() => setIsBatchDetailModalOpen(false)}
                             className="btn btn-ghost btn-xs btn-square rounded-xl"
+                            aria-label="Kapat"
                           >
                             <XMarkIcon className="h-5 w-5" />
                           </button>
@@ -1068,7 +1217,7 @@ export default function MalzemeTalepPool({
 
                         {/* Scroll-safe Material Items Table */}
                         <div className="space-y-3">
-                          <div className="overflow-x-auto max-h-[48vh] overflow-y-auto border border-base-200 rounded-2xl relative shadow-xs">
+                          <div className="overflow-x-auto max-h-[68vh] overflow-y-auto border border-base-200 rounded-2xl relative shadow-xs">
                             <table className="table table-zebra w-full text-xs">
                               <thead className="sticky top-0 z-20 bg-base-200/90 backdrop-blur-md shadow-xs">
                                 <tr>
@@ -1104,7 +1253,7 @@ export default function MalzemeTalepPool({
                                     (!isSameUserAsSupervisor || isAdmin);
 
                                   const isOwner = currentUser?._id && item.requester?._id && String(item.requester._id) === String(currentUser._id);
-                                  const canEdit = (isOwner || isAdmin) && item.status !== 'approved';
+                                  const canEdit = (isOwner || isAdmin || isMaliIsler) && item.status !== 'approved';
 
                                   return (
                                     <tr key={item._id}>
@@ -1143,11 +1292,11 @@ export default function MalzemeTalepPool({
                                       <td className="text-center">
                                         <div className="flex items-center justify-center">
                                           {currentRemaining === 0 ? (
-                                            <span className="badge badge-success badge-sm font-black text-white shadow-xs">
+                                            <span className="font-black text-xs text-emerald-600">
                                               ✓ 0 {item.unit} (Tamamı Depodan)
                                             </span>
                                           ) : (
-                                            <span className="badge badge-warning badge-sm font-black text-warning-content shadow-xs">
+                                            <span className="font-black text-xs text-amber-600">
                                               🛒 {currentRemaining} {item.unit} Satın Alınacak
                                             </span>
                                           )}
@@ -1341,6 +1490,7 @@ export default function MalzemeTalepPool({
                   <button
                     onClick={() => setIsLogModalOpen(false)}
                     className="btn btn-ghost btn-xs btn-square rounded-xl"
+                    aria-label="Kapat"
                   >
                     <XMarkIcon className="h-5 w-5" />
                   </button>
@@ -1473,6 +1623,7 @@ export default function MalzemeTalepPool({
                   <button
                     onClick={() => setIsReviewModalOpen(false)}
                     className="btn btn-ghost btn-xs btn-square rounded-xl"
+                    aria-label="Kapat"
                   >
                     <XMarkIcon className="h-4 w-4" />
                   </button>
@@ -1677,6 +1828,7 @@ export default function MalzemeTalepPool({
                   <button
                     onClick={() => setIsEditModalOpen(false)}
                     className="btn btn-ghost btn-xs btn-square rounded-xl"
+                    aria-label="Kapat"
                   >
                     <XMarkIcon className="h-5 w-5" />
                   </button>
@@ -1724,14 +1876,35 @@ export default function MalzemeTalepPool({
                         />
                       </div>
                       <div>
-                        <label className="label font-bold text-base-content">Birim</label>
-                        <input
-                          type="text"
-                          className="input input-bordered w-full rounded-xl text-xs font-bold"
-                          value={editFormData.unit}
-                          onChange={(e) => setEditFormData({ ...editFormData, unit: e.target.value })}
-                          placeholder="Adet, Kutu, Paket"
-                        />
+                        <label className="label font-bold text-base-content">Birim Ölçeği</label>
+                        <select
+                          className="select select-bordered w-full rounded-xl text-xs font-bold"
+                          value={isEditCustomUnit ? 'Diğer' : editFormData.unit}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === 'Diğer') {
+                              setIsEditCustomUnit(true);
+                              setEditFormData({ ...editFormData, unit: '' });
+                            } else {
+                              setIsEditCustomUnit(false);
+                              setEditFormData({ ...editFormData, unit: val });
+                            }
+                          }}
+                        >
+                          {UNIT_OPTIONS.map((u) => (
+                            <option key={u} value={u}>{u}</option>
+                          ))}
+                          <option value="Diğer">Diğer (Özel Belirt)</option>
+                        </select>
+                        {isEditCustomUnit && (
+                          <input
+                            type="text"
+                            className="input input-bordered w-full rounded-xl text-xs font-bold mt-2"
+                            placeholder="Birimi buraya yazınız..."
+                            value={editFormData.unit}
+                            onChange={(e) => setEditFormData({ ...editFormData, unit: e.target.value })}
+                          />
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1770,7 +1943,7 @@ export default function MalzemeTalepPool({
                   <button
                     type="button"
                     onClick={handleSaveEdit}
-                    disabled={isEditingSubmitting || !editFormData.materialName.trim()}
+                    disabled={isEditingSubmitting || !editFormData.materialName.trim() || !editFormData.unit.trim()}
                     className="btn btn-primary btn-sm rounded-xl font-bold text-white shadow-md gap-1"
                   >
                     {isEditingSubmitting ? <span className="loading loading-spinner loading-xs"></span> : 'Kaydet ve Güncelle'}
@@ -1834,6 +2007,7 @@ export default function MalzemeTalepPool({
                     <button
                       onClick={() => setIsPrintModalOpen(false)}
                       className="btn btn-ghost btn-sm btn-square rounded-xl"
+                      aria-label="Kapat"
                     >
                       <XMarkIcon className="h-5 w-5 text-gray-500" />
                     </button>
@@ -1842,7 +2016,7 @@ export default function MalzemeTalepPool({
 
                 {/* Printable Document Area */}
                 {(() => {
-                  const printItems = printBatch ? printBatch.items : requests;
+                  const printItems = printBatch ? printBatch.items : reportItems;
                   const requesterName = printBatch ? printBatch.requester?.name : (requests[0]?.requester?.name || 'Sistem Kullanıcısı');
                   const supervisorUser = printItems.find(i => i.supervisorReviewer)?.supervisorReviewer;
                   const maliIslerUser = printItems.find(i => i.maliIslerReviewer)?.maliIslerReviewer;
@@ -1868,7 +2042,7 @@ export default function MalzemeTalepPool({
                         <div className="flex justify-between items-center text-[11px] text-gray-500 pt-2 px-2">
                           <span>Form Tarihi: {new Date().toLocaleDateString('tr-TR')}</span>
                           <span>
-                            Talep Kodu: {printBatch ? printBatch.batchId : 'Tüm Talepler'}
+                            Talep Kodu: {printBatch ? printBatch.batchId : (hasActiveFilter ? `Filtrelenmiş Liste (${printItems.length} Kalem)` : 'Tüm Talepler')}
                           </span>
                         </div>
                       </div>

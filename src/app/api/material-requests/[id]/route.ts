@@ -33,8 +33,9 @@ export async function PUT(
 
     const isRequester = String(item.requester) === String(user.id);
     const isAdmin = user.role === UserRole.ADMIN;
+    const isMaliIsler = user.role === UserRole.MALI_ISLER;
 
-    if (!isRequester && !isAdmin) {
+    if (!isRequester && !isAdmin && !isMaliIsler) {
       return NextResponse.json({ msg: 'Sadece kendi oluşturduğunuz malzeme talebini düzenleyebilirsiniz.' }, { status: 403 });
     }
 

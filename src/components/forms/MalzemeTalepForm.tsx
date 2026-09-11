@@ -259,7 +259,7 @@ export default function MalzemeTalepForm({
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Yerleşke Seçimi (İş Kodu için Zorunlu) */}
         <div className="p-4 bg-primary/5 rounded-2xl border border-primary/20 space-y-2">
-          <label className="block text-xs font-extrabold text-primary flex items-center gap-1.5">
+          <label className="block text-xs font-extrabold text-primary items-center gap-1.5">
             <BuildingOfficeIcon className="h-4 w-4 text-primary" />
             Yerleşke Seçiniz * (İş Koduna Otomatik İşlenir)
           </label>
@@ -426,7 +426,7 @@ export default function MalzemeTalepForm({
 
           {/* 1 Adet Gerekçe */}
           <div>
-            <label className="block text-xs font-bold text-base-content/80 mb-1 flex items-center gap-1">
+            <label className="block text-xs font-bold text-base-content/80 mb-1 items-center gap-1">
               <DocumentTextIcon className="h-4 w-4 text-primary" />
               Talep Gerekçesi / Açıklama (1 Adet - Opsiyonel)
             </label>
@@ -441,7 +441,7 @@ export default function MalzemeTalepForm({
 
           {/* 1 Adet Şartname Metni */}
           <div>
-            <label className="block text-xs font-bold text-base-content/80 mb-1 flex items-center gap-1">
+            <label className="block text-xs font-bold text-base-content/80 mb-1 items-center gap-1">
               <ClipboardDocumentListIcon className="h-4 w-4 text-secondary" />
               Teknik Şartname / Özel Detaylar (Metin Olarak - Opsiyonel)
             </label>
@@ -456,7 +456,7 @@ export default function MalzemeTalepForm({
 
           {/* 1 Adet Şartname DOSYASI YÜKLEME (PDF veya DOCX) */}
           <div className="pt-1">
-            <label className="block text-xs font-bold text-base-content/80 mb-1.5 flex items-center gap-1">
+            <label className="block text-xs font-bold text-base-content/80 mb-1.5 items-center gap-1">
               <PaperClipIcon className="h-4 w-4 text-accent" />
               Teknik Şartname Dosyası Yükle (.pdf, .docx, .doc, .rar - Opsiyonel)
             </label>
