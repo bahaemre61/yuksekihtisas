@@ -85,6 +85,62 @@ export default function AdminDashboardPage() {
         }
     };
 
+    const getStatusLabel = (status: string) => {
+        switch (status) {
+            case 'pending': return 'Beklemede';
+            case 'assigned': return 'Atandı';
+            case 'completed': return 'Tamamlandı';
+            case 'cancelled': return 'İptal';
+            default: return status;
+        }
+    };
+
+    // Raporlama: Aktif filtreden bağımsız olarak (iptaller dahil) TÜM talepleri Excel/CSV olarak indirir
+    const [exportingCsv, setExportingCsv] = useState(false);
+    const handleExportAllCSV = async () => {
+        setExportingCsv(true);
+        try {
+            const res = await axios.get('/api/admin/requests?status=all&showCancelled=true');
+            const allRequests: IVehicleReuqest[] = res.data;
+
+            if (!allRequests || allRequests.length === 0) {
+                alert('Dışa aktarılacak talep bulunamadı.');
+                return;
+            }
+
+            const headers = ['Talep Eden', 'E-Posta', 'Nereden', 'Nereye', 'Amaç', 'Başlangıç Tarihi', 'Başlangıç Saati', 'Bitiş Saati', 'Durum', 'Şoför'];
+
+            const rows = allRequests.map((req) => [
+                req.requestingUser?.name || 'Silinmiş',
+                req.requestingUser?.email || '',
+                req.fromLocation,
+                req.toLocation,
+                req.purpose,
+                new Date(req.startTime).toLocaleDateString('tr-TR'),
+                new Date(req.startTime).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+                new Date(req.endTime).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+                getStatusLabel(req.status),
+                req.assignedDriver?.name || 'Atanmadı'
+            ].map((val) => `"${String(val).replace(/"/g, '""')}"`).join(','));
+
+            const csvContent = '﻿' + [headers.join(','), ...rows].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `Arac_Talepleri_Raporu_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error(err);
+            alert('Excel raporu oluşturulamadı.');
+        } finally {
+            setExportingCsv(false);
+        }
+    };
+
     const isPastDate = (dateString: string) => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -132,13 +188,22 @@ export default function AdminDashboardPage() {
                         <button
                             onClick={() => setShowCancelled(!showCancelled)}
                             className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all border ${
-                                showCancelled 
-                                ? 'bg-error/10 text-error border-error/30 shadow-inner' 
+                                showCancelled
+                                ? 'bg-error/10 text-error border-error/30 shadow-inner'
                                 : 'bg-base-100 text-base-content/70 border-base-300 shadow-sm hover:bg-base-200'
                             }`}
                         >
                             {showCancelled ? <EyeIcon className="h-4 w-4" /> : <EyeSlashIcon className="h-4 w-4" />}
                             {showCancelled ? 'İPTALLERİ GİZLE' : 'İPTALLERİ GÖSTER'}
+                        </button>
+
+                        <button
+                            onClick={handleExportAllCSV}
+                            disabled={exportingCsv}
+                            title="Filtreden bağımsız olarak tüm talepleri (iptaller dahil) Excel/CSV olarak indir"
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all border bg-base-100 text-base-content/70 border-base-300 shadow-sm hover:bg-base-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {exportingCsv ? 'HAZIRLANIYOR...' : 'TÜMÜNÜ EXCEL\'E AKTAR'}
                         </button>
                     </div>
                 </div>

@@ -94,6 +94,56 @@ export default function TechnicalAdminPage() {
         }
     };
 
+    const getPriorityLabel = (priority: string) => {
+        return priority === 'HIGH' ? 'ACİL' : priority === 'LOW' ? 'DÜŞÜK' : 'NORMAL';
+    };
+
+    // Raporlama: Aktif filtreden bağımsız olarak TÜM talepleri Excel/CSV olarak indirir (iptal edilenler HARİÇ)
+    const [exportingCsv, setExportingCsv] = useState(false);
+    const handleExportAllCSV = async () => {
+        setExportingCsv(true);
+        try {
+            const res = await axios.get('/api/admin/technical-requests?status=all&showCancelled=false');
+            const incomingData = Array.isArray(res.data) ? res.data : (res.data.data || []);
+            const allRequests: ITechnicalRequest[] = incomingData.filter((r: ITechnicalRequest) => r.status !== RequestStatus.CANCELLED);
+
+            if (allRequests.length === 0) {
+                alert('Dışa aktarılacak talep bulunamadı.');
+                return;
+            }
+
+            const headers = ['Talep Eden', 'E-Posta', 'Arıza Başlığı', 'Açıklama', 'Konum', 'Öncelik', 'Tarih', 'Durum', 'Personel'];
+
+            const rows = allRequests.map((req) => [
+                req.user?.name || 'Bilinmiyor',
+                req.user?.email || '',
+                req.title,
+                req.description,
+                req.location,
+                getPriorityLabel(req.priority),
+                new Date(req.createdAt).toLocaleDateString('tr-TR'),
+                req.status.toUpperCase(),
+                req.technicalStaff && req.technicalStaff.length > 0 ? req.technicalStaff.map((s) => s.name).join(' / ') : 'Atanmadı'
+            ].map((val) => `"${String(val).replace(/"/g, '""')}"`).join(','));
+
+            const csvContent = '﻿' + [headers.join(','), ...rows].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `Teknik_Talepler_Raporu_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error(err);
+            alert('Excel raporu oluşturulamadı.');
+        } finally {
+            setExportingCsv(false);
+        }
+    };
+
     const isPastDate = (dateString: string) => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -149,6 +199,15 @@ export default function TechnicalAdminPage() {
                         >
                             {showCancelled ? <EyeIcon className="h-4 w-4" /> : <EyeSlashIcon className="h-4 w-4" />}
                             {showCancelled ? 'İptalleri Gizle' : 'İptalleri Göster'}
+                        </button>
+
+                        <button
+                            onClick={handleExportAllCSV}
+                            disabled={exportingCsv}
+                            title="Filtreden bağımsız olarak tüm talepleri (iptaller HARİÇ) Excel/CSV olarak indir"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all border bg-base-100 text-base-content/70 border-base-300 shadow-sm hover:bg-base-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {exportingCsv ? 'Hazırlanıyor...' : "Tümünü Excel'e Aktar"}
                         </button>
                     </div>
                 </div>
