@@ -3,18 +3,18 @@
 import React, { useState, useEffect, Fragment } from 'react';
 import axios from 'axios';
 import { Dialog, Transition } from '@headlessui/react';
-import {
-  XMarkIcon,
-  ShoppingBagIcon,
-  PlusIcon,
-  TrashIcon,
-  DocumentTextIcon,
-  ClipboardDocumentListIcon,
-  PaperClipIcon,
-  CloudArrowUpIcon,
-  CheckCircleIcon,
-  BuildingOfficeIcon
-} from '@heroicons/react/24/outline';
+import { CloudArrowUpIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import Alert from '@/src/components/ui/Alert';
+
+// Teknik şartname yükleme kuralları (sunucudaki upload-spec ile aynı olmalı)
+const SPEC_ALLOWED_EXT = ['.pdf', '.doc', '.docx', '.rar', '.zip', '.7z'];
+const SPEC_MAX_BYTES = 25 * 1024 * 1024; // 25MB
+
+const formatBytes = (bytes: number) => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
 
 export interface IUser {
   _id: string;
@@ -73,6 +73,10 @@ export default function MalzemeTalepForm({
   const [specFileUrl, setSpecFileUrl] = useState('');
   const [specFileName, setSpecFileName] = useState('');
   const [uploadingSpec, setUploadingSpec] = useState(false);
+  const [specFileSize, setSpecFileSize] = useState(0);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [specError, setSpecError] = useState('');
+  const [dragActive, setDragActive] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -110,41 +114,77 @@ export default function MalzemeTalepForm({
   };
 
   // Şartname Dosyası Yükleme İşleyicisi
-  const handleSpecFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = e.target.files?.[0];
-    if (!selected) return;
+  const uploadSpecFile = async (selected: File) => {
+    setSpecError('');
 
-    const allowed = ['.pdf', '.doc', '.docx', '.rar'];
-    const ext = selected.name.substring(selected.name.lastIndexOf('.')).toLowerCase();
+    const dot = selected.name.lastIndexOf('.');
+    const ext = dot >= 0 ? selected.name.substring(dot).toLowerCase() : '';
 
-    if (!allowed.includes(ext)) {
-      alert('Şartname dosyası sadece PDF (.pdf) veya Word (.doc, .docx) formatında yüklenebilir.');
+    if (!SPEC_ALLOWED_EXT.includes(ext)) {
+      setSpecError(`"${ext || 'uzantısız'}" dosya türü desteklenmiyor. Yalnızca PDF, Word (.doc/.docx) veya sıkıştırılmış dosya (.rar, .zip, .7z) yükleyebilirsiniz.`);
+      return;
+    }
+    if (selected.size === 0) {
+      setSpecError('Seçilen dosya boş görünüyor. Lütfen dosyayı kontrol edip tekrar deneyin.');
+      return;
+    }
+    if (selected.size > SPEC_MAX_BYTES) {
+      setSpecError(`Dosya boyutu (${formatBytes(selected.size)}) 25 MB sınırını aşıyor. Dosyayı küçültüp ya da parçalara bölüp tekrar deneyin.`);
       return;
     }
 
     setUploadingSpec(true);
+    setUploadProgress(0);
     try {
       const formData = new FormData();
       formData.append('file', selected);
 
+      // Content-Type elle verilmez: tarayıcı boundary değerini kendisi ekler
       const res = await axios.post('/api/material-requests/upload-spec', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        onUploadProgress: (ev) => {
+          if (ev.total) setUploadProgress(Math.round((ev.loaded * 100) / ev.total));
+        }
       });
 
       setSpecFileUrl(res.data.fileUrl);
       setSpecFileName(res.data.fileName);
+      setSpecFileSize(selected.size);
       setSpecFile(selected);
-    } catch (err: any) {
-      alert(err.response?.data?.msg || 'Şartname dosyası yüklenirken bir hata oluştu.');
+    } catch (err) {
+      let msg = 'Şartname dosyası yüklenirken bir hata oluştu.';
+      if (axios.isAxiosError(err)) {
+        const status = err.response?.status;
+        if (status === 413) {
+          msg = 'Dosya, sunucunun kabul ettiği boyut sınırını aşıyor (413). Dosyayı küçültüp tekrar deneyin.';
+        } else if (status === 401) {
+          msg = 'Oturum süreniz dolmuş olabilir. Sayfayı yenileyip tekrar giriş yapın.';
+        } else if (!err.response) {
+          msg = 'Sunucuya ulaşılamadı veya bağlantı koptu. İnternet bağlantınızı kontrol edip tekrar deneyin.';
+        } else if (err.response.data?.msg) {
+          msg = err.response.data.msg;
+        } else {
+          msg = `Yükleme başarısız oldu (HTTP ${status}).`;
+        }
+      }
+      setSpecError(msg);
     } finally {
       setUploadingSpec(false);
     }
+  };
+
+  const handleSpecFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    // Aynı dosya tekrar seçilebilsin (hata sonrası yeniden deneme) diye input sıfırlanır
+    e.target.value = '';
+    if (selected) uploadSpecFile(selected);
   };
 
   const handleRemoveSpecFile = () => {
     setSpecFile(null);
     setSpecFileUrl('');
     setSpecFileName('');
+    setSpecFileSize(0);
+    setSpecError('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -211,6 +251,7 @@ export default function MalzemeTalepForm({
       setSpecFile(null);
       setSpecFileUrl('');
       setSpecFileName('');
+      setSpecFileSize(0);
 
       setTimeout(() => {
         if (onSuccess) onSuccess();
@@ -227,15 +268,16 @@ export default function MalzemeTalepForm({
     }
   };
 
+  const inputCls =
+    'w-full h-11 rounded-lg border border-base-300 bg-base-100 px-3 text-sm font-medium text-base-content placeholder:font-normal placeholder:text-base-content/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10';
+  const labelCls = 'mb-1.5 block text-sm font-semibold text-base-content/80';
+
   const formBody = (
     <div className="space-y-6">
-      <div className="flex items-center justify-between border-b border-base-200 pb-3">
+      <div className="flex items-start justify-between border-b border-base-200 pb-4">
         <div>
-          <h2 className="text-xl font-black text-base-content flex items-center gap-2">
-            <ShoppingBagIcon className="h-6 w-6 text-primary" />
-            Malzeme Talep Formu
-          </h2>
-          <p className="text-xs text-base-content/60 mt-0.5">
+          <h2 className="text-2xl font-bold tracking-tight text-base-content">Malzeme Talep Formu</h2>
+          <p className="mt-1 text-sm text-base-content/60">
             Yerleşke seçerek malzeme kalemlerini girebilir ve şartname belgesi yükleyebilirsiniz.
           </p>
         </div>
@@ -243,30 +285,31 @@ export default function MalzemeTalepForm({
           <button
             type="button"
             onClick={onClose}
-            className="btn btn-ghost btn-xs btn-square rounded-xl"
+            className="btn btn-ghost btn-sm btn-square rounded-lg text-2xl leading-none text-base-content/60"
+            aria-label="Kapat"
           >
-            <XMarkIcon className="h-5 w-5" />
+            &times;
           </button>
         )}
       </div>
 
       {message && (
-        <div className={`p-4 rounded-2xl text-xs font-bold ${message.type === 'success' ? 'bg-success/10 text-success border border-success/20' : 'bg-error/10 text-error border border-error/20'}`}>
+        <Alert variant={message.type === 'success' ? 'success' : 'error'} onClose={() => setMessage(null)}>
           {message.text}
-        </div>
+        </Alert>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Yerleşke Seçimi (İş Kodu için Zorunlu) */}
-        <div className="p-4 bg-primary/5 rounded-2xl border border-primary/20 space-y-2">
-          <label className="block text-xs font-extrabold text-primary items-center gap-1.5">
-            <BuildingOfficeIcon className="h-4 w-4 text-primary" />
-            Yerleşke Seçiniz * (İş Koduna Otomatik İşlenir)
+        <div className="rounded-xl border border-base-200 bg-base-200/40 p-5">
+          <label className={labelCls}>
+            Yerleşke <span className="text-error">*</span>
+            <span className="ml-1 font-normal text-base-content/50">(İş koduna otomatik işlenir)</span>
           </label>
           <select
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            className="w-full border border-base-300 rounded-xl p-3 bg-base-100 font-bold text-xs focus:ring-2 focus:ring-primary/20 shadow-xs"
+            className={inputCls}
             required
           >
             {availableLocations.map((loc) => (
@@ -275,245 +318,263 @@ export default function MalzemeTalepForm({
               </option>
             ))}
           </select>
-          {/* <p className="text-[11px] text-base-content/60 italic">
-            Seçilen yerleşke İş Kodunuza (Örn: 20262027-01-YRLŞK(BLGT)) otomatik yansıyacaktır.
-          </p> */}
         </div>
 
-        {/* Dynamic Item Cards */}
-        <div className="space-y-5">
-          {items.map((item, index) => (
-            <div
-              key={item.id}
-              className="p-5 rounded-2xl bg-base-200/40 border border-base-200 space-y-4 relative transition-all hover:border-primary/30"
+        {/* Malzeme Kalemleri: tablo benzeri, tek satırlık giriş */}
+        <div className="overflow-hidden rounded-xl border border-base-200">
+          <div className="flex items-center justify-between border-b border-base-200 bg-base-200/50 px-5 py-3">
+            <h3 className="text-sm font-semibold text-base-content">Malzeme Kalemleri</h3>
+            <span className="text-xs font-medium text-base-content/60">{items.length} kalem</span>
+          </div>
+
+          <div className="divide-y divide-base-200">
+            {items.map((item, index) => (
+              <div key={item.id} className="px-5 py-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-12 lg:items-start">
+                  <div className="flex items-center gap-3 sm:col-span-2 lg:col-span-12">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-md bg-base-200 text-xs font-semibold text-base-content/70">
+                      {index + 1}
+                    </span>
+                    <span className="text-sm font-semibold text-base-content">Kalem {index + 1}</span>
+                    {items.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveItem(index)}
+                        className="ml-auto text-xs font-semibold text-error hover:underline"
+                        title="Bu kalemi kaldır"
+                      >
+                        Kaldır
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Malzemenin Cinsi */}
+                  <div className="lg:col-span-3">
+                    <label className={labelCls}>Cinsi <span className="text-error">*</span></label>
+                    <select
+                      value={item.materialType}
+                      onChange={(e) => handleItemChange(index, 'materialType', e.target.value)}
+                      className={inputCls}
+                      required
+                    >
+                      <option value="Kırtasiye">Kırtasiye</option>
+                      <option value="Teknoloji / Donanım">Teknoloji / Donanım</option>
+                      <option value="Sarf Malzemesi">Sarf Malzemesi</option>
+                      <option value="Temizlik">Temizlik</option>
+                      <option value="Demirbaş">Demirbaş</option>
+                      <option value="Ofis Malzemesi">Ofis Malzemesi</option>
+                      <option value="Diğer">Diğer (Özel Belirt)</option>
+                    </select>
+                    {item.materialType === 'Diğer' && (
+                      <input
+                        type="text"
+                        placeholder="Cinsi yazınız..."
+                        value={item.customMaterialType}
+                        onChange={(e) => handleItemChange(index, 'customMaterialType', e.target.value)}
+                        className={`${inputCls} mt-2`}
+                        required
+                      />
+                    )}
+                  </div>
+
+                  {/* Malzeme Adı / Tanımı */}
+                  <div className="sm:col-span-2 lg:col-span-5">
+                    <label className={labelCls}>Malzeme Adı / Tanımı <span className="text-error">*</span></label>
+                    <input
+                      type="text"
+                      required
+                      value={item.materialName}
+                      onChange={(e) => handleItemChange(index, 'materialName', e.target.value)}
+                      placeholder="Örn: A4 Fotokopi Kağıdı"
+                      className={inputCls}
+                    />
+                  </div>
+
+                  {/* Miktar */}
+                  <div className="lg:col-span-2">
+                    <label className={labelCls}>Miktar <span className="text-error">*</span></label>
+                    <input
+                      type="number"
+                      min={1}
+                      required
+                      value={item.quantity}
+                      onChange={(e) => handleItemChange(index, 'quantity', Number(e.target.value))}
+                      className={inputCls}
+                    />
+                  </div>
+
+                  {/* Birim */}
+                  <div className="lg:col-span-2">
+                    <label className={labelCls}>Birim <span className="text-error">*</span></label>
+                    <select
+                      value={item.unit}
+                      onChange={(e) => handleItemChange(index, 'unit', e.target.value)}
+                      className={inputCls}
+                      required
+                    >
+                      <option value="Adet">Adet</option>
+                      <option value="Paket">Paket</option>
+                      <option value="Kutu">Kutu</option>
+                      <option value="Koli">Koli</option>
+                      <option value="Top">Top</option>
+                      <option value="Metre">Metre</option>
+                      <option value="Litre">Litre</option>
+                      <option value="Kg">Kg</option>
+                      <option value="Diğer">Diğer (Özel Belirt)</option>
+                    </select>
+                    {item.unit === 'Diğer' && (
+                      <input
+                        type="text"
+                        placeholder="Birimi yazınız..."
+                        value={item.customUnit}
+                        onChange={(e) => handleItemChange(index, 'customUnit', e.target.value)}
+                        className={`${inputCls} mt-2`}
+                        required
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="border-t border-base-200 bg-base-200/30 px-5 py-3">
+            <button
+              type="button"
+              onClick={handleAddItem}
+              className="inline-flex h-10 items-center rounded-lg border border-base-300 bg-base-100 px-4 text-sm font-semibold text-base-content/80 transition-colors hover:bg-base-200"
             >
-              {/* Item Card Header */}
-              <div className="flex items-center justify-between border-b border-base-200/70 pb-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-primary/10 text-primary font-black text-xs">
-                  Malzeme Kalemi #{index + 1}
-                </span>
-
-                {items.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveItem(index)}
-                    className="btn btn-ghost btn-xs text-error gap-1 hover:bg-error/10 rounded-xl"
-                    title="Bu Malzemeyi Kaldır"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                    <span className="text-[11px] font-bold">Kaldır</span>
-                  </button>
-                )}
-              </div>
-
-              {/* Grid 1: Malzemenin Cinsi & Malzeme Adı */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Malzemenin Cinsi */}
-                <div>
-                  <label className="block text-xs font-bold text-base-content/80 mb-1">
-                    Malzemenin Cinsi *
-                  </label>
-                  <select
-                    value={item.materialType}
-                    onChange={(e) => handleItemChange(index, 'materialType', e.target.value)}
-                    className="w-full border border-base-300 rounded-xl p-2.5 bg-base-100 text-xs font-bold focus:ring-2 focus:ring-primary/20"
-                    required
-                  >
-                    <option value="Kırtasiye">Kırtasiye</option>
-                    <option value="Teknoloji / Donanım">Teknoloji / Donanım</option>
-                    <option value="Sarf Malzemesi">Sarf Malzemesi</option>
-                    <option value="Temizlik">Temizlik</option>
-                    <option value="Demirbaş">Demirbaş</option>
-                    <option value="Ofis Malzemesi">Ofis Malzemesi</option>
-                    <option value="Diğer">Diğer (Özel Belirt)</option>
-                  </select>
-                  {item.materialType === 'Diğer' && (
-                    <input
-                      type="text"
-                      placeholder="Cinsi buraya yazınız..."
-                      value={item.customMaterialType}
-                      onChange={(e) => handleItemChange(index, 'customMaterialType', e.target.value)}
-                      className="w-full border border-base-300 rounded-xl p-2 mt-2 text-xs font-bold focus:ring-2 focus:ring-primary/20"
-                      required
-                    />
-                  )}
-                </div>
-
-                {/* Malzeme Adı / Tanımı */}
-                <div>
-                  <label className="block text-xs font-bold text-base-content/80 mb-1">
-                    Malzeme Adı / Tanımı *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={item.materialName}
-                    onChange={(e) => handleItemChange(index, 'materialName', e.target.value)}
-                    placeholder="Örn: A4 Fotokopi Kağıdı, Kalem, Silgi..."
-                    className="w-full border border-base-300 rounded-xl p-2.5 text-xs font-bold focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
-              </div>
-
-              {/* Grid 2: Miktar & Birim Ölçeği */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-base-content/80 mb-1">
-                    Miktar *
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    required
-                    value={item.quantity}
-                    onChange={(e) => handleItemChange(index, 'quantity', Number(e.target.value))}
-                    className="w-full border border-base-300 rounded-xl p-2.5 text-xs font-bold focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-base-content/80 mb-1">
-                    Birim Ölçeği *
-                  </label>
-                  <select
-                    value={item.unit}
-                    onChange={(e) => handleItemChange(index, 'unit', e.target.value)}
-                    className="w-full border border-base-300 rounded-xl p-2.5 bg-base-100 text-xs font-bold focus:ring-2 focus:ring-primary/20"
-                    required
-                  >
-                    <option value="Adet">Adet</option>
-                    <option value="Paket">Paket</option>
-                    <option value="Kutu">Kutu</option>
-                    <option value="Koli">Koli</option>
-                    <option value="Top">Top</option>
-                    <option value="Metre">Metre</option>
-                    <option value="Litre">Litre</option>
-                    <option value="Kg">Kg</option>
-                    <option value="Diğer">Diğer (Özel Belirt)</option>
-                  </select>
-                  {item.unit === 'Diğer' && (
-                    <input
-                      type="text"
-                      placeholder="Birimi buraya yazınız..."
-                      value={item.customUnit}
-                      onChange={(e) => handleItemChange(index, 'customUnit', e.target.value)}
-                      className="w-full border border-base-300 rounded-xl p-2 mt-2 text-xs font-bold focus:ring-2 focus:ring-primary/20"
-                      required
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
+              + Başka Malzeme Ekle
+            </button>
+          </div>
         </div>
-
-        {/* Add Another Material Button (+) */}
-        <button
-          type="button"
-          onClick={handleAddItem}
-          className="btn btn-outline btn-primary btn-sm w-full gap-2 rounded-2xl font-bold border-dashed border-2 hover:border-solid hover:scale-[1.005] transition-all"
-        >
-          <PlusIcon className="h-5 w-5" />
-          <span>+ Başka Malzeme Ekle</span>
-        </button>
 
         {/* SHARED SECTION: GEREKÇE & ŞARTNAME DOSYA YÜKLEME */}
-        <div className="p-5 rounded-2xl bg-base-200/60 border border-base-200 space-y-4">
-          <div className="font-extrabold text-xs text-base-content/80 uppercase tracking-wider border-b border-base-200 pb-2 flex items-center gap-1.5">
-            <DocumentTextIcon className="h-4 w-4 text-primary" />
-            Tüm Talep İçin Genel Bilgiler & Şartname (Opsiyonel)
+        <div className="rounded-xl border border-base-200 bg-base-200/40 p-5 space-y-5">
+          <div className="border-b border-base-200 pb-3 text-sm font-semibold text-base-content">
+            Genel Bilgiler & Şartname <span className="font-normal text-base-content/50">(Opsiyonel)</span>
           </div>
 
           {/* 1 Adet Gerekçe */}
           <div>
-            <label className="block text-xs font-bold text-base-content/80 mb-1 items-center gap-1">
-              <DocumentTextIcon className="h-4 w-4 text-primary" />
-              Talep Gerekçesi / Açıklama (1 Adet - Opsiyonel)
+            <label className={labelCls}>
+              Talep Gerekçesi / Açıklama
             </label>
             <textarea
               rows={2}
               value={batchDescription}
               onChange={(e) => setBatchDescription(e.target.value)}
               placeholder="Tüm malzeme talebinizin ortak gerekçesini veya amacını buraya yazabilirsiniz..."
-              className="w-full border border-base-300 rounded-xl p-2.5 text-xs font-medium focus:ring-2 focus:ring-primary/20 bg-base-100"
+              className="w-full rounded-lg border border-base-300 bg-base-100 px-3 py-2.5 text-sm font-medium text-base-content placeholder:font-normal placeholder:text-base-content/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10"
             ></textarea>
           </div>
 
           {/* 1 Adet Şartname Metni */}
           <div>
-            <label className="block text-xs font-bold text-base-content/80 mb-1 items-center gap-1">
-              <ClipboardDocumentListIcon className="h-4 w-4 text-secondary" />
-              Teknik Şartname / Özel Detaylar (Metin Olarak - Opsiyonel)
+            <label className={labelCls}>
+              Teknik Şartname / Özel Detaylar (Metin)
             </label>
             <textarea
               rows={2}
               value={specification}
               onChange={(e) => setSpecification(e.target.value)}
               placeholder="Talep edilen ürünlerin teknik özellikleri veya şartname detaylarını metin olarak buraya yazabilirsiniz..."
-              className="w-full border border-base-300 rounded-xl p-2.5 text-xs font-medium focus:ring-2 focus:ring-primary/20 bg-base-100"
+              className="w-full rounded-lg border border-base-300 bg-base-100 px-3 py-2.5 text-sm font-medium text-base-content placeholder:font-normal placeholder:text-base-content/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10"
             ></textarea>
           </div>
 
           {/* 1 Adet Şartname DOSYASI YÜKLEME (PDF veya DOCX) */}
           <div className="pt-1">
-            <label className="block text-xs font-bold text-base-content/80 mb-1.5 items-center gap-1">
-              <PaperClipIcon className="h-4 w-4 text-accent" />
-              Teknik Şartname Dosyası Yükle (.pdf, .docx, .doc, .rar - Opsiyonel)
+            <label className={labelCls}>
+              Teknik Şartname Dosyası
             </label>
 
+            {specError && (
+              <div className="mb-2">
+                <Alert key={specError} variant="error" onClose={() => setSpecError('')}>
+                  {specError}
+                </Alert>
+              </div>
+            )}
+
             {specFileUrl ? (
-              <div className="flex items-center justify-between p-3 rounded-xl bg-success/10 border border-success/30 text-xs font-bold text-success">
-                <div className="flex items-center gap-2 truncate">
-                  <CheckCircleIcon className="h-5 w-5 text-success shrink-0" />
-                  <span className="truncate">{specFileName} (Şartname Yüklendi)</span>
+              <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-base-100 border border-success/40">
+                <div className="flex items-center gap-3 min-w-0">
+                  <CheckCircleIcon className="h-6 w-6 text-success shrink-0" />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-base-content">{specFileName}</p>
+                    <p className="text-xs text-base-content/60">
+                      Şartname yüklendi{specFileSize > 0 ? ` · ${formatBytes(specFileSize)}` : ''}
+                    </p>
+                  </div>
                 </div>
                 <button
                   type="button"
                   onClick={handleRemoveSpecFile}
-                  className="btn btn-ghost btn-xs text-error font-bold underline shrink-0"
+                  className="btn btn-ghost btn-xs text-error font-bold shrink-0"
                 >
                   Kaldır
                 </button>
               </div>
             ) : (
-              <div className="relative border-2 border-dashed border-base-300 hover:border-primary/50 hover:bg-base-100 rounded-xl p-4 text-center transition-all cursor-pointer">
+              <div
+                onDragEnter={() => setDragActive(true)}
+                onDragLeave={() => setDragActive(false)}
+                onDrop={() => setDragActive(false)}
+                className={`relative rounded-xl border-2 border-dashed p-5 text-center transition-colors ${
+                  uploadingSpec
+                    ? 'border-primary/40 bg-primary/5'
+                    : dragActive
+                      ? 'border-primary bg-primary/5'
+                      : 'border-base-300 bg-base-100 hover:border-primary/50'
+                }`}
+              >
                 <input
                   type="file"
-                  accept=".pdf,.doc,.docx,.rar"
+                  accept={SPEC_ALLOWED_EXT.join(',')}
                   onChange={handleSpecFileChange}
                   disabled={uploadingSpec}
-                  className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                  aria-label="Teknik şartname dosyası seç"
+                  className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
                 />
 
                 {uploadingSpec ? (
-                  <div className="flex items-center justify-center gap-2 text-xs font-bold text-primary">
-                    <span className="loading loading-spinner loading-xs"></span>
-                    <span>Şartname Dosyası Yükleniyor...</span>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-center gap-2 text-sm font-semibold text-primary">
+                      <span className="loading loading-spinner loading-xs"></span>
+                      <span>Yükleniyor... %{uploadProgress}</span>
+                    </div>
+                    <progress className="progress progress-primary w-full max-w-xs" value={uploadProgress} max={100}></progress>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center gap-2 text-xs font-bold text-base-content/70">
-                    <CloudArrowUpIcon className="h-5 w-5 text-primary" />
-                    <span>PDF veya Word Şartname Dosyası Seçin (.pdf, .docx, .rar)</span>
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-center gap-2 text-sm font-semibold text-base-content/80">
+                      <CloudArrowUpIcon className="h-5 w-5 text-primary" />
+                      <span>Dosyayı sürükleyip bırakın veya <span className="text-primary underline">bilgisayardan seçin</span></span>
+                    </div>
+                    <p className="text-xs text-base-content/50">
+                      PDF, Word (.doc/.docx) veya sıkıştırılmış dosya (.rar, .zip, .7z) · En fazla 25 MB
+                    </p>
                   </div>
                 )}
               </div>
             )}
+            <p className="mt-1.5 text-xs text-base-content/50">
+              Birden fazla şartname dosyası varsa hepsini tek bir .rar veya .zip içinde sıkıştırıp yükleyebilirsiniz.
+            </p>
           </div>
         </div>
 
         {/* 2 Aşamalı Onay Bilgilendirme Notu */}
-        <div className="p-3.5 bg-primary/10 rounded-2xl text-xs text-primary font-bold border border-primary/20 flex items-center gap-2">
-          <span>ℹ️</span>
-          <span>
-            Oluşturduğunuz {items.length} malzeme talebi <strong>Genel Sekreterlik</strong> onayından geçip <strong>Satın Alma</strong> tarafından işleme alınacaktır.
-          </span>
+        <div className="rounded-xl border border-base-200 bg-base-200/40 px-4 py-3 text-sm text-base-content/70">
+          Oluşturduğunuz {items.length} malzeme talebi <strong className="font-semibold text-base-content">Genel Sekreterlik</strong> onayından geçip <strong className="font-semibold text-base-content">Satın Alma</strong> tarafından işleme alınacaktır.
         </div>
 
         {/* Submit Button */}
         <button
           type="submit"
           disabled={loading || uploadingSpec}
-          className={`w-full text-primary-content font-bold py-3.5 px-4 rounded-2xl transition duration-300 shadow-lg shadow-primary/20 ${loading || uploadingSpec ? 'bg-base-300 text-base-content/50 cursor-not-allowed' : 'bg-primary hover:brightness-95'
+          className={`w-full text-primary-content font-semibold py-3 px-4 text-sm rounded-lg transition-colors ${loading || uploadingSpec ? 'bg-base-300 text-base-content/50 cursor-not-allowed' : 'bg-primary hover:brightness-95'
             }`}
         >
           {loading ? (
@@ -528,7 +589,7 @@ export default function MalzemeTalepForm({
 
   if (!isModal) {
     return (
-      <div className="bg-base-100 shadow-md rounded-3xl p-6 md:p-8 space-y-6 max-w-3xl mx-auto border border-base-200">
+      <div className="bg-base-100 rounded-2xl p-6 md:p-10 space-y-6 max-w-5xl mx-auto border border-base-200">
         {formBody}
       </div>
     );
@@ -559,7 +620,7 @@ export default function MalzemeTalepForm({
             leaveFrom="opacity-100 scale-100"
             leaveTo="opacity-0 scale-95"
           >
-            <Dialog.Panel className="w-full max-w-3xl max-h-[92vh] overflow-y-auto bg-base-100 shadow-2xl rounded-3xl p-4 sm:p-6 md:p-8 my-4 sm:my-8 border border-base-200">
+            <Dialog.Panel className="w-full max-w-5xl max-h-[92vh] overflow-y-auto bg-base-100 shadow-2xl rounded-2xl p-4 sm:p-6 md:p-10 my-4 sm:my-8 border border-base-200">
               {formBody}
             </Dialog.Panel>
           </Transition.Child>

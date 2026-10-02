@@ -3,6 +3,7 @@
 import { useState, FormEvent, ChangeEvent, useEffect } from "react";
 import { useRouter } from 'next/navigation';
 import { ExclamationTriangleIcon, CheckCircleIcon, ClockIcon, LockClosedIcon } from '@heroicons/react/24/outline';
+import Alert from '@/src/components/ui/Alert';
 
 export default function TeknikTalepForm() {
 
@@ -167,9 +168,9 @@ export default function TeknikTalepForm() {
       <h2 className="text-xl font-bold text-base-content border-b pb-2">Teknik Destek Formu</h2>
 
       {message && (
-        <div className={`p-4 rounded-md ${message.type === 'success' ? 'bg-success/20 text-success' : 'bg-error/20 text-error'}`}>
+        <Alert variant={message.type === 'success' ? 'success' : 'error'} onClose={() => setMessage(null)}>
           {message.text}
-        </div>
+        </Alert>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">

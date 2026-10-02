@@ -38,7 +38,10 @@ export async function GET(
       '.doc': 'application/msword',
       '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       '.xls': 'application/vnd.ms-excel',
-      '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      '.rar': 'application/vnd.rar',
+      '.zip': 'application/zip',
+      '.7z': 'application/x-7z-compressed'
     };
     const contentType = mimeTypes[ext] || 'application/octet-stream';
 
@@ -65,7 +68,7 @@ export async function GET(
       .replace(/ç/g, 'c').replace(/Ç/g, 'C')
       .replaceAll(/[^a-zA-Z0-9._-]/g, '_');
 
-    const isDownload = searchParams.get('download') === 'true' || ext === '.doc' || ext === '.docx';
+    const isDownload = searchParams.get('download') === 'true' || ext === '.doc' || ext === '.docx' || ext === '.rar' || ext === '.zip' || ext === '.7z';
     const dispositionType = isDownload ? 'attachment' : 'inline';
 
     return new NextResponse(fileBuffer, {

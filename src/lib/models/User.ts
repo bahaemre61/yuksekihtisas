@@ -28,6 +28,7 @@ export interface IUser extends Document {
     resetPasswordExpires?: Date;
     pushSubscription?: any;
     isActive?: boolean;
+    manager?: mongoose.Types.ObjectId | null;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -48,6 +49,7 @@ const UserSchema = new Schema<IUser>({
         type: Boolean,
         default: true,
     },
+    manager: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     pushSubscription: { type: Object },
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date },

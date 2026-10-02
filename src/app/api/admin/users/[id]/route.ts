@@ -3,6 +3,8 @@ import type { NextRequest } from "next/server";
 import connectToDatabase from "@/src/lib/db";
 import User from "@/src/lib/models/User";
 import { getAuthenticatedUser } from "@/src/lib/auth";
+import { getDownlineIds } from "@/src/lib/hierarchy";
+import mongoose from "mongoose";
 
 
 export async function  DELETE(request: NextRequest, {params}: {params: Promise<{id : string}> }) {
@@ -38,7 +40,7 @@ export async function PUT(request:NextRequest, {params}: {params: Promise<{id : 
 
     try{
         const {id} = await params;
-        const {name, email, role, isActive} = await request.json();
+        const {name, email, role, isActive, manager} = await request.json();
 
         if (id === user.id && isActive === false) {
             return NextResponse.json({ msg: 'Kendinizi deaktif edemezsiniz.' }, { status: 400 });
@@ -49,6 +51,22 @@ export async function PUT(request:NextRequest, {params}: {params: Promise<{id : 
         const updateData: any = {name, email, role};
         if (isActive !== undefined) updateData.isActive = isActive;
         if (role === 'driver') updateData.driverStatus = 'available';
+
+        // Hiyerarşi: bağlı olduğu amir (görev atama zinciri)
+        if (manager !== undefined) {
+            if (!manager) {
+                updateData.manager = null;
+            } else {
+                if (!mongoose.Types.ObjectId.isValid(manager) || String(manager) === id) {
+                    return NextResponse.json({ msg: 'Geçersiz amir seçimi.' }, { status: 400 });
+                }
+                const downline = await getDownlineIds(id);
+                if (downline.includes(String(manager))) {
+                    return NextResponse.json({ msg: 'Döngüsel hiyerarşi oluşturulamaz: seçilen amir bu kullanıcının altında.' }, { status: 400 });
+                }
+                updateData.manager = manager;
+            }
+        }
 
         const updatedUser = await User.findByIdAndUpdate(id, updateData, {new : true}).select('-password');
 

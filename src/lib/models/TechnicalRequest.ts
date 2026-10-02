@@ -12,6 +12,7 @@ export interface ITechnicalRequest extends Document {
     priority : 'MEDIUM' | 'HIGH' | 'LOW';
     status: 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
     completedAt?: Date;
+    rating?: { score: number; comment?: string; ratedAt?: Date };
     createdAt: Date;
     updatedAt: Date;
 }
@@ -44,7 +45,13 @@ const TechnicalRequestSchema = new Schema<ITechnicalRequest>(
       default: 'pending',
       index: true
     },
-    completedAt: { type: Date, default: null }
+    completedAt: { type: Date, default: null },
+    // Talep sahibinin iş tamamlandıktan sonra yaptığı değerlendirme (1-5 yıldız)
+    rating: {
+      score: { type: Number, min: 1, max: 5 },
+      comment: { type: String, maxlength: 500 },
+      ratedAt: { type: Date }
+    }
   },
   { timestamps: true, versionKey: false }
 );

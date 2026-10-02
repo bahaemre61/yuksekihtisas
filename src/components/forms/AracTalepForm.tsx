@@ -4,6 +4,7 @@ import React, { useState, useEffect, ChangeEvent } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { ExclamationTriangleIcon, SparklesIcon, ClockIcon } from '@heroicons/react/24/outline';
+import Alert from '@/src/components/ui/Alert';
 
 export default function CreateRequestPage() {
   const router = useRouter();
@@ -198,8 +199,16 @@ export default function CreateRequestPage() {
       <div className="bg-base-100 shadow-lg rounded-lg p-6 sm:p-8 border border-base-200">
         <h2 className="text-2xl font-semibold text-base-content mb-6 border-b border-base-200 pb-4">Yeni Araç Talep Formu</h2>
 
-        {error && <div className="mb-4 bg-error/20 p-4 border border-error/30 text-error rounded-md text-sm font-medium">{error}</div>}
-        {successMessage && <div className="mb-4 bg-success/20 p-4 border border-success/30 text-success rounded-md text-sm font-medium">{successMessage}</div>}
+        {error && (
+          <div className="mb-4">
+            <Alert variant="error" onClose={() => setError('')}>{error}</Alert>
+          </div>
+        )}
+        {successMessage && (
+          <div className="mb-4">
+            <Alert variant="success" onClose={() => setSuccessMessage('')}>{successMessage}</Alert>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
 

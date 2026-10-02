@@ -3,6 +3,7 @@ import {useState} from 'react';
 import Sidebar from '@/src/components/Sidebar';
 import Header from '@/src/components/Header';
 import FeedbackModal from '@/src/components/popup/FeedbackModal';
+import TechRatingPrompt from '@/src/components/popup/TechRatingPrompt';
 
 export default function DashboardLayout({
     children,
@@ -14,13 +15,15 @@ export default function DashboardLayout({
 
     return(
         <div className='flex h-screen overflow-hidden bg-base-200'>
-            <Sidebar 
+            <Sidebar
              isMobileMenuOpen={isMobileMenuOpen}
              setIsMobileMenuOpen={setIsMobileMenuOpen}
             />
 
              {/* <FeedbackModal formUrl="https://forms.cloud.microsoft/r/2yjGVRHpVk" formVersion='v2' /> */}
 
+
+            <TechRatingPrompt />
 
             <div className='flex flex-col w-0 flex-1 overflow-hidden md:pl-64'>
                 <Header setIsMobileMenuOpen={setIsMobileMenuOpen} />

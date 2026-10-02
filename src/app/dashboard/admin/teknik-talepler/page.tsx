@@ -9,6 +9,9 @@ import {
     EyeIcon,
     EyeSlashIcon
 } from '@heroicons/react/24/outline';
+import { Dialog } from '@headlessui/react';
+import { RATING_START_DATE } from '@/src/lib/ratingConfig';
+import StarRating, { RATING_LABELS } from '@/src/components/ui/StarRating';
 
 enum RequestStatus {
     PENDING = 'pending',
@@ -34,6 +37,8 @@ interface ITechnicalRequest {
     createdAt: string;
     user: { name: string; email: string };
     technicalStaff?: { _id: string; name: string }[];
+    rating?: { score: number; comment?: string; ratedAt?: string };
+    completedAt?: string | null;
 }
 
 export default function TechnicalAdminPage() {
@@ -41,6 +46,7 @@ export default function TechnicalAdminPage() {
     const [loading, setLoading] = useState(true);
     const [filterStatus, setFilterStatus] = useState<string>('all');
     const [showCancelled, setShowCancelled] = useState<boolean>(false);
+    const [ratingView, setRatingView] = useState<ITechnicalRequest | null>(null);
 
     const fetchAllRequests = async () => {
         setLoading(true);
@@ -229,6 +235,7 @@ export default function TechnicalAdminPage() {
                                 <th className="px-6 py-3 text-left text-[10px] font-black text-base-content/50 uppercase tracking-widest">Durum</th>
                                 <th className="px-6 py-3 text-left text-[10px] font-black text-base-content/50 uppercase tracking-widest">Personel</th>
                                 <th className="px-6 py-3 text-right text-[10px] font-black text-base-content/50 uppercase tracking-widest">İşlemler</th>
+                                <th className="px-6 py-3 text-right text-[10px] font-black text-base-content/50 uppercase tracking-widest">Değerlendirme</th>
                             </tr>
                         </thead>
                         <tbody className="bg-base-100 divide-y divide-base-200">
@@ -291,6 +298,26 @@ export default function TechnicalAdminPage() {
                                             </button>
                                         )}
                                     </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                                        {req.status !== 'completed' ? (
+                                            <span className="text-xs text-base-content/30">—</span>
+                                        ) : req.rating?.score ? (
+                                            <button
+                                                onClick={() => setRatingView(req)}
+                                                className="inline-flex items-center gap-2 rounded-lg border border-base-300 bg-base-100 px-3 py-1.5 text-xs font-semibold text-base-content/80 hover:bg-base-200 transition-colors"
+                                                title="Değerlendirmeyi Gör"
+                                            >
+                                                <StarRating value={req.rating.score} size="sm" />
+                                                <span>{req.rating.score}/5</span>
+                                            </button>
+                                        ) : req.completedAt && new Date(req.completedAt) >= RATING_START_DATE ? (
+                                            <span className="inline-flex rounded-lg bg-base-200 px-3 py-1.5 text-xs font-medium text-base-content/50">
+                                                Değerlendirilmedi
+                                            </span>
+                                        ) : (
+                                            <span className="text-xs text-base-content/30" title="Değerlendirme sistemi öncesinde tamamlandı">—</span>
+                                        )}
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
@@ -303,6 +330,77 @@ export default function TechnicalAdminPage() {
                     </div>
                 )}
             </div>
+
+            {/* Değerlendirme detayı */}
+            <Dialog open={ratingView !== null} onClose={() => setRatingView(null)} className="relative z-50">
+                <div className="fixed inset-0 bg-base-content/40 backdrop-blur-sm" aria-hidden="true" />
+                <div className="fixed inset-0 flex items-center justify-center p-4">
+                    <Dialog.Panel className="w-full max-w-md rounded-2xl border border-base-200 bg-base-100 p-6 shadow-2xl">
+                        {ratingView && ratingView.rating && (
+                            <>
+                                <div className="flex items-start justify-between gap-3">
+                                    <Dialog.Title className="text-lg font-semibold text-base-content">Talep Değerlendirmesi</Dialog.Title>
+                                    <button
+                                        type="button"
+                                        onClick={() => setRatingView(null)}
+                                        className="text-2xl leading-none text-base-content/50 hover:text-base-content"
+                                        aria-label="Kapat"
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
+                                <p className="mt-1 text-sm text-base-content/60">{ratingView.title}</p>
+
+                                <div className="mt-5 flex items-center gap-3">
+                                    <StarRating value={ratingView.rating.score} size="lg" />
+                                    <div>
+                                        <p className="text-xl font-semibold text-base-content">{ratingView.rating.score}/5</p>
+                                        <p className="text-sm text-base-content/60">{RATING_LABELS[ratingView.rating.score]}</p>
+                                    </div>
+                                </div>
+
+                                <div className="mt-5 rounded-xl border border-base-200 bg-base-200/40 p-4">
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-base-content/50">Yorum</p>
+                                    <p className="mt-1 whitespace-pre-wrap break-words text-sm text-base-content">
+                                        {ratingView.rating.comment?.trim() || 'Yorum yazılmamış.'}
+                                    </p>
+                                </div>
+
+                                <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                                    <div>
+                                        <dt className="text-xs text-base-content/50">Değerlendiren</dt>
+                                        <dd className="font-medium text-base-content">{ratingView.user?.name || 'Bilinmiyor'}</dd>
+                                    </div>
+                                    <div>
+                                        <dt className="text-xs text-base-content/50">Tarih</dt>
+                                        <dd className="font-medium text-base-content">
+                                            {ratingView.rating.ratedAt ? new Date(ratingView.rating.ratedAt).toLocaleString('tr-TR') : '-'}
+                                        </dd>
+                                    </div>
+                                    <div className="col-span-2">
+                                        <dt className="text-xs text-base-content/50">İşi Yapan Personel</dt>
+                                        <dd className="font-medium text-base-content">
+                                            {ratingView.technicalStaff && ratingView.technicalStaff.length > 0
+                                                ? ratingView.technicalStaff.map((st) => st.name).join(', ')
+                                                : 'Atanmadı'}
+                                        </dd>
+                                    </div>
+                                </dl>
+
+                                <div className="mt-6 flex justify-end">
+                                    <button
+                                        type="button"
+                                        onClick={() => setRatingView(null)}
+                                        className="h-10 rounded-lg px-4 text-sm font-medium text-base-content/70 ring-1 ring-inset ring-base-300 hover:bg-base-200"
+                                    >
+                                        Kapat
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </Dialog.Panel>
+                </div>
+            </Dialog>
         </div>
     );
 }

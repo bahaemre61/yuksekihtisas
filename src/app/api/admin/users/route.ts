@@ -53,7 +53,7 @@ export async function POST(request:NextRequest) {
     }
 
     try{
-        const {name, email ,password ,role} = await request.json();
+        const {name, email ,password ,role, manager} = await request.json();
 
         await connectToDatabase();
 
@@ -69,6 +69,7 @@ export async function POST(request:NextRequest) {
             email,
             password,
             role: role || 'user',
+            manager: manager || null,
             driverStatus: role === 'driver' ? 'available' : undefined
         });
 

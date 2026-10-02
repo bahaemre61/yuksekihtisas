@@ -15,6 +15,11 @@ export async function PUT(
         const { id } = await context.params;
         const body = await request.json();
 
+        // Değerlendirme yalnızca /rating endpoint'inden yazılabilir
+        for (const key of Object.keys(body)) {
+            if (key === 'rating' || key.startsWith('rating.')) delete body[key];
+        }
+
         await connectToDatabase();
 
         const existingRequest = await TechnicalRequest.findById(id);

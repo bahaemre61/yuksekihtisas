@@ -17,10 +17,12 @@ interface IUser {
     email: string;
     role: 'user' | 'driver' | 'admin' | 'amir' | 'tech' | 'supervisor' | 'techamir' | 'akademik' | 'mali_isler';
     isActive?: boolean;
+    manager?: string | null;
 }
 
 export default function UserPage() {
     const [users, setUsers] = useState<IUser[]>([]);
+    const [allUsers, setAllUsers] = useState<IUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -36,12 +38,14 @@ export default function UserPage() {
     const [editEmail, setEditEmail] = useState('');
     const [editRole, setEditRole] = useState('user');
     const [editIsActive, setEditIsActive] = useState(true);
+    const [editManager, setEditManager] = useState('');
 
     // fetchUser artık opsiyonel bir arama parametresi alıyor
     const fetchUser = async (search: string = '') => {
         try {
             const res = await axios.get(`/api/admin/users?search=${search}`);
             setUsers(res.data);
+            if (!search) setAllUsers(res.data);
         } catch (err) {
             console.error(err);
         } finally {
@@ -92,6 +96,7 @@ export default function UserPage() {
         setEditEmail(user.email);
         setEditRole(user.role);
         setEditIsActive(user.isActive !== false);
+        setEditManager(user.manager || '');
         setIsEditModalOpen(true);
     };
 
@@ -103,6 +108,7 @@ export default function UserPage() {
                 email: editEmail,
                 role: editRole,
                 isActive: editIsActive,
+                manager: editManager || null,
             });
 
             alert("Güncelleme başarılı!");
@@ -313,6 +319,20 @@ export default function UserPage() {
                                                 <option value="akademik">Akademik</option>
                                                 <option value="mali_isler">Mali İşler</option>
                                             </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-base-content/60">Bağlı Olduğu Amir (Görev Hiyerarşisi)</label>
+                                            <select value={editManager} onChange={e => setEditManager(e.target.value)}
+                                                className="mt-1 w-full px-3 py-2 border border-base-300 bg-base-100 text-base-content rounded-md focus:ring-1 focus:ring-primary outline-none">
+                                                <option value="">— Üst amir yok —</option>
+                                                {allUsers
+                                                    .filter(u => u._id !== editingUser?._id && u.isActive !== false)
+                                                    .map(u => (
+                                                        <option key={u._id} value={u._id}>{u.name}</option>
+                                                    ))}
+                                            </select>
+                                            <p className="mt-1 text-xs text-base-content/50">Bu kişiye, seçilen amir ve onun üstündekiler görev atayabilir.</p>
                                         </div>
 
                                         <div className="flex items-center pt-2">
