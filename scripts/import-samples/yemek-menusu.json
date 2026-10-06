@@ -1,0 +1,7 @@
+{
+  "type": "yemek-menusu",
+  "rows": [
+    { "date": "2026-10-05", "items": ["Mercimek Çorbası", "Izgara Tavuk", "Pilav", "Ayran"], "calories": 850 },
+    { "date": "2026-10-06", "items": ["Ezogelin Çorbası", "Kuru Fasulye", "Bulgur Pilavı", "Cacık"] }
+  ]
+}

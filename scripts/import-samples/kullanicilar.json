@@ -1,0 +1,7 @@
+{
+  "type": "kullanicilar",
+  "rows": [
+    { "name": "Ayşe Yılmaz", "email": "ayse.yilmaz@yuksekihtisas.edu.tr", "password": "Gecici123", "role": "amir" },
+    { "name": "Mehmet Demir", "email": "mehmet.demir@yuksekihtisas.edu.tr", "password": "Gecici123", "role": "user", "managerEmail": "ayse.yilmaz@yuksekihtisas.edu.tr" }
+  ]
+}

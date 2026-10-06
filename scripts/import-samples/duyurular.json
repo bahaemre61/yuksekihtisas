@@ -1,0 +1,7 @@
+{
+  "type": "duyurular",
+  "rows": [
+    { "title": "Bakım Çalışması", "content": "Cumartesi 02:00-04:00 arası sistem bakımda olacaktır.", "priority": "urgent" },
+    { "title": "Yeni Form Yayında", "content": "Kurumsal risk formu yakında.", "link": "/dashboard/formlar/kurumsal-risk" }
+  ]
+}

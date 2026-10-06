@@ -1,7 +1,7 @@
 // src/app/dashboard/admin/page.tsx
 
 import Link from 'next/link';
-import { CpuChipIcon, TruckIcon } from '@heroicons/react/24/outline';
+import { ArrowUpTrayIcon, CpuChipIcon, TruckIcon } from '@heroicons/react/24/outline';
 
 // HATA BURADAYDI: "export default function" yazmazsak Next.js bu dosyayı tanımaz.
 export default function AdminDashboardHome() {
@@ -44,6 +44,24 @@ export default function AdminDashboardHome() {
               <h3 className="text-lg font-bold text-base-content">Teknik Destek</h3>
               <p className="text-sm text-base-content/70 mt-1">
                 Arıza kayıtlarını görüntüle, personel ataması yap ve durumları yönet.
+              </p>
+            </div>
+          </div>
+        </Link>
+
+        {/* 3. TOPLU VERİ AKTARIMI */}
+        <Link
+          href="/dashboard/admin/toplu-aktarim"
+          className="bg-base-100 p-6 rounded-xl shadow-sm border border-base-200 hover:border-success hover:shadow-md transition-all group cursor-pointer"
+        >
+          <div className="flex items-center gap-4">
+            <div className="bg-success/10 p-4 rounded-lg group-hover:bg-success group-hover:text-success-content transition-colors text-success">
+              <ArrowUpTrayIcon className="h-8 w-8" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-base-content">Toplu Veri Aktarımı</h3>
+              <p className="text-sm text-base-content/70 mt-1">
+                JSON dosyasından kullanıcı, yerleşke, duyuru ve yemek menüsü ekle.
               </p>
             </div>
           </div>
