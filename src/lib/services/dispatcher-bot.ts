@@ -96,7 +96,12 @@ VERİLER: ${JSON.stringify(dataForAI)}
 }
 `;
 
-    const result = await generateGeminiJson<{ groups: { title: string; reason: string; ids: string[] }[] }>(prompt);
+    // Gemini'ye erişilemezse (ağ/kota) cron işi takılmasın: 25 sn sonra kural bazlı gruplamaya düş
+    const AI_TIMEOUT_MS = 25_000;
+    const result = await Promise.race([
+      generateGeminiJson<{ groups: { title: string; reason: string; ids: string[] }[] }>(prompt),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), AI_TIMEOUT_MS))
+    ]);
     return result?.groups || null;
   } catch (err: any) {
     console.warn('Gemini Dispatcher Bot grouping failed, using fallback:', err.message);
@@ -250,6 +255,7 @@ export async function runScheduledDispatcherBot(
 ): Promise<IBotLogResult> {
   const logDetails: string[] = [];
   const timestamp = new Date().toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' });
+  const slotLabel = timeSlot === 'morning' ? '08:30' : timeSlot === 'afternoon' ? '13:30' : 'Manuel';
   const actionType = timeSlot === 'morning' ? 'SCHEDULED_MORNING' : timeSlot === 'afternoon' ? 'SCHEDULED_AFTERNOON' : 'REACTIVE_CHECK';
 
   try {
@@ -295,7 +301,7 @@ export async function runScheduledDispatcherBot(
     });
 
     if (todayPending.length === 0) {
-      logDetails.push(`🤖 Dispeçer Botu: ${timeSlot === 'morning' ? 'Sabah (08:30)' : 'Öğle (13:30)'} vardiyası için bekleyen talep yok.`);
+      logDetails.push(`🤖 Dispeçer Botu: ${timeSlot === 'morning' ? 'Sabah (08:30)' : timeSlot === 'afternoon' ? 'Öğle (13:30)' : 'Bugün'} için bekleyen talep yok.`);
       return {
         timestamp,
         action: actionType,
@@ -415,7 +421,7 @@ export async function runScheduledDispatcherBot(
         if (chosenDriver.pushSubscription) {
           try {
             const payload = JSON.stringify({
-              title: `🤖 OTOMATİK VARDİYA ATAMASI (${timeSlot === 'morning' ? '08:30' : '13:30'})`,
+              title: `🤖 OTOMATİK VARDİYA ATAMASI (${slotLabel})`,
               body: `${regionName} için ${updateResult.modifiedCount} adet talep listenize otomatik eklendi.`,
               url: '/dashboard/gorevlerim'
             });
@@ -433,7 +439,7 @@ export async function runScheduledDispatcherBot(
           const driverHtml = `
             <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #10b981; border-radius: 12px; background-color: #ecfdf5;">
               <h2 style="color: #059669;">Merhaba ${chosenDriver.name},</h2>
-              <p>Otonom Dispeçer Botu saat <strong>${timeSlot === 'morning' ? '08:30' : '13:30'}</strong> vardiyası için yeni görevleri listenize otomatik ekledi.</p>
+              <p>Otonom Dispeçer Botu saat <strong>${slotLabel}</strong> vardiyası için yeni görevleri listenize otomatik ekledi.</p>
               <div style="background-color: white; padding: 15px; border-radius: 8px; border: 1px solid #a7f3d0; margin: 15px 0;">
                 <p><strong>Grup / Güzergah:</strong> ${regionName}</p>
                 <p><strong>Gruplama Mantığı:</strong> ${groupReason}</p>
