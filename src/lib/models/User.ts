@@ -29,6 +29,8 @@ export interface IUser extends Document {
     pushSubscription?: any;
     isActive?: boolean;
     manager?: mongoose.Types.ObjectId | null;
+    // Malzeme talebi oluşturabilen kullanıcı listesi (admin her zaman oluşturabilir)
+    canCreateMaterialRequest?: boolean;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -50,6 +52,7 @@ const UserSchema = new Schema<IUser>({
         default: true,
     },
     manager: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    canCreateMaterialRequest: { type: Boolean, default: false },
     pushSubscription: { type: Object },
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date },

@@ -18,6 +18,7 @@ interface IUser {
     role: 'user' | 'driver' | 'admin' | 'amir' | 'tech' | 'supervisor' | 'techamir' | 'akademik' | 'mali_isler';
     isActive?: boolean;
     manager?: string | null;
+    canCreateMaterialRequest?: boolean;
 }
 
 export default function UserPage() {
@@ -39,6 +40,7 @@ export default function UserPage() {
     const [editRole, setEditRole] = useState('user');
     const [editIsActive, setEditIsActive] = useState(true);
     const [editManager, setEditManager] = useState('');
+    const [editCanCreateMaterial, setEditCanCreateMaterial] = useState(false);
 
     // fetchUser artık opsiyonel bir arama parametresi alıyor
     const fetchUser = async (search: string = '') => {
@@ -97,6 +99,7 @@ export default function UserPage() {
         setEditRole(user.role);
         setEditIsActive(user.isActive !== false);
         setEditManager(user.manager || '');
+        setEditCanCreateMaterial(user.canCreateMaterialRequest === true);
         setIsEditModalOpen(true);
     };
 
@@ -109,6 +112,7 @@ export default function UserPage() {
                 role: editRole,
                 isActive: editIsActive,
                 manager: editManager || null,
+                canCreateMaterialRequest: editCanCreateMaterial,
             });
 
             alert("Güncelleme başarılı!");
@@ -201,6 +205,7 @@ export default function UserPage() {
                                 <th className="px-4 py-3 text-left text-xs font-medium text-base-content/60 uppercase tracking-wider">E-posta</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-base-content/60 uppercase tracking-wider">Rol</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-base-content/60 uppercase tracking-wider">Durum</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-base-content/60 uppercase tracking-wider">Malzeme Talebi</th>
                                 <th className="px-4 py-3 text-right text-xs font-medium text-base-content/60 uppercase tracking-wider">İşlemler</th>
                             </tr>
                         </thead>
@@ -229,6 +234,15 @@ export default function UserPage() {
                                                 {user.isActive !== false ? 'Aktif' : 'Deaktif'}
                                             </span>
                                         </td>
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            {user.role === 'admin' || user.canCreateMaterialRequest ? (
+                                                <span className="px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full border bg-success/10 text-success border-success/30">
+                                                    {user.role === 'admin' ? 'Yetkili (Admin)' : 'Yetkili'}
+                                                </span>
+                                            ) : (
+                                                <span className="text-xs text-base-content/40">—</span>
+                                            )}
+                                        </td>
                                         <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                                             <div className="flex items-center justify-end space-x-2">
                                                 <button
@@ -251,7 +265,7 @@ export default function UserPage() {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={4} className="px-4 py-10 text-center text-base-content/40">Sonuç bulunamadı.</td>
+                                    <td colSpan={6} className="px-4 py-10 text-center text-base-content/40">Sonuç bulunamadı.</td>
                                 </tr>
                             )}
                         </tbody>
@@ -345,6 +359,23 @@ export default function UserPage() {
                                             />
                                             <label htmlFor="editIsActive" className="text-sm font-medium text-base-content/70 cursor-pointer select-none">
                                                 Hesap Aktif
+                                            </label>
+                                        </div>
+
+                                        <div className="flex items-start pt-1">
+                                            <input
+                                                type="checkbox"
+                                                id="editCanCreateMaterial"
+                                                checked={editCanCreateMaterial || editRole === 'admin'}
+                                                disabled={editRole === 'admin'}
+                                                onChange={(e) => setEditCanCreateMaterial(e.target.checked)}
+                                                className="checkbox checkbox-primary mr-2 mt-0.5"
+                                            />
+                                            <label htmlFor="editCanCreateMaterial" className="text-sm font-medium text-base-content/70 cursor-pointer select-none">
+                                                Malzeme talebi oluşturabilir
+                                                <span className="block text-xs font-normal text-base-content/50">
+                                                    {editRole === 'admin' ? 'Admin her zaman oluşturabilir.' : 'İşaretli olmayan kullanıcılar malzeme talebi oluşturamaz.'}
+                                                </span>
                                             </label>
                                         </div>
 

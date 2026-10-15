@@ -38,7 +38,7 @@ export default function MalzemeTalepleriPage() {
         <MalzemeTalepPool
           key={refreshKey}
           currentUser={currentUser}
-          onOpenNewFormModal={() => setIsNewFormModalOpen(true)}
+          onOpenNewFormModal={currentUser?.canCreateMaterialRequest ? () => setIsNewFormModalOpen(true) : undefined}
         />
       )}
 

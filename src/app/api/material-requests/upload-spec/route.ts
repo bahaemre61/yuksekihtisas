@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import { writeFile, mkdir } from 'fs/promises';
 import { getAuthenticatedUser } from '@/src/lib/auth';
+import connectToDatabase from '@/src/lib/db';
+import { canUserCreateMaterialRequest } from '@/src/lib/materialAccess';
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
 
@@ -10,6 +12,12 @@ export async function POST(req: NextRequest) {
     const { user, error } = getAuthenticatedUser(req);
     if (error || !user) {
       return error || NextResponse.json({ msg: 'Yetkisiz erişim' }, { status: 401 });
+    }
+
+    // Yetkisiz kullanıcılar sunucuya dosya yükleyemesin
+    await connectToDatabase();
+    if (!(await canUserCreateMaterialRequest(user.id))) {
+      return NextResponse.json({ msg: 'Malzeme talebi oluşturma yetkiniz bulunmuyor.' }, { status: 403 });
     }
 
     const formData = await req.formData();

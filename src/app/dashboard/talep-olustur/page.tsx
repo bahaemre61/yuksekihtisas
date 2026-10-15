@@ -28,6 +28,7 @@ export default function TalepOlusturPage() {
   }, []);
 
   const isAkademi = currentUser?.role === 'akademik';
+  const canCreateMaterial = currentUser?.canCreateMaterialRequest === true;
 
   const SelectionScreen = () => (
     <div className="flex flex-col items-center justify-center min-h-[60vh]">
@@ -92,22 +93,40 @@ export default function TalepOlusturPage() {
         </div>
 
         {/* 3. KUTU: MALZEME TALEBİ */}
-        <div 
-          onClick={() => setActiveTab('material')}
-          className="group bg-base-100 p-8 rounded-3xl shadow-md border-2 border-transparent hover:border-primary hover:shadow-xl cursor-pointer transition-all duration-300 flex flex-col items-center text-center hover:-translate-y-1"
+        <div
+          onClick={() => {
+            if (canCreateMaterial) setActiveTab('material');
+          }}
+          className={`group bg-base-100 p-8 rounded-3xl shadow-md border-2 border-transparent transition-all duration-300 flex flex-col items-center text-center ${
+            canCreateMaterial
+              ? 'hover:border-primary hover:shadow-xl cursor-pointer hover:-translate-y-1'
+              : 'opacity-50 cursor-not-allowed border-base-200'
+          }`}
         >
-          <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mb-6 group-hover:bg-primary transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-primary group-hover:text-primary-content">
+          <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 transition-colors ${
+            canCreateMaterial ? 'bg-primary/20 group-hover:bg-primary' : 'bg-base-200'
+          }`}>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-10 h-10 ${canCreateMaterial ? 'text-primary group-hover:text-primary-content' : 'text-base-content/40'}`}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
             </svg>
           </div>
           <h2 className="text-xl font-black text-base-content mb-2 flex items-center justify-center gap-2">
             Malzeme Talebi
-            <span className="text-[10px] uppercase font-extrabold tracking-wider px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/25">
-              YENİ
-            </span>
+            {canCreateMaterial ? (
+              <span className="text-[10px] uppercase font-extrabold tracking-wider px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/25">
+                YENİ
+              </span>
+            ) : (
+              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-error/15 text-error border border-error/25">
+                Erişim Yok
+              </span>
+            )}
           </h2>
-          <p className="text-base-content/70 text-sm">Almak istediğiniz malzemenin cinsi, miktarı ve birimi için talep oluşturun.</p>
+          <p className="text-base-content/70 text-sm">
+            {canCreateMaterial
+              ? 'Almak istediğiniz malzemenin cinsi, miktarı ve birimi için talep oluşturun.'
+              : 'Malzeme talebi oluşturma yetkiniz bulunmuyor. Yetki için yöneticiye başvurun.'}
+          </p>
         </div>
 
       </div>
@@ -137,7 +156,7 @@ export default function TalepOlusturPage() {
           {activeTab === 'selection' && <SelectionScreen />}
           {activeTab === 'vehicle' && <AracTalepForm />}
           {activeTab === 'technical' && <TeknikTalepForm />}
-          {activeTab === 'material' && (
+          {activeTab === 'material' && canCreateMaterial && (
             <div className="max-w-4xl mx-auto">
               <MalzemeTalepForm
                 isModal={false}

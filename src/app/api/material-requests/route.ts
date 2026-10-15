@@ -4,6 +4,7 @@ import connectToDatabase from '@/src/lib/db';
 import { getAuthenticatedUser } from '@/src/lib/auth';
 import MaterialRequest from '@/src/lib/models/MaterialRequest';
 import User, { UserRole } from '@/src/lib/models/User';
+import { canUserCreateMaterialRequest } from '@/src/lib/materialAccess';
 
 export async function GET(req: NextRequest) {
   try {
@@ -52,9 +53,14 @@ export async function POST(req: NextRequest) {
       return error || NextResponse.json({ msg: 'Yetkisiz erişim' }, { status: 401 });
     }
 
-    const body = await req.json();
-
     await connectToDatabase();
+
+    // Yalnızca admin'in belirlediği listedeki kullanıcılar malzeme talebi oluşturabilir
+    if (!(await canUserCreateMaterialRequest(user.id))) {
+      return NextResponse.json({ msg: 'Malzeme talebi oluşturma yetkiniz bulunmuyor.' }, { status: 403 });
+    }
+
+    const body = await req.json();
 
     const locationVal = (body.location || 'Yüksek İhtisas Tıp Fakültesi (100.Yıl Yerleşkesi)').trim();
 

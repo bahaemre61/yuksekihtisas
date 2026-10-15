@@ -40,7 +40,7 @@ export async function PUT(request:NextRequest, {params}: {params: Promise<{id : 
 
     try{
         const {id} = await params;
-        const {name, email, role, isActive, manager} = await request.json();
+        const {name, email, role, isActive, manager, canCreateMaterialRequest} = await request.json();
 
         if (id === user.id && isActive === false) {
             return NextResponse.json({ msg: 'Kendinizi deaktif edemezsiniz.' }, { status: 400 });
@@ -51,6 +51,7 @@ export async function PUT(request:NextRequest, {params}: {params: Promise<{id : 
         const updateData: any = {name, email, role};
         if (isActive !== undefined) updateData.isActive = isActive;
         if (role === 'driver') updateData.driverStatus = 'available';
+        if (typeof canCreateMaterialRequest === 'boolean') updateData.canCreateMaterialRequest = canCreateMaterialRequest;
 
         // Hiyerarşi: bağlı olduğu amir (görev atama zinciri)
         if (manager !== undefined) {

@@ -21,6 +21,7 @@ export interface IUser {
   name: string;
   email: string;
   role: string;
+  canCreateMaterialRequest?: boolean;
 }
 
 export interface IMaterialItemInput {

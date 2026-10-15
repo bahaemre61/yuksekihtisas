@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 import connectToDatabase from '@/src/lib/db';
 import User from '@/src/lib/models/User';
 import { getAuthenticatedUser } from '@/src/lib/auth';
+import { isMaterialRequestAllowed } from '@/src/lib/materialAccess';
 
 
 export async function GET(request: NextRequest) { 
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     await connectToDatabase();
 
-    const dbUser = await User.findById(user.id).select('name role driverStatus isActive');
+    const dbUser = await User.findById(user.id).select('name role driverStatus isActive canCreateMaterialRequest');
 
     if(!dbUser || dbUser.isActive === false){
       return NextResponse.json({msg : 'Yetkisiz : Kullanıcı bulunamadı veya deaktif'}, {status : 401});
@@ -25,7 +26,8 @@ export async function GET(request: NextRequest) {
       _id: dbUser._id,
       name: dbUser.name,
       role: dbUser.role,
-      driverStatus : dbUser.driverStatus
+      driverStatus : dbUser.driverStatus,
+      canCreateMaterialRequest: isMaterialRequestAllowed(dbUser)
     });
     
   } catch (error) {

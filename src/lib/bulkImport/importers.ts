@@ -16,6 +16,7 @@ interface UserRow {
     password: string;
     role: string;
     managerEmail: string;
+    canCreateMaterialRequest: boolean;
 }
 
 const usersImporter: Importer<UserRow> = {
@@ -27,7 +28,8 @@ const usersImporter: Importer<UserRow> = {
         { name: 'email', required: true, description: 'E-posta (benzersiz, giriş adı olarak kullanılır)' },
         { name: 'password', required: true, description: 'Şifre (en az 6 karakter). Aktarım sonrası JSON dosyasını silin!' },
         { name: 'role', required: false, description: `Rol: ${Object.values(UserRole).join(', ')} (varsayılan: user)` },
-        { name: 'managerEmail', required: false, description: 'Bağlı olduğu amirin e-postası (sistemde ya da aynı dosyada olmalı)' }
+        { name: 'managerEmail', required: false, description: 'Bağlı olduğu amirin e-postası (sistemde ya da aynı dosyada olmalı)' },
+        { name: 'canCreateMaterialRequest', required: false, description: 'true ise malzeme talebi oluşturabilir (varsayılan: false)' }
     ],
     example: [
         { name: 'Ayşe Yılmaz', email: 'ayse.yilmaz@yuksekihtisas.edu.tr', password: 'Gecici123', role: 'amir' },
@@ -49,7 +51,7 @@ const usersImporter: Importer<UserRow> = {
         }
         if (managerEmail && !EMAIL_RE.test(managerEmail)) return { error: '"managerEmail" geçersiz.' };
         if (managerEmail && managerEmail.toLowerCase() === email.toLowerCase()) return { error: 'Kullanıcı kendi amiri olamaz.' };
-        return { data: { name, email, password, role, managerEmail } };
+        return { data: { name, email, password, role, managerEmail, canCreateMaterialRequest: raw.canCreateMaterialRequest === true } };
     },
     label_of: (d) => `${d.name} <${d.email}>`,
     uniqueKey: (d) => d.email.toLowerCase(),
@@ -61,6 +63,7 @@ const usersImporter: Importer<UserRow> = {
             email: d.email,
             password: d.password,
             role: d.role,
+            canCreateMaterialRequest: d.canCreateMaterialRequest,
             driverStatus: d.role === UserRole.DRIVER ? 'available' : undefined
         });
         await user.save();
