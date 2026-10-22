@@ -31,6 +31,8 @@ interface IVehicleRequest {
   willCarryItems: boolean;
   priority?: string;
   assignedDriver?: { name: string; };
+  cancelReason?: string;
+  cancelledAt?: string;
 }
 
 const StatusBadge = ({ status }: { status: RequestStatus }) => {
@@ -106,7 +108,8 @@ export default function MyRequestsPage() {
   const filteredAndSortedRequests = useMemo(() => {
     let result = requests;
     if (!showCancelled) {
-      result = result.filter(r => r.status !== RequestStatus.CANCELLED);
+      // Yönetim tarafından nedenle iptal edilenler gizlenmez: kullanıcı sonucu görebilmeli
+      result = result.filter(r => r.status !== RequestStatus.CANCELLED || !!r.cancelReason);
     }
 
     return [...result].sort((a, b) => {
@@ -266,7 +269,7 @@ export default function MyRequestsPage() {
                 ${req.status === RequestStatus.COMPLETED
                   ? 'hover:shadow-[0_0_15px_rgba(34,197,94,0.4)] hover:border-success bg-base-100'
                   : 'hover:shadow-md bg-base-100'}
-                ${req.status === RequestStatus.CANCELLED ? 'opacity-60 bg-base-200/50' : ''}
+                ${req.status === RequestStatus.CANCELLED ? (req.cancelReason ? 'bg-base-200/50' : 'opacity-60 bg-base-200/50') : ''}
               `}
             >
               <div className="flex flex-col sm:flex-row justify-between sm:items-start">
@@ -309,6 +312,16 @@ export default function MyRequestsPage() {
                   )}
                 </div>
               </div>
+
+              {req.status === RequestStatus.CANCELLED && req.cancelReason && (
+                <div className="mt-4 rounded-lg border-l-4 border-error bg-error/10 p-3" role="note">
+                  <p className="text-xs font-bold uppercase tracking-wide text-error">Talebiniz yönetim tarafından iptal edildi</p>
+                  <p className="mt-1 whitespace-pre-line text-sm text-base-content">{req.cancelReason}</p>
+                  {req.cancelledAt && (
+                    <p className="mt-1 text-xs text-base-content/50">{formatTRDate(req.cancelledAt)}</p>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>

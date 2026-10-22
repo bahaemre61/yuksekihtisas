@@ -9,6 +9,7 @@ import {
     EyeIcon, 
     EyeSlashIcon 
 } from '@heroicons/react/24/outline';
+import CancelReasonDialog from '@/src/components/ui/CancelReasonDialog';
 
 enum RequestStatus {
     PENDING = 'pending',
@@ -35,6 +36,7 @@ interface IVehicleReuqest {
     endTime: string;
     requestingUser: { name: string; email: string };
     assignedDriver?: { name: string; email: string };
+    cancelReason?: string;
 }
 
 export default function AdminDashboardPage() {
@@ -75,13 +77,28 @@ export default function AdminDashboardPage() {
         }
     };
 
-    const handleCancel = async (id: string) => {
-        if (!confirm("Bu talebi iptal etmek istediğinize emin misiniz?")) return;
+    // İptal: neden yazdıran modal açılır; neden talep sahibine iletilir
+    const [cancelTarget, setCancelTarget] = useState<IVehicleReuqest | null>(null);
+    const [isCancelling, setIsCancelling] = useState(false);
+    const [cancelError, setCancelError] = useState('');
+
+    const handleCancel = (req: IVehicleReuqest) => {
+        setCancelError('');
+        setCancelTarget(req);
+    };
+
+    const handleCancelConfirm = async (reason: string) => {
+        if (!cancelTarget) return;
+        setIsCancelling(true);
+        setCancelError('');
         try {
-            await axios.put(`/api/admin/requests/${id}/cancel`);
+            await axios.put(`/api/admin/requests/${cancelTarget._id}/cancel`, { reason });
+            setCancelTarget(null);
             fetchAllRequests();
         } catch (err) {
-            alert("İptal işlemi başarısız.");
+            setCancelError(axios.isAxiosError(err) ? (err.response?.data?.msg || 'İptal işlemi başarısız.') : 'İptal işlemi başarısız.');
+        } finally {
+            setIsCancelling(false);
         }
     };
 
@@ -261,6 +278,11 @@ export default function AdminDashboardPage() {
                                             <span className={`px-2.5 py-0.5 inline-flex text-[10px] leading-5 font-bold rounded-full border ${getStatusColor(req.status)}`}>
                                                 {req.status.toUpperCase()}
                                             </span>
+                                            {req.status === 'cancelled' && req.cancelReason && (
+                                                <div className="mt-1 max-w-[180px] truncate text-[11px] text-error" title={req.cancelReason}>
+                                                    Neden: {req.cancelReason}
+                                                </div>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-base-content/70">
                                             {req.assignedDriver ? (
@@ -280,7 +302,7 @@ export default function AdminDashboardPage() {
                                             )}
                                             {(req.status === 'pending' && isPastDate(req.startTime)) && (
                                                 <button
-                                                    onClick={() => handleCancel(req._id)}
+                                                    onClick={() => handleCancel(req)}
                                                     className="px-3 py-1 rounded transition-all text-xs font-bold border bg-error/10 text-error border-error/30 hover:bg-error hover:text-error-content ring-1 ring-error/50 animate-pulse"
                                                 >
                                                     SÜRESİ GEÇTİ - İPTAL ET
@@ -300,6 +322,16 @@ export default function AdminDashboardPage() {
                     </table>
                 )}
             </div>
+
+            <CancelReasonDialog
+                open={!!cancelTarget}
+                title="Talebi iptal et"
+                description={cancelTarget ? `${cancelTarget.requestingUser?.name || 'Kullanıcı'} — ${cancelTarget.fromLocation} ➔ ${cancelTarget.toLocation}` : undefined}
+                submitting={isCancelling}
+                error={cancelError}
+                onConfirm={handleCancelConfirm}
+                onClose={() => setCancelTarget(null)}
+            />
         </div>
     );
 }

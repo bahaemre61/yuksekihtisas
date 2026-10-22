@@ -6,8 +6,9 @@ import axios from 'axios';
 import {
   MapPinIcon, ClockIcon, UsersIcon, BoltIcon,
   CalendarDaysIcon, ArrowRightCircleIcon, HandRaisedIcon,
-  CpuChipIcon, CheckCircleIcon, SparklesIcon, ShieldCheckIcon
+  CpuChipIcon, CheckCircleIcon, SparklesIcon, ShieldCheckIcon, XMarkIcon
 } from '@heroicons/react/24/solid';
+import CancelReasonDialog from '@/src/components/ui/CancelReasonDialog';
 
 export default function SmartGroupPage() {
   const [groups, setGroups] = useState<any[]>([]);
@@ -21,6 +22,11 @@ export default function SmartGroupPage() {
   const [botLogs, setBotLogs] = useState<string[]>([]);
   const [isBotRunning, setIsBotRunning] = useState(false);
   const [lastBotRunTime, setLastBotRunTime] = useState<string | null>(null);
+
+  // Talep iptal / red
+  const [cancelTarget, setCancelTarget] = useState<{ id: string; label: string } | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState('');
 
   const fetchData = async () => {
     setLoading(true);
@@ -82,6 +88,21 @@ export default function SmartGroupPage() {
       fetchData();
     } catch (err) { alert("Hata oluştu."); }
     finally { setIsAssigning(null); }
+  };
+
+  const handleCancelConfirm = async (reason: string) => {
+    if (!cancelTarget) return;
+    setIsCancelling(true);
+    setCancelError('');
+    try {
+      await axios.put(`/api/admin/requests/${cancelTarget.id}/cancel`, { reason });
+      setCancelTarget(null);
+      fetchData();
+    } catch (err) {
+      setCancelError(axios.isAxiosError(err) ? (err.response?.data?.msg || 'İptal işlemi başarısız oldu.') : 'İptal işlemi başarısız oldu.');
+    } finally {
+      setIsCancelling(false);
+    }
   };
 
   if (loading) return <div className="p-20 text-center text-base-content/50 font-medium animate-pulse">Operasyon planı ve dispeçer botu yükleniyor...</div>;
@@ -270,15 +291,26 @@ export default function SmartGroupPage() {
                             <p className="text-[10px] text-base-content/60 font-medium">{req.fromLocation} ➔ {req.toLocation}</p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          {/* 🕒 ESNEK ZAMAN VEYA NORMAL SAAT */}
-                          <p className={`text-[9px] font-bold ${flexLabel ? 'text-info' : 'text-base-content/70'}`}>
-                            {flexLabel || start.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                          {/* 🔄 DÖNÜŞ SAATİ */}
-                          <p className="text-[8px] text-base-content/70 font-medium italic">
-                            Dönüş: {end.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
-                          </p>
+                        <div className="flex items-center gap-2">
+                          <div className="text-right">
+                            {/* 🕒 ESNEK ZAMAN VEYA NORMAL SAAT */}
+                            <p className={`text-[9px] font-bold ${flexLabel ? 'text-info' : 'text-base-content/70'}`}>
+                              {flexLabel || start.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                            {/* 🔄 DÖNÜŞ SAATİ */}
+                            <p className="text-[8px] text-base-content/70 font-medium italic">
+                              Dönüş: {end.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => { setCancelError(''); setCancelTarget({ id: req._id, label: `${req.requestingUser?.name || 'Kullanıcı'} — ${req.fromLocation} ➔ ${req.toLocation}` }); }}
+                            className="p-1.5 rounded-lg text-error/70 hover:text-error hover:bg-error/10 transition-colors"
+                            title="Talebi iptal et / reddet"
+                            aria-label="Talebi iptal et"
+                          >
+                            <XMarkIcon className="h-4 w-4" />
+                          </button>
                         </div>
                       </div>
                     );
@@ -332,6 +364,7 @@ export default function SmartGroupPage() {
                 <th className="px-8 py-4">Güzergah</th>
                 <th className="px-8 py-4">Kişi</th>
                 <th className="px-8 py-4 text-right">Durum</th>
+                <th className="px-8 py-4 text-right">İşlem</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-base-200">
@@ -354,12 +387,35 @@ export default function SmartGroupPage() {
                   <td className="px-8 py-4 text-right">
                     <span className="text-[10px] font-black text-base-content/40 border border-base-300 px-3 py-1 rounded-full uppercase">Planlı</span>
                   </td>
+                  <td className="px-8 py-4 text-right">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const r = group.requests[0];
+                        setCancelError('');
+                        setCancelTarget({ id: r._id, label: `${r.requestingUser?.name || 'Kullanıcı'} — ${r.fromLocation} ➔ ${r.toLocation}` });
+                      }}
+                      className="text-[10px] font-black uppercase text-error/80 hover:text-error border border-error/30 hover:bg-error/10 px-3 py-1 rounded-full transition-colors"
+                    >
+                      İptal Et
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </section>
+
+      <CancelReasonDialog
+        open={!!cancelTarget}
+        title="Talebi iptal et / reddet"
+        description={cancelTarget?.label}
+        submitting={isCancelling}
+        error={cancelError}
+        onConfirm={handleCancelConfirm}
+        onClose={() => setCancelTarget(null)}
+      />
     </div>
   );
 }

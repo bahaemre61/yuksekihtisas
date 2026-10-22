@@ -23,6 +23,10 @@ export interface IVehicleRequest extends Document {
     endTime: Date;
     //district: string;
     priority : 'normal' | 'high'; 
+    // Yönetici tarafından iptal/red edildiğinde doldurulur
+    cancelReason?: string;
+    cancelledBy?: IUser['_id'];
+    cancelledAt?: Date;
 }
 
 const VehicleRequestSchema: Schema<IVehicleRequest> = new Schema({
@@ -73,7 +77,10 @@ const VehicleRequestSchema: Schema<IVehicleRequest> = new Schema({
         type: String,
         enum: ['normal', 'high'],
         default : 'normal'
-    }
+    },
+    cancelReason: { type: String, trim: true, maxlength: 500 },
+    cancelledBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    cancelledAt: { type: Date }
 }, { 
     timestamps: true 
 });
