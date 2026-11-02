@@ -14,8 +14,38 @@ import {
   DocumentTextIcon,
   ClockIcon,
   ShareIcon,
-  TrashIcon
+  TrashIcon,
+  LinkIcon,
+  CheckIcon
 } from '@heroicons/react/24/outline';
+
+// Panoya kopyalar. HTTPS'te modern API, HTTP/iç ağda textarea + execCommand yedeği kullanılır.
+async function copyText(text: string): Promise<boolean> {
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (err) {
+      console.error('Modern kopyalama başarısız:', err);
+    }
+  }
+  try {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-9999px';
+    textArea.style.top = '0';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    const successful = document.execCommand('copy');
+    document.body.removeChild(textArea);
+    return successful;
+  } catch (err) {
+    console.error('Fallback kopyalama da başarısız:', err);
+    return false;
+  }
+}
 
 export default function MeetingManagement() {
   const { theme } = useTheme();
@@ -25,6 +55,7 @@ export default function MeetingManagement() {
   const [expandedMeetings, setExpandedMeetings] = useState<Record<string, boolean>>({});
   const [showModal, setShowModal] = useState(false);
   const [selectedQR, setSelectedQR] = useState<string | null>(null);
+  const [joinLinkCopied, setJoinLinkCopied] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showMinutesModal, setShowMinutesModal] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<any>(null);
@@ -102,51 +133,23 @@ export default function MeetingManagement() {
 
   const copyShareLink = async (id: string) => {
     const link = `${window.location.origin}/meeting/view/${id}`;
-    let copied = false;
+    const copied = await copyText(link);
 
-    // 1. Modern API denemesi (Sadece HTTPS/Localhost'ta çalışır)
-    if (navigator.clipboard && window.isSecureContext) {
-      try {
-        await navigator.clipboard.writeText(link);
-        copied = true;
-      } catch (err) {
-        console.error("Modern kopyalama başarısız:", err);
-      }
-    }
-
-    if (!copied) {
-      try {
-        const textArea = document.createElement("textarea");
-        textArea.value = link;
-
-        textArea.style.position = "fixed";
-        textArea.style.left = "-9999px";
-        textArea.style.top = "0";
-        document.body.appendChild(textArea);
-
-        textArea.focus();
-        textArea.select();
-
-        const successful = document.execCommand('copy');
-        document.body.removeChild(textArea);
-
-        if (successful) {
-          copied = true;
-        } else {
-          throw new Error('Kopyalama başarısız');
-        }
-      } catch (err) {
-        console.error("Fallback kopyalama da başarısız:", err);
-        alert("Kopyalanamadı, ancak link yeni sekmede açılıyor.");
-      }
-    }
-
-    if (copied) {
-      alert("Link başarıyla kopyalandı ve yeni sekmede açılıyor!");
-    }
+    alert(copied ? "Link başarıyla kopyalandı ve yeni sekmede açılıyor!" : "Kopyalanamadı, ancak link yeni sekmede açılıyor.");
 
     // Her durumda yeni sekmede aç
     window.open(link, '_blank');
+  };
+
+  // Katılım (QR ile aynı) linkini kopyalar: QR'ı okutamayanlara mesajla gönderilebilir
+  const copyJoinLink = async (secret: string) => {
+    const link = `${window.location.origin}/meeting/join/${secret}`;
+    if (await copyText(link)) {
+      setJoinLinkCopied(true);
+      setTimeout(() => setJoinLinkCopied(false), 2000);
+    } else {
+      window.prompt('Otomatik kopyalanamadı. Linki seçip kopyalayın:', link);
+    }
   };
 
   return (
@@ -294,10 +297,26 @@ export default function MeetingManagement() {
       {selectedQR && (
         <div className="fixed inset-0 bg-base-300/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-base-100 rounded-2xl p-8 max-w-sm w-full text-center relative shadow-xl border border-base-200">
-            <button onClick={() => setSelectedQR(null)} className="absolute top-4 right-4 p-2 text-base-content/50 hover:text-base-content hover:bg-base-200 rounded-full transition-colors">
+            <button onClick={() => { setSelectedQR(null); setJoinLinkCopied(false); }} className="absolute top-4 right-4 p-2 text-base-content/50 hover:text-base-content hover:bg-base-200 rounded-full transition-colors">
               <XMarkIcon className="h-6 w-6" />
             </button>
-            <h2 className="text-2xl font-bold text-base-content mb-2">KATILIM QR</h2>
+            <div className="mb-2 flex items-center justify-center gap-2">
+              <h2 className="text-2xl font-bold text-base-content">KATILIM QR</h2>
+              <button
+                type="button"
+                onClick={() => copyJoinLink(selectedQR)}
+                className={`inline-flex h-8 items-center gap-1 rounded-lg border px-2 text-xs font-semibold transition-colors ${
+                  joinLinkCopied
+                    ? 'border-success/30 bg-success/10 text-success'
+                    : 'border-base-300 text-base-content/70 hover:bg-base-200'
+                }`}
+                title="Katılım linkini kopyala"
+                aria-label="Katılım linkini kopyala"
+              >
+                {joinLinkCopied ? <CheckIcon className="h-4 w-4" /> : <LinkIcon className="h-4 w-4" />}
+                {joinLinkCopied ? 'Kopyalandı' : 'Link'}
+              </button>
+            </div>
             <p className="text-sm text-base-content/70 mb-6">Okutmak için ekrana yaklaştırın</p>
 
             <div className="bg-white p-4 rounded-xl inline-block mb-2 shadow-sm border border-base-200">
