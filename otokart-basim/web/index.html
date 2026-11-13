@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OtoKart — Kart Basım Paneli</title>
+  <script src="vendor/tailwind.js"></script>
+  <link rel="icon" type="image/png" href="assets/yiu-logo.png" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: "#0f172a",
+            // Yüksek İhtisas Üniversitesi kurumsal kimliği
+            brand: "#1e3e7a",       // üniversite laciverti
+            brandred: "#e00810",    // amblem kırmızısı
+            brandreddark: "#c10710",
+            navy: "#1e3e7a",
+            inkblue: "#142c56",     // koyu lacivert (sidebar)
+            gold: "#f59e0b",
+          },
+          fontFamily: {
+            sans: ["Manrope", '"Segoe UI"', "system-ui", "-apple-system", "sans-serif"],
+          },
+        },
+      },
+    };
+  </script>
+  <link rel="stylesheet" href="style.css?v=20261109i" />
+</head>
+<body class="bg-slate-100 text-ink antialiased">
+  <!-- LOGIN -->
+  <div id="loginView" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0d1f3c] via-[#142c56] to-[#1e3e7a] p-4">
+    <div class="w-full max-w-sm bg-white/95 backdrop-blur rounded-2xl shadow-2xl shadow-black/30 ring-1 ring-white/10 p-8">
+      <div class="flex items-center gap-3 mb-1">
+        <div class="w-12 h-12 rounded-xl bg-white grid place-items-center shadow ring-1 ring-slate-200 p-1.5"><img src="assets/yiu-logo.png" alt="YİÜ" class="w-full h-full object-contain" /></div>
+        <div>
+          <div class="text-3xl font-extrabold tracking-tight text-slate-900">Oto<span class="text-brandred">Kart</span></div>
+          <div class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Kart Basım Otomasyonu</div>
+        </div>
+      </div>
+      <p class="text-slate-500 text-sm mb-6 mt-4">Excel listesi yükleyin, birkaç tıklamayla basılacak kartları oluşturun.</p>
+      <form id="loginForm" class="space-y-3">
+        <div>
+          <label class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Kullanıcı Adı</label>
+          <input id="loginUser" autocomplete="username" required class="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brandred/60" />
+        </div>
+        <div>
+          <label class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Şifre</label>
+          <input id="loginPass" type="password" autocomplete="current-password" required class="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brandred/60" />
+        </div>
+        <button type="submit" class="w-full rounded-lg bg-brandred hover:bg-[#d23a22] transition text-white font-semibold py-2.5 shadow">Giriş Yap</button>
+        <p id="loginError" class="hidden rounded-lg bg-red-50 text-red-700 text-xs px-3 py-2"></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div id="appView" class="hidden min-h-screen flex flex-col lg:flex-row">
+    <!-- SIDEBAR -->
+    <aside class="w-full lg:w-64 shrink-0 bg-inkblue text-slate-200 flex flex-col lg:sticky lg:top-0 lg:h-screen">
+      <div class="flex items-center gap-2.5 px-3 py-2 lg:px-5 lg:pt-5 lg:pb-4 border-b border-white/10">
+        <div class="w-9 h-9 rounded-lg bg-white grid place-items-center shadow p-1 ring-1 ring-black/5 shrink-0"><img src="assets/yiu-logo.png" alt="YİÜ" class="w-full h-full object-contain" /></div>
+        <div class="leading-tight min-w-0">
+          <div class="text-lg font-extrabold text-white tracking-tight">Oto<span class="text-brandred">Kart</span></div>
+          <div class="text-[9px] uppercase tracking-[0.18em] text-slate-400">Kart Basım</div>
+        </div>
+      </div>
+      <nav class="flex gap-1 overflow-x-auto p-2 lg:flex-col lg:flex-1 lg:space-y-1 lg:overflow-y-auto lg:p-3 lg:gap-0">
+        <p class="hidden lg:block px-3 text-[10px] uppercase tracking-[0.2em] text-slate-500 mb-1">Menü</p>
+        <button id="navDashboard" class="nav-item flex items-center gap-2 lg:gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/5 hover:text-white transition whitespace-nowrap shrink-0 lg:w-full" data-view="dashboard"><span>📊</span> <span>Panel</span></button>
+        <button id="navKartBasim" class="nav-item flex items-center gap-2 lg:gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/5 hover:text-white transition whitespace-nowrap shrink-0 lg:w-full" data-view="kartBasim"><span>🪪</span> <span>Kart Basım</span></button>
+        <button id="navMail" class="nav-item flex items-center gap-2 lg:gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/5 hover:text-white transition whitespace-nowrap shrink-0 lg:w-full" data-view="mail"><span>📧</span> <span>Mail Gönder</span></button>
+        <button id="navUsers" class="nav-item flex items-center gap-2 lg:gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/5 hover:text-white transition whitespace-nowrap shrink-0 lg:w-full" data-view="users"><span>👥</span> <span>Kullanıcılar</span></button>
+        <button id="navLogs" class="nav-item flex items-center gap-2 lg:gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/5 hover:text-white transition whitespace-nowrap shrink-0 lg:w-full" data-view="logs"><span>📜</span> <span>İşlem Logları</span></button>
+      </nav>
+      <div class="flex items-center justify-between gap-2 px-3 py-2 border-t border-white/10 lg:flex-col lg:items-stretch lg:p-4 lg:gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <div id="userAvatar" class="w-9 h-9 lg:w-10 lg:h-10 rounded-full bg-brandred/90 text-white grid place-items-center text-xs lg:text-sm font-bold uppercase shrink-0">AD</div>
+          <div class="min-w-0">
+            <div id="userLabel" class="text-sm font-semibold text-white truncate">—</div>
+            <div id="userRole" class="text-[10px] text-slate-500 uppercase tracking-wide">—</div>
+          </div>
+        </div>
+        <button id="logoutBtn" class="rounded-lg border border-white/10 hover:bg-white/5 transition text-slate-300 text-xs px-3 py-2 lg:px-0 lg:py-2 lg:mt-0 lg:w-full shrink-0">Çıkış Yap</button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="flex-1 min-w-0 w-full p-3 sm:p-5 lg:p-8 max-w-[1400px]">
+
+      <!-- DASHBOARD -->
+      <section id="view-dashboard" class="view space-y-6">
+        <header class="flex items-end justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Genel Bakış</h1>
+            <p class="text-sm text-slate-500">Kart basım yoğunluğunu ve son işlemleri görün.</p>
+          </div>
+          <button class="btn primary" data-goto="kartBasim"><span>🪪</span> Kart Basım</button>
+        </header>
+        <div id="statGrid" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3"></div>
+
+        <div id="panelGlossary" class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-2">
+            <h2 class="font-bold text-slate-800">Panel Sözlüğü</h2>
+            <button type="button" id="glossaryToggle" class="text-xs font-semibold text-brandred hover:underline">Göster / Gizle</button>
+          </div>
+          <div id="glossaryBody" class="p-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <div class="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+              <div class="flex items-center gap-2"><span class="text-xl">📋</span><div class="font-bold text-slate-800">Basım İşlemi</div></div>
+              <p class="mt-2 text-xs text-slate-600 leading-relaxed">Onaylanıp arşive kaydedilmiş listelerin sayısıdır. Excel veya manuel giriş ile oluşturulur. Bir listede birden fazla kart olabilir.</p>
+            </div>
+            <div class="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+              <div class="flex items-center gap-2"><span class="text-xl">🪪</span><div class="font-bold text-slate-800">Toplam Kart</div></div>
+              <p class="mt-2 text-xs text-slate-600 leading-relaxed">Tüm listelerdeki toplam kart adedidir. Basıldı veya bekliyor fark etmez; aynı kişi birden fazla listede varsa tekrar sayılır.</p>
+            </div>
+            <div class="rounded-xl border border-amber-100 bg-amber-50/60 p-4">
+              <div class="flex items-center gap-2"><span class="text-xl">⏳</span><div class="font-bold text-amber-800">Bekleyen</div></div>
+              <p class="mt-2 text-xs text-amber-900 leading-relaxed">Henüz mail ile gönderilmemiş (durumu <b>pending</b>) kart sayısıdır. Bir fotoğraf eşleşmediğinde veya liste onaylandıktan sonra eklendiğinde bu durumda kalır.</p>
+            </div>
+            <div class="rounded-xl border border-emerald-100 bg-emerald-50/60 p-4">
+              <div class="flex items-center gap-2"><span class="text-xl">✅</span><div class="font-bold text-emerald-800">Basıma Gönderildi</div></div>
+              <p class="mt-2 text-xs text-emerald-900 leading-relaxed">Mail gönderilmiş kartların sayısıdır (listedeki `mail_sent_at` işlendiğinde). PDF yerine emaile gönderimdeki durumu gösterir.</p>
+            </div>
+            <div class="rounded-xl border border-indigo-100 bg-indigo-50/60 p-4">
+              <div class="flex items-center gap-2"><span class="text-xl">🔎</span><div class="font-bold text-indigo-800">Durum: Taslak</div></div>
+              <p class="mt-2 text-xs text-indigo-900 leading-relaxed">Listenin henüz mail ile gönderilmemiş olduğunu gösterir. Mail Gönder → Şimdi Gönder (veya gün sonu/haftada bir) ile gönderildiğinde rozet “Basıma Gönderildi”ye döner.</p>
+            </div>
+            <div class="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+              <div class="flex items-center gap-2"><span class="text-xl">📊</span><div class="font-bold text-slate-800">Ekip Takibi</div></div>
+              <p class="mt-2 text-xs text-slate-600 leading-relaxed">Admin için Öğrenci İşleri ve Personel Daire Başkanlığı’nın kendi kategorilerindeki işlem/kart/basıldı/bekleyen sayılarını ve son işlem tarihini gösterir.</p>
+            </div>
+          </div>
+        </div>
+        <div id="teamSection" class="hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h2 class="font-bold text-slate-800">Ekip Takibi</h2>
+            <span class="text-[11px] text-slate-500">Öğrenci İşleri ve Personel Daire Başkanlığı işleri</span>
+          </div>
+          <div id="teamGrid" class="p-3 grid gap-3 md:grid-cols-2"></div>
+        </div>
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h2 class="font-bold text-slate-800">Son İşlemler</h2>
+            <button class="text-xs font-semibold text-brandred hover:underline" data-goto="kartBasim">Tümü →</button>
+          </div>
+          <div id="recentList" class="p-3 space-y-2"></div>
+        </div>
+      </section>
+
+      <!-- KART BASIM -->
+      <section id="view-kartBasim" class="view space-y-5">
+        <header class="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-3">
+              <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Kart Basım İşlemleri</h1>
+              <span id="kbRoleBadge" class="badge printed">—</span>
+            </div>
+            <p class="text-sm text-slate-500 mt-0.5">Excel listesi ya da tek kart — hepsi tek ekranda.</p>
+          </div>
+        </header>
+
+        <!-- Aksiyon butonlari -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button class="kb-action" data-panel="kbToplu">
+            <span class="kb-action-icon bg-emerald-50">📤</span>
+            <span class="text-left">
+              <span class="kb-action-t">Toplu Ekle</span>
+              <span class="kb-action-s">Excel listesi + fotoğrafları birlikte yükleyin</span>
+            </span>
+          </button>
+          <button class="kb-action" data-panel="kbManuel">
+            <span class="kb-action-icon bg-sky-50">✍️</span>
+            <span class="text-left">
+              <span class="kb-action-t">Manuel Ekle</span>
+              <span class="kb-action-s">Tek kartı elle doldurun, önizleyin, ekleyin</span>
+            </span>
+          </button>
+        </div>
+
+        <!-- TOPLU PANEL -->
+        <div id="kbToplu" class="panel-card hidden">
+          <div class="flex items-center justify-between border-b border-slate-100 px-5 py-3">
+            <h2 class="font-bold text-slate-800">📤 Toplu Ekle — Excel</h2>
+            <button class="kb-close" data-close="kbToplu">Kapat ✕</button>
+          </div>
+          <div class="p-5">
+            <div class="grid lg:grid-cols-5 gap-4">
+          <div class="lg:col-span-3 rounded-2xl border border-slate-200 bg-white shadow-sm p-5 space-y-4">
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label class="form-label">Kategori</label>
+                <select id="excelCategory" class="form-input"></select>
+              </div>
+              <div class="flex items-end">
+                <div class="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-[11px] text-slate-500 leading-snug">
+                  <span id="excelCategoryTip"><span class="font-semibold text-slate-700">İpucu:</span> Fotoğraf dosya adı öğrenci no / sicil no ise otomatik eşleşir.</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label class="form-label">Excel Dosyası (.xlsx)</label>
+              <div id="excelDrop" class="drop-zone group">
+                <input type="file" id="excelFile" accept=".xlsx,.xls" hidden />
+                <div class="flex flex-col items-center justify-center gap-2 text-center pointer-events-none">
+                  <div class="w-12 h-12 rounded-xl bg-emerald-50 text-2xl grid place-items-center group-hover:scale-105 transition">📊</div>
+                  <p class="text-sm font-semibold text-slate-700">Excel dosyasını buraya sürükleyin</p>
+                  <p class="text-[11px] text-slate-500">veya <span class="text-brandred font-semibold">tıklayıp seçin</span> · .xlsx / .xls · maks 20MB</p>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label class="form-label">Fotoğraflar <span class="text-slate-400 normal-case font-normal">(opsiyonel)</span></label>
+              <div id="batchPhotoDrop" class="drop-zone drop-zone--photo group">
+                <input type="file" id="batchPhotoFiles" accept="image/*" multiple hidden />
+                <div class="flex flex-col items-center justify-center gap-2 text-center pointer-events-none">
+                  <div class="w-12 h-12 rounded-xl bg-blue-50 text-2xl grid place-items-center group-hover:scale-105 transition">🖼️</div>
+                  <p class="text-sm font-semibold text-slate-700">Fotoğrafları sürükleyin veya seçin</p>
+                  <p class="text-[11px] text-slate-500"><span id="photoDropHint"><span class="text-brandred font-semibold">Çoklu seçim</span> · dosya adı = öğrenci no</span></p>
+                </div>
+              </div>
+              <div id="batchPhotoList" class="mt-2"></div>
+            </div>
+
+            <div id="mappingBox" class="hidden rounded-xl border border-sky-100 bg-sky-50/50 p-4">
+              <div class="flex items-center justify-between gap-2 mb-3">
+                <h3 class="text-sm font-bold text-sky-900">Sütun Eşleştirme</h3>
+                <span class="text-[10px] uppercase tracking-wide text-sky-700 bg-sky-100 rounded-full px-2 py-0.5">Otomatik eşleştirildi</span>
+              </div>
+              <div id="mappingList" class="grid sm:grid-cols-2 gap-3"></div>
+              <p class="mt-3 text-[11px] text-sky-900/80" id="samplePreview"></p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3 pt-1">
+              <button class="btn primary text-base px-6 py-3" id="createBatchBtn" disabled>Listeyi Yükle ve Önizle →</button>
+              <p class="text-xs text-slate-500" id="batchCreateFeedback"></p>
+            </div>
+          </div>
+
+          <div class="lg:col-span-2 rounded-2xl border border-slate-200 bg-white shadow-sm p-5">
+            <h3 class="text-sm font-bold text-slate-800 mb-2">Bu işlem nasıl çalışır?</h3>
+            <ol class="text-sm text-slate-600 space-y-2 list-none">
+              <li class="flex gap-2"><span class="step">1</span> Excel'i yükleyin, sütunlar otomatik eşleşir (gerekirse düzeltin)</li>
+              <li class="flex gap-2" id="stepPhotoLi"><span class="step">2</span> Fotoğrafları numara ile adlandırın: <code class="rounded bg-slate-100 px-1">2601010917.jpg</code></li>
+              <li class="flex gap-2"><span class="step">3</span> "Listeyi Yükle ve Önizle" ile kartları <b>önizle</b></li>
+              <li class="flex gap-2"><span class="step">4</span> Toplu PDF oluşturun, basıma gönderin</li>
+            </ol>
+            <div class="mt-4 rounded-xl bg-slate-900 text-slate-100 p-4 text-xs leading-relaxed">
+              <div class="flex items-center justify-between gap-2 mb-1.5">
+                <div class="text-brandred font-bold uppercase tracking-wider text-[10px]">Örnek liste</div>
+                <button id="downloadSampleExcel" type="button" class="inline-flex items-center gap-1.5 rounded-lg bg-brandred hover:brightness-110 text-white text-[11px] font-semibold px-3 py-1.5 transition">⬇ Örnek Liste İndir</button>
+              </div>
+              <p class="mb-1 text-[10px] text-slate-400">Seçili kategoriye göre hazırlanır.</p>
+              <p id="sampleFormatHint">T.C.Kimlik No_20 · Öğrenci No_20 · Adı_20 · Soyadı_20 · Fakülte_20 · Fakülte_INGILIZCE · Program_20 · Program_INGILIZCE</p>
+            </div>
+          </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MANUEL PANEL -->
+        <div id="kbManuel" class="panel-card hidden">
+          <div class="flex items-center justify-between border-b border-slate-100 px-5 py-3">
+            <h2 class="font-bold text-slate-800">✍️ Manuel Ekle — Tek Kart</h2>
+            <button class="kb-close" data-close="kbManuel">Kapat ✕</button>
+          </div>
+          <div class="p-5">
+            <div class="grid lg:grid-cols-5 gap-4">
+          <form id="manualForm" class="lg:col-span-3 rounded-2xl border border-slate-200 bg-white shadow-sm p-5 grid sm:grid-cols-2 gap-3">
+            <div class="sm:col-span-2">
+              <label class="form-label">Kategori</label>
+              <select id="manualCategory" class="form-input"></select>
+            </div>
+            <div id="manualFields" class="sm:col-span-2 grid sm:grid-cols-2 gap-3"></div>
+
+            <div class="sm:col-span-2 flex flex-wrap items-center gap-3">
+              <label class="btn">📷 Fotoğraf Yükle (opsiyonel)
+                <input type="file" id="manualPhoto" accept="image/*" hidden />
+              </label>
+              <span id="manualPhotoName" class="text-xs text-slate-500"></span>
+            </div>
+
+            <div class="sm:col-span-2 flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100">
+              <button type="button" class="btn" id="manualPreviewBtn">👁 Önizle</button>
+              <button type="button" class="btn primary" id="manualAddBtn">+ Listeye Ekle</button>
+              <button type="button" class="btn primary hidden" id="manualSaveBatch">Arşive Kaydet ve Önizle →</button>
+            </div>
+            <div class="sm:col-span-2 text-sm text-slate-600 font-semibold">Eklenen Kartlar <span id="manualListCount" class="text-slate-400 font-normal"></span></div>
+            <div id="manualList" class="sm:col-span-2 space-y-2"></div>
+          </form>
+          <div class="lg:col-span-2 rounded-2xl border border-slate-200 bg-white shadow-sm p-5">
+            <h3 class="text-sm font-bold text-slate-800 mb-2">Kart Önizleme</h3>
+            <p class="text-xs text-slate-500 mb-3">Basılacak kartın canlı hali. Kart üzerindeki bilgiler girdikçe güncellenir.</p>
+            <div id="manualPreview" class="preview-box hidden"></div>
+            <div id="manualPreviewEmpty" class="rounded-xl border border-dashed border-slate-200 text-center py-12 text-slate-400 text-sm">Önizleme için <b>Önizle</b>'ye basın veya alanları doldurun.</div>
+            </div>
+          </div>
+        </div>
+        </div>
+
+        <!-- Tarih grupları (05.11.2026 gibi tarihe tıklayınca o günkü işlemler) -->
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div class="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2">
+            <h2 class="font-bold text-slate-800">Kart İşlemleri</h2>
+            <div class="flex items-center gap-2">
+              <select id="kbRoleFilter" class="form-input !w-auto text-xs py-1.5 hidden">
+                <option value="">Tüm ekipler</option>
+                <option value="ogrenci_isleri">Öğrenci İşleri</option>
+                <option value="personel_daire">Personel Daire</option>
+              </select>
+              <span class="text-[11px] text-slate-500">Tarihe tıklayın — o günkü kartlar &amp; fotoğraf eksikleri listelenir</span>
+            </div>
+          </div>
+          <div id="kbDateGroups" class="p-3 space-y-2"></div>
+        </div>
+      </section>
+
+      <!-- MAIL MERKEZI -->
+      <section id="view-mail" class="view hidden space-y-5">
+        <header>
+          <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Mail Gönder</h1>
+          <p class="text-sm text-slate-500">Listeleri anında gönderin veya gün sonu / haftada bir otomatik gönderim planlayın.</p>
+        </header>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <button class="kb-action mail-mode active" data-mail-mode="instant">
+            <span class="kb-action-icon bg-emerald-50">⚡</span>
+            <span class="text-left">
+              <span class="kb-action-t">Anında Gönder</span>
+              <span class="kb-action-s">Seçili listeleri hemen mail at</span>
+            </span>
+          </button>
+          <button class="kb-action mail-mode" data-mail-mode="daily">
+            <span class="kb-action-icon bg-indigo-50">🌙</span>
+            <span class="text-left">
+              <span class="kb-action-t">Gün Sonu</span>
+              <span class="kb-action-s">Her gün belirlenen saatte</span>
+            </span>
+          </button>
+          <button class="kb-action mail-mode" data-mail-mode="weekly">
+            <span class="kb-action-icon bg-amber-50">📅</span>
+            <span class="text-left">
+              <span class="kb-action-t">Haftada Bir</span>
+              <span class="kb-action-s">Haftanın belirli günü ve saati</span>
+            </span>
+          </button>
+        </div>
+
+        <!-- ANINDA -->
+        <div id="mailInstant" class="panel-card">
+          <div class="p-5 grid lg:grid-cols-5 gap-4">
+            <div class="lg:col-span-3 space-y-3">
+              <div>
+                <label class="form-label">Alıcı E-posta</label>
+                <input type="email" id="mailInstantTo" class="form-input" placeholder="ornek@kurum.edu.tr" />
+              </div>
+              <div class="grid sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="form-label">Konu</label>
+                  <input type="text" id="mailInstantSubject" class="form-input" />
+                </div>
+                <div>
+                  <label class="form-label">Kategori Filtresi</label>
+                  <select id="mailInstantCategory" class="form-input"></select>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="form-label !mb-0">Gönderilecek Listeler</label>
+                  <span id="mailSelectedCount" class="text-[11px] text-slate-500">0 seçili</span>
+                </div>
+                <div id="mailBatchList" class="max-h-64 overflow-auto rounded-xl border border-slate-200 divide-y divide-slate-100"></div>
+              </div>
+              <div>
+                <label class="form-label">Mesaj</label>
+                <textarea id="mailInstantBody" rows="6" class="form-input"></textarea>
+              </div>
+              <div class="flex items-center gap-3">
+                <button class="btn brandred" id="mailInstantSend">📤 Şimdi Gönder</button>
+                <p id="mailInstantStatus" class="text-xs"></p>
+              </div>
+            </div>
+            <div class="lg:col-span-2 rounded-2xl bg-slate-50 border border-slate-100 p-4 text-xs text-slate-600 leading-relaxed space-y-2">
+              <p class="font-bold text-slate-800">Zip içeriği</p>
+              <p>• Seçili listeler <b>kategori başına ayrı Excel</b>'de birleştirilir (öğrenci↔öğrenci, intörn↔intörn, akademik↔akademik, idari↔idari)</p>
+              <p>• Manuel listelerde kartlardan otomatik üretilir</p>
+              <p>• Sadece seçili listelere ait eşleşen fotoğraflar (kategori klasörlerinde, ör. fotograflar/ogrenci/)</p>
+              <p>• PDF dahil edilmez</p>
+              <p class="pt-2 border-t border-slate-200">Gönderim sonrası listeler “gönderildi” olarak işaretlenir; gün sonu/haftalık kurallar aynı listeyi tekrar göndermez.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- GUN SONU -->
+        <div id="mailDaily" class="panel-card hidden">
+          <div class="p-5 grid lg:grid-cols-2 gap-4">
+            <div class="space-y-3">
+              <div>
+                <label class="form-label">Kural Adı</label>
+                <input type="text" id="mailDailyName" class="form-input" value="Gün Sonu Maili" />
+              </div>
+              <div class="grid sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="form-label">Kategori</label>
+                  <select id="mailDailyCategory" class="form-input"></select>
+                </div>
+                <div>
+                  <label class="form-label">Gönderim Saati</label>
+                  <input type="time" id="mailDailyTime" class="form-input" value="18:00" />
+                </div>
+              </div>
+              <div>
+                <label class="form-label">Alıcı E-posta</label>
+                <input type="email" id="mailDailyTo" class="form-input" placeholder="ornek@kurum.edu.tr" />
+              </div>
+              <div>
+                <label class="form-label">Konu</label>
+                <input type="text" id="mailDailySubject" class="form-input" />
+              </div>
+              <div>
+                <label class="form-label">Mesaj</label>
+                <textarea id="mailDailyBody" rows="4" class="form-input"></textarea>
+              </div>
+              <label class="flex items-center gap-2 text-sm text-slate-700 font-medium">
+                <input type="checkbox" id="mailDailyActive" checked class="h-4 w-4 rounded border-slate-300 text-brandred focus:ring-brandred" /> Aktif
+              </label>
+              <button class="btn primary" id="mailDailySave">Kaydet</button>
+              <p id="mailDailyStatus" class="text-xs"></p>
+            </div>
+            <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4 text-xs text-slate-600 leading-relaxed space-y-2">
+              <p class="font-bold text-slate-800">Gün sonu nasıl çalışır?</p>
+              <p>Her gün belirlenen saatte, <b>o gün oluşturulan ve henüz mail atılmamış</b> listeler tek zip halinde gönderilir.</p>
+              <p>Kategori seçerseniz yalnızca o kategorinin listeleri gönderilir.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- HAFTADA BIR -->
+        <div id="mailWeekly" class="panel-card hidden">
+          <div class="p-5 grid lg:grid-cols-2 gap-4">
+            <div class="space-y-3">
+              <div>
+                <label class="form-label">Kural Adı</label>
+                <input type="text" id="mailWeeklyName" class="form-input" value="Haftalık Mail" />
+              </div>
+              <div class="grid sm:grid-cols-3 gap-3">
+                <div>
+                  <label class="form-label">Kategori</label>
+                  <select id="mailWeeklyCategory" class="form-input"></select>
+                </div>
+                <div>
+                  <label class="form-label">Gün</label>
+                  <select id="mailWeeklyDay" class="form-input">
+                    <option value="1">Pazartesi</option>
+                    <option value="2">Salı</option>
+                    <option value="3">Çarşamba</option>
+                    <option value="4">Perşembe</option>
+                    <option value="5">Cuma</option>
+                    <option value="6">Cumartesi</option>
+                    <option value="0">Pazar</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="form-label">Saat</label>
+                  <input type="time" id="mailWeeklyTime" class="form-input" value="09:00" />
+                </div>
+              </div>
+              <div>
+                <label class="form-label">Alıcı E-posta</label>
+                <input type="email" id="mailWeeklyTo" class="form-input" placeholder="ornek@kurum.edu.tr" />
+              </div>
+              <div>
+                <label class="form-label">Konu</label>
+                <input type="text" id="mailWeeklySubject" class="form-input" />
+              </div>
+              <div>
+                <label class="form-label">Mesaj</label>
+                <textarea id="mailWeeklyBody" rows="4" class="form-input"></textarea>
+              </div>
+              <label class="flex items-center gap-2 text-sm text-slate-700 font-medium">
+                <input type="checkbox" id="mailWeeklyActive" checked class="h-4 w-4 rounded border-slate-300 text-brandred focus:ring-brandred" /> Aktif
+              </label>
+              <button class="btn primary" id="mailWeeklySave">Kaydet</button>
+              <p id="mailWeeklyStatus" class="text-xs"></p>
+            </div>
+            <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4 text-xs text-slate-600 leading-relaxed space-y-2">
+              <p class="font-bold text-slate-800">Haftada bir nasıl çalışır?</p>
+              <p>Seçilen gün ve saatte, <b>son 7 gün içinde oluşturulan ve henüz mail atılmamış</b> listeler tek zip halinde gönderilir.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-2">
+            <h2 class="font-bold text-slate-800">Zamanlanmış Mailler</h2>
+            <span class="text-[11px] text-slate-500">Gün sonu &amp; haftada bir kuralları</span>
+          </div>
+          <div id="mailJobList" class="p-3 space-y-2"></div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-2">
+            <h2 class="font-bold text-slate-800">Gönderim Geçmişi</h2>
+            <span class="text-[11px] text-slate-500">Son 100 kayıt</span>
+          </div>
+          <div id="mailLogList" class="p-3 space-y-2"></div>
+        </div>
+
+        <div id="mailSmtpCard" class="rounded-2xl border border-slate-200 bg-white shadow-sm hidden">
+          <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-2">
+            <h2 class="font-bold text-slate-800">SMTP Ayarları</h2>
+            <span class="badge printed">Yönetici</span>
+          </div>
+          <div class="p-5 grid sm:grid-cols-2 gap-3">
+            <div>
+              <label class="form-label">SMTP Host</label>
+              <input type="text" id="mailSmtpHost" class="form-input" placeholder="smtp.gmail.com" />
+            </div>
+            <div>
+              <label class="form-label">SMTP Port</label>
+              <input type="number" id="mailSmtpPort" class="form-input" placeholder="587" />
+            </div>
+            <div>
+              <label class="form-label">Güvenli (SSL/TLS)</label>
+              <select id="mailSmtpSecure" class="form-input">
+                <option value="false">Hayır (STARTTLS)</option>
+                <option value="true">Evet (SSL/TLS)</option>
+              </select>
+              <p class="mt-1 text-[10px] leading-tight text-slate-500">587 / 25 / 2525 → “Hayır (STARTTLS)” · 465 → “Evet (SSL/TLS)”. OtoKart 587 ve 25 için otomatik STARTTLS kullanır.</p>
+            </div>
+            <div>
+              <label class="form-label">Gönderen Adı</label>
+              <input type="text" id="mailFromName" class="form-input" placeholder="OtoKart" />
+            </div>
+            <div>
+              <label class="form-label">SMTP Kullanıcı</label>
+              <input type="text" id="mailSmtpUser" class="form-input" placeholder="kullanici@kurum.edu.tr" />
+            </div>
+            <div>
+              <label class="form-label">SMTP Şifre</label>
+              <input type="password" id="mailSmtpPass" class="form-input" placeholder="••••••" />
+            </div>
+            <div class="sm:col-span-2">
+              <label class="form-label">Varsayılan Alıcı</label>
+              <input type="email" id="mailToDefault" class="form-input" placeholder="varsayilan@kurum.edu.tr" />
+            </div>
+            <div class="sm:col-span-2 flex flex-wrap items-center gap-2">
+              <button class="btn primary" id="mailSmtpSave">Kaydet</button>
+              <button class="btn" id="mailSmtpTest">Test Mail</button>
+              <p id="mailSmtpStatus" class="text-xs"></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- BATCH DETAIL -->
+      <section id="view-batchDetail" class="view hidden space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3 flex-wrap">
+            <button class="btn" id="backToBatches">← Geri</button>
+            <div>
+              <h1 id="batchTitle" class="text-xl font-extrabold tracking-tight text-slate-900">İş Detayı</h1>
+              <p id="batchSubtitle" class="text-xs text-slate-500"></p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap" id="batchActions"></div>
+        </div>
+
+        <!-- Fotoğraf eşleşme bandı -->
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm px-4 py-3 flex flex-wrap items-center gap-3">
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Fotoğraf eşleşme</span>
+            <span id="matchSummary" class="badge draft">—</span>
+          </div>
+          <div class="h-5 w-px bg-slate-200 hidden sm:block"></div>
+          <div class="flex items-center gap-1.5 flex-wrap" id="matchChips">
+            <button class="chip chip-active" data-filter="all">Tümü <span id="countAll">0</span></button>
+            <button class="chip" data-filter="matched">Fotoğraflı <span id="countMatched">0</span></button>
+            <button class="chip chip-missing" data-filter="missing">Eksik <span id="countMissing">0</span></button>
+          </div>
+          <p class="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 leading-snug w-full sm:w-auto sm:ml-auto" id="missingHint"></p>
+        </div>
+
+        <!-- Eksik alan raporu (otomatik eşleştirme sonrası boş kalanlar) -->
+        <div id="dataReport" class="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 sm:p-5"></div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 sm:p-5">
+          <div id="cardGrid" class="grid gap-4 md:grid-cols-2 xl:grid-cols-2"></div>
+        </div>
+      </section>
+
+      <!-- LOGS (admin) -->
+      <section id="view-logs" class="view hidden space-y-5">
+        <header class="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">İşlem Logları</h1>
+            <p class="text-sm text-slate-500">Her işlem kaydedilir. Sadece yönetici görebilir.</p>
+          </div>
+          <button id="logsExport" class="btn primary">⬇ Excel İndir</button>
+        </header>
+
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 grid sm:grid-cols-6 gap-2">
+          <div class="sm:col-span-2">
+            <label class="form-label">Arama</label>
+            <input type="text" id="logsQ" class="form-input" placeholder="kullanıcı, işlem, detay" />
+          </div>
+          <div>
+            <label class="form-label">Seviye</label>
+            <select id="logsLevel" class="form-input">
+              <option value="">Tümü</option>
+              <option value="info">info</option>
+              <option value="warn">warn</option>
+              <option value="error">error</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">İşlem Türü</label>
+            <input type="text" id="logsAction" class="form-input" placeholder="örn. login_ok" />
+          </div>
+          <div>
+            <label class="form-label">Kullanıcı</label>
+            <input type="text" id="logsUsername" class="form-input" placeholder="admin" />
+          </div>
+          <div>
+            <label class="form-label">Kategori</label>
+            <select id="logsCategory" class="form-input">
+              <option value="">Tümü</option>
+              <option value="ogrenci">Öğrenci</option>
+              <option value="akademik">Akademik</option>
+              <option value="idari">İdari</option>
+              <option value="stajer">Stajer</option>
+              <option value="intorn">İntörn</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Başlangıç</label>
+            <input type="date" id="logsDateFrom" class="form-input" />
+          </div>
+          <div>
+            <label class="form-label">Bitiş</label>
+            <input type="date" id="logsDateTo" class="form-input" />
+          </div>
+          <div class="sm:col-span-6 flex flex-wrap items-center gap-2">
+            <button id="logsApply" class="btn primary small">Filtrele</button>
+            <button id="logsClear" class="btn small">Temizle</button>
+            <span id="logsInfo" class="text-xs text-slate-500 ml-auto"></span>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-auto">
+          <table class="min-w-full text-xs">
+            <thead class="bg-slate-50 text-slate-600">
+              <tr>
+                <th class="text-left px-3 py-2">Tarih/Saat</th>
+                <th class="text-left px-3 py-2">Seviye</th>
+                <th class="text-left px-3 py-2">İşlem</th>
+                <th class="text-left px-3 py-2">Kullanıcı</th>
+                <th class="text-left px-3 py-2">Rol</th>
+                <th class="text-left px-3 py-2">Kategori</th>
+                <th class="text-left px-3 py-2">Batch</th>
+                <th class="text-left px-3 py-2">Detay</th>
+              </tr>
+            </thead>
+            <tbody id="logsTbody"></tbody>
+          </table>
+          <div id="logsEmpty" class="p-6 text-center text-sm text-slate-400 hidden">Kayıt bulunamadı.</div>
+        </div>
+
+        <div class="flex items-center justify-between gap-2">
+          <button id="logsPrev" class="btn small">← Önceki</button>
+          <span id="logsPage" class="text-xs text-slate-500"></span>
+          <button id="logsNext" class="btn small">Sonraki →</button>
+        </div>
+      </section>
+
+
+
+      <!-- USERS (admin) -->
+      <section id="view-users" class="view hidden space-y-5">
+        <header class="flex items-end justify-between gap-3 flex-wrap">
+          <div>
+            <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Kullanıcılar</h1>
+            <p class="text-sm text-slate-500">Akademik / idari personel ekleyin, rollerini atayın.</p>
+          </div>
+        </header>
+
+        <div class="grid lg:grid-cols-5 gap-4">
+          <form id="userForm" class="lg:col-span-2 rounded-2xl border border-slate-200 bg-white shadow-sm p-5 space-y-3">
+            <h3 class="text-sm font-bold text-slate-800">Yeni Kullanıcı</h3>
+            <div>
+              <label class="form-label">Kullanıcı Adı</label>
+              <input type="text" id="userName" class="form-input" placeholder="ornek: akademik2" autocomplete="off" required />
+            </div>
+            <div>
+              <label class="form-label">Şifre</label>
+              <input type="text" id="userPass" class="form-input" placeholder="En az 4 karakter" autocomplete="off" required />
+            </div>
+            <div>
+              <label class="form-label">Rol</label>
+              <select id="userRole" class="form-input">
+                <option value="ogrenci_isleri">Öğrenci İşleri</option>
+                <option value="personel_daire">Personel Daire Başkanlığı</option>
+                <option value="akademik">Akademik Personel</option>
+                <option value="idari">İdari Personel</option>
+                <option value="operator">Operatör</option>
+                <option value="admin">Yönetici (Admin)</option>
+              </select>
+            </div>
+            <button type="submit" class="btn primary w-full">Kullanıcı Ekle</button>
+            <p id="userStatus" class="text-xs text-emerald-600"></p>
+          </form>
+
+          <div class="lg:col-span-3 rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div class="px-5 py-4 border-b border-slate-100">
+              <h3 class="font-bold text-slate-800">Kayıtlı Kullanıcılar</h3>
+            </div>
+            <div id="userList" class="p-3 divide-y divide-slate-100"></div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 leading-relaxed">
+          <b>Roller ne görür?</b><br />
+          <b>Öğrenci İşleri:</b> Kart Basım + Mail Gönder — yalnızca <b>Öğrenci, İntörn, Stajer Doktor</b> kategorileri.<br />
+          <b>Personel Daire Başkanlığı:</b> Kart Basım + Mail Gönder — yalnızca <b>Akademik, İdari</b> kategorileri.<br />
+          <b>Akademik Personel / İdari Personel:</b> sadece <b>Kart Basım</b> menüsü — Toplu Ekle / Manuel Ekle ve kendi işlemleri.<br />
+          <b>Yönetici:</b> Panel (ekip takibi dahil), Mail Gönder, Kullanıcılar, İşlem Logları — her şey.<br />
+          <b>Varsayılan:</b> admin/admin · ogrenci_isleri/ogrenci_isleri · personel_daire/personel_daire · akademik/akademik · idari/idari
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL -->
+  <div id="modal" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4">
+    <div class="relative w-full max-w-3xl max-h-[92vh] overflow-auto rounded-2xl bg-white shadow-2xl p-6">
+      <button class="absolute right-3 top-3 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100" id="modalClose" aria-label="Kapat">✕</button>
+      <div id="modalBody" class="flex justify-center"></div>
+    </div>
+  </div>
+
+  <!-- TOPLU YÜKLEME ÖNİZLEME MODALI -->
+  <div id="batchPreviewModal" class="fixed inset-0 z-50 hidden flex items-start justify-center overflow-y-auto bg-slate-950/70 p-3 backdrop-blur-sm sm:p-6">
+    <div class="relative w-full max-w-6xl rounded-2xl bg-white shadow-2xl">
+      <div class="sticky top-0 z-10 flex items-center justify-between gap-3 rounded-t-2xl border-b border-slate-100 bg-white px-4 py-4 sm:px-6">
+        <div class="min-w-0">
+          <h2 class="truncate font-bold text-slate-900">Liste Önizlemesi</h2>
+          <p id="previewSubtitle" class="text-xs text-slate-500">—</p>
+        </div>
+        <button id="previewCloseBtn" class="kb-close shrink-0" type="button">Kapat ✕</button>
+      </div>
+      <div class="p-4 sm:p-6">
+        <div id="previewStats" class="mb-4"></div>
+        <div id="previewGrid" class="grid gap-4 md:grid-cols-2"></div>
+        <p id="previewMore" class="mt-4 text-center text-xs text-slate-400"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAĞ ALT ONAY ÇUBUĞU -->
+  <div id="confirmBar" class="fixed bottom-4 right-4 z-[60] hidden w-[calc(100%-2rem)] sm:w-auto">
+    <div class="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-2xl ring-1 ring-black/5">
+      <div class="min-w-0 grow">
+        <div id="confirmBarTitle" class="text-xs font-bold text-slate-800">Onay bekliyor</div>
+        <div id="confirmBarSub" class="text-[11px] text-slate-500">Onaylamadan hiçbir kayıt oluşturulmaz.</div>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <button id="previewCancelBtn" class="btn small" type="button">Vazgeç</button>
+        <button id="previewConfirmBtn" class="btn primary" type="button">✓ Onayla ve Yükle</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=20261110d"></script>
+</body>
+</html>

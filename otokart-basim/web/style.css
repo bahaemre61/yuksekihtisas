@@ -1,0 +1,568 @@
+﻿/* OtoKart — Yüksek İhtisas Üniversitesi kurumsal kimliği */
+/* Resmî font: Manrope (üniversite sitesiyle aynı) — yerel, offline */
+@font-face {
+  font-family: "Manrope";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("assets/fonts/manrope-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Manrope";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("assets/fonts/manrope-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  --line: #e2e8f0;
+  --ink: #0f172a;
+  --muted: #64748b;
+  /* Kurumsal palet: amblem kırmızısı + üniversite laciverti */
+  --brandred: #e00810;
+  --brandred-dark: #c10710;
+  --navy: #1e3e7a;
+  --inkblue: #142c56;
+}
+
+html, body { height: 100%; }
+body {
+  font-family: "Manrope", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  letter-spacing: -0.005em;
+}
+h1, h2, h3, .kb-action-t, .brand-font { letter-spacing: -0.02em; }
+
+.hidden { display: none !important; }
+
+/* form */
+.form-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.form-input {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 14px;
+  color: var(--ink);
+  transition: box-shadow .16s ease, border-color .16s ease;
+}
+.form-input:focus {
+  outline: none;
+  border-color: #fca5a5;
+  box-shadow: 0 0 0 3px rgba(232, 68, 42, .25);
+}
+
+/* Manuel tek kart — belirgin etiketler */
+.manual-field-label {
+  position: relative;
+  display: block;
+  margin-bottom: 8px;
+}
+.manual-field-title {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: 4px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+/* Otomatik tamamlama acilan listesi */
+.suggest-list {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  margin-top: 2px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(15,23,42,.12);
+  z-index: 50;
+  max-height: 200px;
+  overflow-y: auto;
+  list-style: none;
+  padding: 0;
+  display: none;
+}
+.suggest-item {
+  padding: 7px 10px;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.suggest-item:hover {
+  background: #fef2f2;
+  color: #c0392b;
+}
+code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+/* buttons */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 1px solid var(--line); background: #fff; color: var(--ink);
+  border-radius: 10px; padding: 8px 14px; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all .15s ease; text-decoration: none;
+}
+.btn:hover { background: #f8fafc; border-color: #cbd5e1; }
+.btn:active { transform: translateY(1px); }
+.btn.primary {
+  background: var(--brandred); border-color: var(--brandred); color: #fff;
+  box-shadow: 0 6px 16px rgba(224,8,16,.30);
+}
+.btn.primary:hover { background: var(--brandred-dark); border-color: var(--brandred-dark); }
+.btn.primary:disabled { background: #fca5a5; border-color: #fca5a5; cursor: not-allowed; box-shadow: none; }
+.btn.brandred { background: var(--brandred-dark); border-color: var(--brandred-dark); color: #fff; }
+.btn.brandred:hover { background: var(--brandred); border-color: var(--brandred); }
+.btn.danger { background: #fff; color: #dc2626; border-color: #fecaca; }
+.btn.danger:hover { background: #fef2f2; }
+.btn.small { padding: 5px 10px; font-size: 12px; border-radius: 8px; }
+
+/* tabs */
+.tab { color: var(--muted); }
+.tab.active { background: #111827; color: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.2); }
+
+/* drop zones */
+.drop-zone {
+  display: block; border: 2px dashed var(--line); border-radius: 14px;
+  background: #fbfcfe; padding: 20px; cursor: pointer; transition: all .18s ease;
+}
+.drop-zone:hover, .drop-zone.over {
+  border-color: #93c5fd; background: #eff6ff;
+  box-shadow: 0 0 0 4px rgba(59,130,246,.12);
+}
+.drop-zone--photo:hover, .drop-zone--photo.over { border-color: #fda4af; background: #fff1f2; box-shadow: 0 0 0 4px rgba(244,63,94,.12); }
+
+/* nav */
+.nav-item.active { background: var(--brandred) !important; color: #fff !important; box-shadow: 0 4px 14px rgba(224,8,16,.40); }
+
+/* steps */
+.step {
+  flex: 0 0 auto;
+  width: 20px; height: 20px; border-radius: 999px;
+  background: #fee2e2; color: #b45309;
+  font-size: 11px; font-weight: 800;
+  display: grid; place-items: center;
+  margin-top: 1px;
+}
+
+/* cards list rows */
+.list-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: #fff; border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px 14px; transition: box-shadow .15s ease;
+}
+.list-row:hover { box-shadow: 0 4px 14px rgba(15,23,42,.08); }
+.meta { color: var(--muted); font-size: 12px; }
+
+/* badges */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  border-radius: 999px; padding: 2px 10px; font-size: 11px; font-weight: 700; letter-spacing: .02em;
+}
+.badge.pending { background: #fef3c7; color: #92400e; }
+.badge.printed { background: #d1fae5; color: #065f46; }
+.badge.draft   { background: #e0e7ff; color: #3730a3; }
+
+/* stat cards */
+.stat {
+  border: 1px solid var(--line); background: #fff; border-radius: 14px;
+  padding: 14px 16px; box-shadow: 0 1px 2px rgba(15,23,42,.04);
+}
+.stat .num { font-size: 26px; font-weight: 800; color: #111827; }
+.stat .lbl { color: var(--muted); font-size: 11px; margin-top: 2px; text-transform: uppercase; letter-spacing: .06em; }
+
+/* =====================================================
+   KART (Yüksek İhtisas stili) — önizleme
+   ===================================================== */
+.kart-shell {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 6px;
+  /* kartlar: 85.6x54 mm ~= 1.585 ratio */
+}
+
+.kart {
+  position: relative;
+  width: 342px; height: 216px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 10px 26px rgba(15,23,42,.35), 0 0 0 1px rgba(15,23,42,.08);
+  background: #fff;
+  font-family: Arial, Helvetica, sans-serif;
+  user-select: none;
+}
+.kart * { box-sizing: border-box; }
+
+/* watermark */
+.kart-watermark {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  pointer-events: none; opacity: .07;
+}
+.kart-watermark svg { width: 60%; opacity: .9; }
+
+/* vertical strip */
+.kart-strip {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 46px;
+  background: linear-gradient(180deg, #e00810 0%, #c10710 60%, #8f050c 100%);
+  z-index: 3;
+  display: flex; align-items: center; justify-content: center;
+}
+.kart-strip span {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  color: #fff;
+  font-size: 17px;
+  letter-spacing: 0.22em;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.kart-strip small {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  color: rgba(255,255,255,.75);
+  font-size: 8px;
+  letter-spacing: 0.3em;
+  font-weight: 700;
+  white-space: nowrap;
+  margin-bottom: 4px;
+}
+
+/* content area */
+.kart-body {
+  position: absolute;
+  left: 46px; right: 0; top: 0; bottom: 0;
+  padding: 6px 8px 6px 8px;
+}
+
+/* university header */
+.kart-uni {
+  display: flex; align-items: center; gap: 5px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 4px;
+}
+.kart-uni-name { line-height: 1.05; }
+.kart-uni-name b { display: block; font-size: 12.5px; letter-spacing: .02em; color: var(--navy); font-weight: 900; }
+.kart-uni-name i { display: block; font-style: normal; font-size: 6.5px; letter-spacing: .08em; color: var(--brandred); font-weight: 800; margin-top: 1px; }
+
+/* red header style (idari/akademik/intorn back) */
+.kart-red-header {
+  background: linear-gradient(180deg, #e00810, #c10710);
+  color: #fff; text-align: center;
+  padding: 4px 6px; min-height: 32px; box-sizing: border-box;
+  position: absolute; left: 46px; right: 0; top: 0;
+  font-weight: 900; font-size: 11px; letter-spacing: .14em;
+}
+.kart-red-header small { display: block; font-size: 6px; letter-spacing: .25em; font-weight: 700; opacity: .9; margin-top: 2px; }
+
+/* gray band (idari/akademik) */
+.kart-gray-band {
+  position: absolute; top: 32px; left: 46px; right: 0;
+  background: #e5e7eb;
+  padding: 3px 8px;
+  text-align: center;
+}
+.kart-gray-band b { display: block; font-size: 11.5px; color: #111827; }
+.kart-gray-band span { display: block; font-size: 9px; color: #374151; font-weight: 600; }
+
+/* fields */
+.kart-fields { display: flex; flex-direction: column; gap: 1px; padding-left: 1px; padding-top: 2px; }
+.kart-field { border-bottom: 1.4px solid var(--navy); padding-bottom: 1px; margin-bottom: 1px; }
+.kart-field-l { font-size: 6.2px; text-transform: uppercase; letter-spacing: .1em; color: var(--navy); font-weight: 800; }
+.kart-field-v { font-size: 11px; color: #111827; font-weight: 700; line-height: 1.15; }
+.kart-field-v small { display: block; font-size: 7px; color: #374151; font-weight: 600; }
+.kart-tr { font-size: 8px; color: #111827; font-weight: 700; line-height: 1.25; }
+.kart-en { font-size: 7.5px; color: #111827; font-weight: 600; line-height: 1.3; }
+
+/* student specific labels */
+.kart-label-red {
+  color: var(--brandred); font-size: 6.2px; font-weight: 800; letter-spacing: .12em;
+  text-transform: uppercase; line-height: 1.1;
+}
+.kart-num { font-size: 20px; font-weight: 900; color: #111827; letter-spacing: .05em; line-height: 1; }
+
+/* photo */
+.kart-photo {
+  background: linear-gradient(135deg, #fde4e1 0%, #f9d2cd 100%);
+  border: 1px solid #f1a39a;
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+.kart-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.kart-photo .ph-empty { color: var(--brandred-dark); font-size: 10px; font-weight: 700; text-align: center; line-height: 1.3; }
+
+/* serial vertical */
+.kart-serial {
+  position: absolute; right: 0; top: 0; height: 100%;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  color: #111827; font-size: 9px; font-weight: 800; letter-spacing: .12em;
+  display: flex; align-items: center; padding: 6px 2px;
+}
+.kart-serial span { margin: 2px 0; }
+.kart-serial i { font-style: normal; font-size: 6px; font-weight: 700; color: #374151; }
+
+/* back: layout */
+.kart-back-body { position: absolute; left: 46px; right: 10px; top: 33px; bottom: 3px; display: flex; gap: 4px; align-items: stretch; }
+.kart-barcode { width: 38%; display: flex; align-items: center; }
+.kart-barcode svg { width: 100%; height: 100%; }
+.kart-tckn {
+  writing-mode: vertical-rl; transform: rotate(180deg);
+  font-size: 6.5px; font-weight: 800; letter-spacing: .1em;
+  display: flex; align-items: center; padding: 2px 0;
+}
+
+.terms {
+  flex: 1; min-width: 0;
+  font-size: 5.4px; line-height: 1.35; color: #111827; overflow: hidden;
+}
+.terms ul { padding-left: 6px; margin: 0; }
+.terms li { margin: 0 0 1px; }
+.terms .en { color: var(--brandred); font-size: 5px; }
+.terms .date-line { display: flex; justify-content: space-between; padding-bottom: 2px; color: #111827; font-size: 5.2px; font-weight: 800; }
+.terms .ask { text-align: right; font-size: 5px; font-weight: 800; color: #111827; letter-spacing: .1em; margin-top: 1px; }
+
+/* modal & misc reuse */
+.preview-box { display: flex; justify-content: center; }
+.kart-actions { display: flex; gap: 6px; justify-content: center; padding: 8px 10px 10px; border-top: 1px solid var(--line); margin-top: 6px; }
+
+/* virtual print grid */
+.card-grid { display: grid; gap: 14px; }
+@media (min-width: 1280px) {
+  .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* responsive */
+@media (max-width: 860px) {
+  .kart { width: 300px; height: 190px; }
+  .kart-num { font-size: 16px; }
+  .kart-uni-name b { font-size: 10.5px; }
+  .terms { font-size: 4.4px; line-height: 1.3; }
+  .terms .en { font-size: 4px; }
+  .terms .date-line { font-size: 4.4px; }
+}
+@media (max-width: 380px) {
+  .kart { width: 270px; height: 171px; }
+  .kart-strip { width: 38px; }
+  .kart-body { left: 38px; padding: 5px 6px; }
+  .kart-back-body { left: 38px; top: 32px; }
+  .kart-red-header { left: 38px; }
+  .kart-gray-band { left: 38px; }
+  .terms { display: none; }
+  .kart-photo { transform: scale(.86); transform-origin: top left; margin-bottom: -20px; }
+}
+
+/* KART BASIM hub */
+.kb-action {
+  display: flex; align-items: center; gap: 12px;
+  border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px;
+  background: #fff; cursor: pointer; text-align: left;
+  transition: box-shadow .16s ease, transform .16s ease, border-color .16s ease;
+}
+.kb-action:hover { border-color: #fdba74; box-shadow: 0 8px 22px rgba(224,8,16,.14); transform: translateY(-1px); }
+.kb-action-icon { width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; font-size: 24px; flex: 0 0 46px; }
+.kb-action-t { display: block; font-weight: 800; font-size: 15px; color: #111827; }
+.kb-action-s { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; line-height: 1.3; }
+
+.panel-card { border: 1px solid var(--line); border-radius: 16px; background: #fff; box-shadow: 0 1px 2px rgba(15,23,42,.05); overflow: hidden; }
+.panel-card.hidden { display: none !important; }
+.kb-close { border: 1px solid var(--line); border-radius: 8px; padding: 5px 10px; font-size: 12px; color: var(--muted); background: #fff; cursor: pointer; }
+.kb-close:hover { background: #f8fafc; color: var(--ink); }
+
+/* Tarih gruplari */
+.date-group { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #fff; }
+.date-header {
+  width: 100%; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 10px 14px; background: #f8fafc; border: 0; cursor: pointer; text-align: left;
+}
+.date-header:hover { background: #f1f5f9; }
+.date-header .d { font-weight: 800; color: #111827; font-variant-numeric: tabular-nums; }
+.date-header .n { font-size: 11px; color: var(--muted); margin-left: auto; }
+.date-header .chev { transition: transform .2s ease; color: var(--muted); }
+.date-group.open .chev { transform: rotate(90deg); }
+.date-body { display: none; border-top: 1px solid var(--line); }
+.date-group.open .date-body { display: block; }
+.date-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px; flex-wrap: wrap;
+  border-bottom: 1px solid #eef2f7; cursor: pointer;
+}
+.date-item:last-child { border-bottom: 0; }
+.date-item:hover { background: #fff7ed; }
+.date-item .grow { flex: 1; min-width: 0; }
+.date-item .t { font-weight: 700; color: #111827; font-size: 13px; }
+.date-item .meta2 { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.match-ok { color: #047857; font-weight: 700; }
+.match-warn { color: #b45309; font-weight: 700; }
+
+/* Esleme chipleri */
+.chip {
+  border: 1px solid var(--line); background: #fff; border-radius: 999px;
+  padding: 5px 12px; font-size: 12px; font-weight: 600; color: var(--ink); cursor: pointer;
+}
+.chip:hover { border-color: #cbd5e1; }
+.chip-active { background: #111827; color: #fff; border-color: #111827; }
+.chip-missing { border-color: #f59e0b; color: #b45309; }
+.chip-missing.chip-active { background: #f59e0b; border-color: #f59e0b; color: #111827; }
+.chip span { font-variant-numeric: tabular-nums; opacity: .8; margin-left: 4px; }
+
+/* Kart grid iki sutun */
+@media (min-width: 1280px) {
+  #cardGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* =====================================================
+   YENI KART TASARIMI — Referans şablon tabanlı (PDF şablon background)
+   ===================================================== */
+
+/* Kart şablon konteyneri — referanstaki .sheet (ayrı ön/arka dosyalar, 1990x1146) */
+.kart-template {
+  position: relative;
+  width: 384px;
+  aspect-ratio: 283.5 / 164.4; /* PDF kart geometrisi (yi öğrenmci.pdf) */
+  min-height: 223px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 10px 26px rgba(15,23,42,.35), 0 0 0 1px rgba(15,23,42,.08);
+  background: #fff;
+  container-type: inline-size;
+  container-name: kart;
+  font-family: Arial, Helvetica, sans-serif;
+  user-select: none;
+  display: block;
+  flex-shrink: 0;
+  margin: 0 auto;
+}
+
+.kart-template .bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* .kart-text / .kart-photo-tpl / .kart-barcode-tpl hepsi position:absolute —
+   dönüşüm, % değerler ve font bire bir referans .sheet/.ov/.ovr */
+.kart-template > *:not(.bg) {
+  z-index: 1;
+}
+
+/* Metin katmanı — absolut konumlandırılmış, referanstaki .ov/.ovr mantığı */
+.kart-text {
+  position: absolute;
+  left: var(--l, 0%);
+  top: var(--t, 0%);
+  width: var(--w, auto);
+  height: var(--h, auto);
+  font-size: var(--f, 1cqw);
+  font-weight: var(--wt, 900);
+  color: var(--c, #111);
+  text-align: var(--al, left);
+  white-space: var(--wr, nowrap);
+  text-overflow: clip;
+  line-height: 1.15;
+  overflow: hidden;
+  pointer-events: none;
+  transform-origin: top left;
+}
+
+.kart-text.rot {
+  transform: rotate(90deg);
+  transform-origin: left top;
+  white-space: nowrap;
+}
+
+.kart-text.cov {
+  background: var(--cov, transparent);
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Fotoğraf alanı — referanstaki #foto mantığı */
+.kart-photo-tpl {
+  position: absolute;
+  left: var(--l, 0%);
+  top: var(--t, 0%);
+  width: var(--w, 20%);
+  height: var(--h, 25%);
+  object-fit: cover;
+  background: #e8edf2;
+  border: 1px solid #ccc;
+  z-index: 5;
+}
+
+.kart-photo-tpl.ghost { opacity: .25; }
+
+/* Barkod alanı — referanstaki #barcode mantığı */
+.kart-barcode-tpl {
+  position: absolute;
+  left: var(--l, 0%);
+  top: var(--t, 0%);
+  width: var(--w, 15%);
+  height: var(--h, 8%);
+  display: flex;
+  align-items: stretch;
+  background: #fff;
+  z-index: 5;
+}
+
+.kart-barcode-tpl i {
+  display: block;
+  background: #000;
+  height: 100%;
+}
+
+/* Kart ön/arka pair — şablon tabanlı */
+.kart-pair {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.kart-pair .kart-template {
+  flex: 0 0 auto;
+}
+
+/* Responsive */
+@media (max-width: 860px) {
+  .kart-template { width: 300px; min-height: 173px; }
+}
+@media (max-width: 380px) {
+  .kart-template { width: 270px; min-height: 156px; }
+}
+
+/* Eski kart sınıfları ile birlikte kullanım — şablon kartları gizle/göster */
+.kart-template.hidden { display: none; }
+
+
+/* İşlem Logları */
+#logsTbody tr { border-top: 1px solid var(--line); }
+#logsTbody tr:hover { background: #f8fafc; }
+.log-level-info { color: #059669; font-weight: 700; }
+.log-level-warn { color: #d97706; font-weight: 700; }
+.log-level-error { color: #e11d48; font-weight: 700; }
+.log-action { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; color: #0f172a; }
+

@@ -1,0 +1,27 @@
+# Bağımlılıklar
+node_modules/
+
+# Yerel veritabanı (kullanıcılar, kartlar, ayarlar)
+otokart.db
+otokart.db-shm
+otokart.db-wal
+
+# Kişisel veri içeren çalışma klasörleri (repoya girmez)
+uploads/
+photos/
+output/
+data/
+Boş örnek/
+
+# Geçici / log dosyaları
+*.log
+*.tmp
+npm-debug.log*
+.DS_Store
+Thumbs.db
+__pycache__/
+*.pyc
+
+# Ortam değişkenleri
+.env
+.env.*

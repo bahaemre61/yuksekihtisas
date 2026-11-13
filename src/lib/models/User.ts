@@ -14,6 +14,7 @@ export const UserRole= {
     KANIT_SORUMLU: 'kanit_sorumlu',
     RAPORTOR: 'raportor',
     MALI_ISLER: 'mali_isler',
+    OGRENCI_ISLERI: 'ogrenci_isleri',
 } as const;
 
 export type UserRole = typeof UserRole[keyof typeof UserRole];

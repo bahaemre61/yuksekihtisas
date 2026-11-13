@@ -1,0 +1,628 @@
+{
+ "akademik": {
+  "front": {
+   "file": "akademik-front.jpg",
+   "w": 1990,
+   "h": 1146
+  },
+  "front_fields": [
+   {
+    "k": "ad",
+    "et": "Adı Soyadı",
+    "d": "Özlem BARİN GÜÇBİLMEZ",
+    "l": 15.64,
+    "t": 50.5,
+    "w": 44.55,
+    "f": 3.17,
+    "rot": 0
+   },
+   {
+    "k": "unvan",
+    "et": "Ünvanı",
+    "d": "Dr. Öğr. Üyesi",
+    "l": 15.64,
+    "t": 62,
+    "w": 44.55,
+    "f": 3.17,
+    "rot": 0
+   },
+   {
+    "k": "anabilim",
+    "et": "Ana Bilim Dalı / Programı",
+    "d": "Optisyenlik Programı",
+    "l": 15.64,
+    "t": 76,
+    "w": 44.55,
+    "f": 3.17,
+    "rot": 0
+   },
+   {
+    "k": "sicil",
+    "et": "Kurum Sicil Numarası",
+    "d": "A-5359",
+    "l": 15.64,
+    "t": 88.2,
+    "w": 44.55,
+    "f": 3.96,
+    "rot": 0
+   },
+   {
+    "k": "okul",
+    "et": "Yüksekokul",
+    "d": "Sağlık Hizmetleri Meslek Yüksekokulu",
+    "l": 29.7,
+    "t": 25,
+    "w": 57.43,
+    "f": 2.87,
+    "rot": 0
+   },
+   {
+    "k": "bolum",
+    "et": "Bölüm",
+    "d": "Tıbbi Hizmetler ve Teknikler Bölümü",
+    "l": 29.7,
+    "t": 33.5,
+    "w": 57.43,
+    "f": 2.87,
+    "rot": 0
+   },
+   {
+    "k": "seri",
+    "et": "Seri No (dikey)",
+    "d": "0000001",
+    "l": 95.25,
+    "t": 0.6,
+    "w": null,
+    "f": 2.77,
+    "rot": 1
+   }
+  ],
+  "front_foto": [
+   64.36,
+   44,
+   22.18,
+   47
+  ],
+  "front_bar": null,
+  "front_asp": [
+   1990,
+   1146
+  ],
+  "back": {
+   "file": "akademik-back.jpg",
+   "w": 1991,
+   "h": 1146
+  },
+  "back_fields": [
+   {
+    "k": "barkodno",
+    "et": "Barkod No (dikey)",
+    "d": "55654320202",
+    "l": -2.38,
+    "t": 53,
+    "w": null,
+    "f": 2.77,
+    "rot": 1
+   },
+   {
+    "k": "tarih",
+    "et": "Tarih (dikey)",
+    "d": "19.10.26",
+    "l": 87.72,
+    "t": 71.8,
+    "w": null,
+    "f": 1.09,
+    "rot": 1
+   }
+  ],
+  "back_foto": null,
+  "back_bar": [
+   7.72,
+   28,
+   16.44,
+   60
+  ],
+  "back_asp": [
+   1991,
+   1146
+  ]
+ },
+ "idari": {
+  "front": {
+   "file": "idari-front.jpg",
+   "w": 1990,
+   "h": 1146
+  },
+  "front_fields": [
+   {
+    "k": "ad",
+    "et": "Adı Soyadı",
+    "d": "Berkay DEDE",
+    "l": 17.03,
+    "t": 57.7,
+    "w": 44.55,
+    "f": 3.17,
+    "rot": 0
+   },
+   {
+    "k": "gorev",
+    "et": "Görevi",
+    "d": "Şoför/Yolcu Taşıma Personeli",
+    "l": 17.03,
+    "t": 71.9,
+    "w": 47.52,
+    "f": 2.87,
+    "rot": 0
+   },
+   {
+    "k": "sicil",
+    "et": "Kurum Sicil Numarası",
+    "d": "B-1222",
+    "l": 17.03,
+    "t": 87.4,
+    "w": 44.55,
+    "f": 3.17,
+    "rot": 0
+   },
+   {
+    "k": "birim",
+    "et": "Birim",
+    "d": "Genel Sekreterlik",
+    "l": 29.7,
+    "t": 25,
+    "w": 57.43,
+    "f": 3.76,
+    "rot": 0
+   },
+   {
+    "k": "seri",
+    "et": "Seri No (dikey)",
+    "d": "0000001",
+    "l": 95.84,
+    "t": 2.8,
+    "w": null,
+    "f": 2.77,
+    "rot": 1
+   }
+  ],
+  "front_foto": [
+   63.17,
+   41.2,
+   21.78,
+   51.3
+  ],
+  "front_bar": null,
+  "front_asp": [
+   1990,
+   1146
+  ],
+  "back": {
+   "file": "idari-back.jpg",
+   "w": 1991,
+   "h": 1146
+  },
+  "back_fields": [
+   {
+    "k": "barkodno",
+    "et": "Barkod No (dikey)",
+    "d": "11545143060",
+    "l": -2.38,
+    "t": 44.5,
+    "w": null,
+    "f": 2.77,
+    "rot": 1
+   },
+   {
+    "k": "tarih",
+    "et": "Tarih (dikey)",
+    "d": "19.10.26",
+    "l": 88.51,
+    "t": 72.2,
+    "w": null,
+    "f": 1.09,
+    "rot": 1
+   }
+  ],
+  "back_foto": null,
+  "back_bar": [
+   7.72,
+   28,
+   16.44,
+   60
+  ],
+  "back_asp": [
+   1991,
+   1146
+  ]
+ },
+ "ogrenci": {
+  "front": {
+   "file": "ogrenci-front.jpg",
+   "w": 1990,
+   "h": 1146
+  },
+  "front_fields": [
+   {
+    "k": "ad",
+    "et": "Adı Soyadı",
+    "d": "İREM HASANOĞLU",
+    "l": 39.01,
+    "t": 42,
+    "w": 59.41,
+    "f": 3.47,
+    "rot": 0
+   },
+   {
+    "k": "no",
+    "et": "Öğrenci No",
+    "d": "2601010213",
+    "l": 39.01,
+    "t": 55.2,
+    "w": 59.41,
+    "f": 3.88,
+    "rot": 0
+   },
+   {
+    "k": "faktr",
+    "et": "Fakülte (TR)",
+    "d": "Tıp Fakültesi",
+    "l": 39.01,
+    "t": 64.7,
+    "w": 59.41,
+    "f": 2.44,
+    "rot": 0
+   },
+   {
+    "k": "faken",
+    "et": "Fakülte (EN)",
+    "d": "FACULTY of MEDICINE",
+    "l": 39.41,
+    "t": 70.4,
+    "w": 59.41,
+    "f": 2.42,
+    "rot": 0
+   },
+   {
+    "k": "progtr",
+    "et": "Program Fakülte (TR)",
+    "d": "Tıp Fakültesi",
+    "l": 39.01,
+    "t": 77.8,
+    "w": 59.41,
+    "f": 2.44,
+    "rot": 0
+   },
+   {
+    "k": "progen",
+    "et": "Program (EN)",
+    "d": "TURKISH PROGRAMME",
+    "l": 39.01,
+    "t": 83.8,
+    "w": 59.41,
+    "f": 2.42,
+    "rot": 0
+   },
+   {
+    "k": "seri",
+    "et": "Seri No (dikey)",
+    "d": "0000001",
+    "l": 94.26,
+    "t": 2.4,
+    "w": null,
+    "f": 2.77,
+    "rot": 1
+   }
+  ],
+  "front_foto": [
+   16.83,
+   40.8,
+   20.79,
+   49.8
+  ],
+  "front_bar": null,
+  "front_asp": [
+   1990,
+   1146
+  ],
+  "back": {
+   "file": "ogrenci-back.jpg",
+   "w": 1991,
+   "h": 1146
+  },
+  "back_fields": [
+   {
+    "k": "tarih",
+    "et": "Dönem / Tarih",
+    "d": "2024/25  19.10.26",
+    "l": 14.65,
+    "t": 18.5,
+    "w": 39.6,
+    "f": 1.78,
+    "rot": 0
+   },
+   {
+    "k": "sn",
+    "et": "Arka alt kod",
+    "d": "<<sn>>",
+    "l": 13.66,
+    "t": 88.5,
+    "w": 19.8,
+    "f": 1.78,
+    "rot": 0
+   },
+   {
+    "k": "barkodno",
+    "et": "Barkod No",
+    "d": "2601010213",
+    "l": 5.94,
+    "t": 82,
+    "w": 23.76,
+    "f": 1.78,
+    "rot": 0
+   }
+  ],
+  "back_foto": null,
+  "back_bar": [
+   5.94,
+   25,
+   13.86,
+   55
+  ],
+  "back_asp": [
+   1991,
+   1146
+  ]
+ },
+ "intern": {
+  "front": {
+   "file": "intern-front.jpg",
+   "w": 2039,
+   "h": 1146
+  },
+  "front_fields": [
+   {
+    "k": "ad",
+    "et": "Adı Soyadı",
+    "d": "PELİNSU AYDIN",
+    "l": 39.6,
+    "t": 59.2,
+    "w": 49.5,
+    "f": 3.37,
+    "rot": 0
+   },
+   {
+    "k": "fakulte",
+    "et": "Fakülte / Program",
+    "d": "Tıp Fakültesi (İngilizce Program)",
+    "l": 37.62,
+    "t": 50.5,
+    "w": 53.47,
+    "f": 2.77,
+    "rot": 0,
+    "al": "center",
+    "c": "#c40000",
+    "cov": "#f6f6f6",
+    "h": 7
+   },
+   {
+    "k": "ogrno",
+    "et": "Öğrenci No",
+    "d": "2301020203",
+    "l": 41.58,
+    "t": 74.4,
+    "w": 31.68,
+    "f": 2.38,
+    "rot": 0
+   },
+   {
+    "k": "gecerlilik",
+    "et": "Geçerlilik",
+    "d": "31.12.2026",
+    "l": 66.73,
+    "t": 74,
+    "w": 31.68,
+    "f": 2.38,
+    "rot": 0
+   },
+   {
+    "k": "seri",
+    "et": "Seri No (dikey)",
+    "d": "0000001",
+    "l": 94.46,
+    "t": 2.4,
+    "w": null,
+    "f": 3.37,
+    "rot": 1
+   }
+  ],
+  "front_foto": [
+   11.88,
+   14,
+   23.37,
+   55.3
+  ],
+  "front_bar": null,
+  "front_asp": [
+   2039,
+   1146
+  ],
+  "back": {
+   "file": "intern-back.jpg",
+   "w": 2040,
+   "h": 1146
+  },
+  "back_fields": [
+   {
+    "k": "fakulte2",
+    "et": "Fakülte / Program (arka)",
+    "d": "Tıp Fakültesi (İngilizce Program)",
+    "l": 27.72,
+    "t": 48,
+    "w": 54.46,
+    "f": 2.77,
+    "rot": 0,
+    "al": "center",
+    "c": "#c40000",
+    "cov": "#ffffff",
+    "h": 6
+   },
+   {
+    "k": "barkodno",
+    "et": "Barkod No (barkod altı)",
+    "d": "35302412268",
+    "l": 39.21,
+    "t": 76.4,
+    "w": 31.68,
+    "f": 2.08,
+    "rot": 0
+   },
+   {
+    "k": "tarih",
+    "et": "Tarih (dikey)",
+    "d": "19.10.26",
+    "l": 87.72,
+    "t": 11.7,
+    "w": null,
+    "f": 1.09,
+    "rot": 1
+   }
+  ],
+  "back_foto": null,
+  "back_bar": [
+   30.3,
+   62,
+   49.5,
+   14
+  ],
+  "back_asp": [
+   2040,
+   1146
+  ]
+ },
+ "stajyer": {
+  "front": {
+   "file": "stajyer-front.jpg",
+   "w": 2039,
+   "h": 1146
+  },
+  "front_fields": [
+   {
+    "k": "ad",
+    "et": "Adı Soyadı",
+    "d": "GÜL SENA BAYKAL",
+    "l": 39.6,
+    "t": 59.1,
+    "w": 49.5,
+    "f": 3.03,
+    "rot": 0
+   },
+   {
+    "k": "fakulte",
+    "et": "Fakülte / Program",
+    "d": "Tıp Fakültesi (Türkçe Program)",
+    "l": 37.62,
+    "t": 50.5,
+    "w": 53.47,
+    "f": 2.77,
+    "rot": 0,
+    "al": "center",
+    "c": "#c40000",
+    "cov": "#f6f6f6",
+    "h": 7
+   },
+   {
+    "k": "ogrno",
+    "et": "Öğrenci No",
+    "d": "2601010209",
+    "l": 40.99,
+    "t": 74.4,
+    "w": 31.68,
+    "f": 2.38,
+    "rot": 0
+   },
+   {
+    "k": "gecerlilik",
+    "et": "Geçerlilik",
+    "d": "31.12.2026",
+    "l": 66.14,
+    "t": 74,
+    "w": 31.68,
+    "f": 2.38,
+    "rot": 0
+   },
+   {
+    "k": "seri",
+    "et": "Seri No (dikey)",
+    "d": "0000001",
+    "l": 94.26,
+    "t": 2.5,
+    "w": null,
+    "f": 3.37,
+    "rot": 1
+   }
+  ],
+  "front_foto": [
+   11.09,
+   15.4,
+   24.16,
+   55.2
+  ],
+  "front_bar": null,
+  "front_asp": [
+   2039,
+   1146
+  ],
+  "back": {
+   "file": "stajyer-back.jpg",
+   "w": 2040,
+   "h": 1146
+  },
+  "back_fields": [
+   {
+    "k": "fakulte2",
+    "et": "Fakülte / Program (arka)",
+    "d": "Tıp Fakültesi (Türkçe Program)",
+    "l": 27.72,
+    "t": 52,
+    "w": 54.46,
+    "f": 2.77,
+    "rot": 0,
+    "al": "center",
+    "c": "#c40000",
+    "cov": "#ffffff",
+    "h": 6
+   },
+   {
+    "k": "barkodno",
+    "et": "Barkod No (barkod altı)",
+    "d": "2601010209",
+    "l": 38.61,
+    "t": 76.4,
+    "w": 31.68,
+    "f": 2.08,
+    "rot": 0
+   },
+   {
+    "k": "tarih",
+    "et": "Tarih (dikey)",
+    "d": "17.9.26",
+    "l": 87.72,
+    "t": 13.5,
+    "w": null,
+    "f": 1.09,
+    "rot": 1
+   }
+  ],
+  "back_foto": null,
+  "back_bar": [
+   30.69,
+   62,
+   47.52,
+   14
+  ],
+  "back_asp": [
+   2040,
+   1146
+  ]
+ }
+}
