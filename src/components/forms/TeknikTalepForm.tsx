@@ -25,7 +25,7 @@ export default function TeknikTalepForm() {
         const data = await res.json();
 
 
-        if (data.role === 'admin' || data.role === 'amir' || data.role === 'ADMIN' || data.role === 'AMIR' || data.role === 'TECHAMIR' || data.role === 'techamir' || data.role === 'SUPERVISOR' || data.role === 'supervisor') {
+        if (data.role === 'itadmin' || data.role === 'admin' || data.role === 'amir' || data.role === 'ADMIN' || data.role === 'AMIR' || data.role === 'TECHAMIR' || data.role === 'techamir' || data.role === 'SUPERVISOR' || data.role === 'supervisor') {
           setCanSelectHighPriority(true);
         }
       } catch (error) {
@@ -35,6 +35,9 @@ export default function TeknikTalepForm() {
 
     checkUserRole();
   }, []);
+
+  const [category, setCategory] = useState<'technical' | 'it'>('technical');
+  const isIt = category === 'it';
 
   const [formData, setFormData] = useState({
     title: '',
@@ -123,6 +126,7 @@ export default function TeknikTalepForm() {
       dataToSend.append('description', formData.description);
       dataToSend.append('location', finalLocation);
       dataToSend.append('priority', formData.priority);
+      dataToSend.append('category', category);
 
       if (file) {
         dataToSend.append('screenshot', file);
@@ -165,7 +169,7 @@ export default function TeknikTalepForm() {
 
   return (
     <div className="bg-base-100 shadow-md rounded-lg p-6 space-y-6 max-w-3xl mx-auto">
-      <h2 className="text-xl font-bold text-base-content border-b pb-2">Teknik Destek Formu</h2>
+      <h2 className="text-xl font-bold text-base-content border-b pb-2">{isIt ? 'Bilgi İşlem Destek Formu' : 'Teknik Destek Formu'}</h2>
 
       {message && (
         <Alert variant={message.type === 'success' ? 'success' : 'error'} onClose={() => setMessage(null)}>
@@ -174,6 +178,33 @@ export default function TeknikTalepForm() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
+
+        {/* Talep Türü: talep hangi ekibe düşecek */}
+        <div>
+          <label className="block text-sm font-medium text-base-content/80 mb-2">Talep Türü</label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <button
+              type="button"
+              onClick={() => setCategory('technical')}
+              className={`px-4 py-3 border rounded-lg text-left transition-all ${!isIt
+                ? 'border-warning bg-warning/10 ring-2 ring-warning/30'
+                : 'border-base-300 hover:bg-base-200'}`}
+            >
+              <span className="block text-sm font-bold text-base-content">🛠️ Teknik Servis</span>
+              <span className="block text-xs text-base-content/60 mt-0.5">Elektrik, tesisat, mobilya, cihaz/ekipman arızaları</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setCategory('it')}
+              className={`px-4 py-3 border rounded-lg text-left transition-all ${isIt
+                ? 'border-info bg-info/10 ring-2 ring-info/30'
+                : 'border-base-300 hover:bg-base-200'}`}
+            >
+              <span className="block text-sm font-bold text-base-content">💻 Bilgi İşlem</span>
+              <span className="block text-xs text-base-content/60 mt-0.5">Bilgisayar, yazılım, ağ/internet, hesap ve e-posta sorunları</span>
+            </button>
+          </div>
+        </div>
 
         {/* Başlık */}
         <div>
@@ -184,7 +215,7 @@ export default function TeknikTalepForm() {
             required
             value={formData.title}
             onChange={handleInputChange}
-            placeholder="Örn: Bilgisayar Açılmıyor"
+            placeholder={isIt ? 'Örn: E-posta hesabıma giremiyorum' : 'Örn: Kalorifer bozuk, Odamdaki prizler çalışmıyor'}
             className="w-full border border-base-300 rounded-md p-2 focus:ring-orange-500 focus:border-orange-500"
           />
         </div>
@@ -293,7 +324,7 @@ export default function TeknikTalepForm() {
           {/* Bilgilendirme Metni */}
           <p className="text-xs text-base-content/60 mt-2 flex items-center gap-1">
             <span className="text-error font-bold">*</span>
-            Acil durumlar teknik ekip ekranında en üstte ve kırmızı olarak listelenir.
+            Acil durumlar ilgili ekip ekranında en üstte ve kırmızı olarak listelenir.
           </p>
         </div>
 
@@ -335,7 +366,7 @@ export default function TeknikTalepForm() {
           className={`w-full text-primary-content font-bold py-3 px-4 rounded-md transition duration-300 ${loading ? 'bg-base-300 text-base-content/50 cursor-not-allowed' : 'bg-primary hover:brightness-90'
             }`}
         >
-          {loading ? 'Gönderiliyor...' : 'Teknik Talep Oluştur'}
+          {loading ? 'Gönderiliyor...' : (isIt ? 'Bilgi İşlem Talebi Oluştur' : 'Teknik Talep Oluştur')}
         </button>
 
       </form>

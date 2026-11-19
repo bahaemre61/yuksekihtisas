@@ -5,31 +5,36 @@ import connectToDatabase from "@/src/lib/db";
 import TechnicalRequest from "@/src/lib/models/TechnicalRequest";
 import { getAuthenticatedUser } from "@/src/lib/auth";
 import { sendPushToUser } from "@/src/lib/push";
+import { categoryFilter, workerCategories } from "@/src/lib/techAccess";
 
+// Görevli kendi kategorisindeki işleri görür: tech -> teknik servis, it -> bilgi işlem, admin -> hepsi
 export async function GET(request:NextRequest) {
 
     const {user, error} = getAuthenticatedUser(request);
       if(error) return error
 
-    if(user.role !== 'admin' && user.role !== 'tech')
+    const categories = workerCategories(user.role);
+    if(categories.length === 0)
         return NextResponse.json({msg: 'Yasak: Yetkisiz giriş.'}, {status : 403});
 
   await connectToDatabase();
 
   const tasks = await TechnicalRequest.find({
     technicalStaff: user.id,
-    status: 'assigned'
+    status: 'assigned',
+    ...categoryFilter(categories)
   }).populate('user', 'name location');
 
   return NextResponse.json({ success: true, data: tasks });
 }
 
-// Teknisyen işi tamamlar: durum + tamamlanma zamanı yazılır, talep sahibine anlık bildirim gider.
+// Görevli işi tamamlar: durum + tamamlanma zamanı yazılır, talep sahibine anlık bildirim gider.
 export async function PUT(request: NextRequest) {
   const { user, error } = getAuthenticatedUser(request);
   if (error) return error;
 
-  if (user.role !== 'admin' && user.role !== 'tech') {
+  const categories = workerCategories(user.role);
+  if (categories.length === 0) {
     return NextResponse.json({ success: false, msg: 'Yasak: Yetkisiz giriş.' }, { status: 403 });
   }
 
@@ -41,8 +46,12 @@ export async function PUT(request: NextRequest) {
 
     await connectToDatabase();
 
-    // Teknisyen sadece kendisine atanmış, tamamlanmamış talebi kapatabilir (admin hepsini)
-    const filter: Record<string, unknown> = { _id: requestId, status: { $in: ['assigned', 'in_progress'] } };
+    // Görevli sadece kendisine atanmış, tamamlanmamış talebi kapatabilir (admin hepsini)
+    const filter: Record<string, unknown> = {
+      _id: requestId,
+      status: { $in: ['assigned', 'in_progress'] },
+      ...categoryFilter(categories),
+    };
     if (user.role !== 'admin') filter.technicalStaff = user.id;
 
     const completed = await TechnicalRequest.findOneAndUpdate(
@@ -58,7 +67,7 @@ export async function PUT(request: NextRequest) {
     // Talep sahibine anlık bildirim (abone değilse sessizce atlanır; bildirim hatası işlemi bozmaz)
     try {
       await sendPushToUser(String(completed.user), {
-        title: 'Teknik talebiniz tamamlandı',
+        title: completed.category === 'it' ? 'Bilgi işlem talebiniz tamamlandı' : 'Teknik talebiniz tamamlandı',
         body: `"${completed.title}" talebiniz tamamlandı. Lütfen hizmeti değerlendirin.`,
         url: '/dashboard/tekniktaleplerim'
       });

@@ -17,6 +17,7 @@ interface ITechnicalRequest {
   title: string;
   description: string;
   location: string;
+  category?: 'technical' | 'it';
   priority: 'LOW' | 'MEDIUM' | 'HIGH';
   status: RequestStatus;
   createdAt: string;
@@ -257,6 +258,9 @@ export default function MyRequestsPage() {
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="text-lg font-semibold text-base-content">{req.title}</h3>
                     <PriorityBadge priority={req.priority} />
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${req.category === 'it' ? 'bg-info/10 text-info border-info/30' : 'bg-warning/10 text-warning border-warning/30'}`}>
+                      {req.category === 'it' ? 'Bilgi İşlem' : 'Teknik Servis'}
+                    </span>
                   </div>
                   
                   <p className="text-sm text-base-content/70 mb-2 line-clamp-2">

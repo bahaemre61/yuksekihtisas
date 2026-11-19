@@ -15,6 +15,8 @@ export const UserRole= {
     RAPORTOR: 'raportor',
     MALI_ISLER: 'mali_isler',
     OGRENCI_ISLERI: 'ogrenci_isleri',
+    IT: 'it',            // Bilgi işlem personeli (kendisine atanan işleri yapar)
+    ITADMIN: 'itadmin',  // Bilgi işlem yöneticisi (talepleri IT personeline atar)
 } as const;
 
 export type UserRole = typeof UserRole[keyof typeof UserRole];

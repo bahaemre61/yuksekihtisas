@@ -32,6 +32,7 @@ interface ITechnicalRequest {
     title: string;
     description: string;
     location: string;
+    category?: 'technical' | 'it';
     priority: 'LOW' | 'MEDIUM' | 'HIGH';
     status: RequestStatus;
     createdAt: string;
@@ -47,12 +48,22 @@ export default function TechnicalAdminPage() {
     const [filterStatus, setFilterStatus] = useState<string>('all');
     const [showCancelled, setShowCancelled] = useState<boolean>(false);
     const [ratingView, setRatingView] = useState<ITechnicalRequest | null>(null);
+    // Talep türü filtresi: '' = hepsi (sunucu, rolün göremeyeceği kategoriyi zaten dışarıda bırakır)
+    const [filterCategory, setFilterCategory] = useState<string>('');
+    const [categoryReady, setCategoryReady] = useState(false);
+
+    // Havuz sayfasından ?category=it|technical ile gelinirse filtre önceden seçilir
+    useEffect(() => {
+        const c = new URLSearchParams(window.location.search).get('category');
+        if (c === 'it' || c === 'technical') setFilterCategory(c);
+        setCategoryReady(true);
+    }, []);
 
     const fetchAllRequests = async () => {
         setLoading(true);
         try {
             // 🛠️ API çağrısına filtreleri ekliyoruz
-            const res = await axios.get(`/api/admin/technical-requests?status=${filterStatus}&showCancelled=${showCancelled}`);
+            const res = await axios.get(`/api/admin/technical-requests?status=${filterStatus}&showCancelled=${showCancelled}&category=${filterCategory}`);
 
             // API'den gelen verinin formatını kontrol ederek alıyoruz
             const incomingData = Array.isArray(res.data) ? res.data : (res.data.data || []);
@@ -71,8 +82,9 @@ export default function TechnicalAdminPage() {
 
     // 🔄 Filtreler değiştiğinde veriyi tekrar çek
     useEffect(() => {
+        if (!categoryReady) return;
         fetchAllRequests();
-    }, [filterStatus, showCancelled]);
+    }, [filterStatus, showCancelled, filterCategory, categoryReady]);
 
     const handleUnassign = async (id: string) => {
         if (!confirm("Emin misiniz?")) return;
@@ -109,7 +121,7 @@ export default function TechnicalAdminPage() {
     const handleExportAllCSV = async () => {
         setExportingCsv(true);
         try {
-            const res = await axios.get('/api/admin/technical-requests?status=all&showCancelled=false');
+            const res = await axios.get(`/api/admin/technical-requests?status=all&showCancelled=false&category=${filterCategory}`);
             const incomingData = Array.isArray(res.data) ? res.data : (res.data.data || []);
             const allRequests: ITechnicalRequest[] = incomingData.filter((r: ITechnicalRequest) => r.status !== RequestStatus.CANCELLED);
 
@@ -118,9 +130,10 @@ export default function TechnicalAdminPage() {
                 return;
             }
 
-            const headers = ['Talep Eden', 'E-Posta', 'Arıza Başlığı', 'Açıklama', 'Konum', 'Öncelik', 'Tarih', 'Durum', 'Personel'];
+            const headers = ['Tür', 'Talep Eden', 'E-Posta', 'Arıza Başlığı', 'Açıklama', 'Konum', 'Öncelik', 'Tarih', 'Durum', 'Personel'];
 
             const rows = allRequests.map((req) => [
+                req.category === 'it' ? 'Bilgi İşlem' : 'Teknik Servis',
                 req.user?.name || 'Bilinmiyor',
                 req.user?.email || '',
                 req.title,
@@ -176,10 +189,25 @@ export default function TechnicalAdminPage() {
                         <Link href="/dashboard/admin" className="p-2 hover:bg-base-200 rounded-full transition-colors">
                             <ArrowLeftIcon className="h-5 w-5 text-base-content/70" />
                         </Link>
-                        <h2 className="text-xl font-bold text-base-content uppercase tracking-tight">Teknik Destek Yönetimi</h2>
+                        <h2 className="text-xl font-bold text-base-content uppercase tracking-tight">
+                            {filterCategory === 'it' ? 'Bilgi İşlem Yönetimi' : filterCategory === 'technical' ? 'Teknik Servis Yönetimi' : 'Teknik & Bilgi İşlem Yönetimi'}
+                        </h2>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3">
+                        {/* Talep Türü Filtresi */}
+                        <div className="flex items-center gap-2 bg-base-100 border border-base-200 rounded-lg px-3 py-1.5 shadow-sm">
+                            <select
+                                value={filterCategory}
+                                onChange={(e) => setFilterCategory(e.target.value)}
+                                className="text-xs font-bold bg-transparent outline-none pr-4 cursor-pointer uppercase"
+                            >
+                                <option value="">Tüm Türler</option>
+                                <option value="technical">Teknik Servis</option>
+                                <option value="it">Bilgi İşlem</option>
+                            </select>
+                        </div>
+
                         {/* Statü Filtresi */}
                         <div className="flex items-center gap-2 bg-base-100 border border-base-200 rounded-lg px-3 py-1.5 shadow-sm">
                             <FunnelIcon className="h-4 w-4 text-base-content/50" />
@@ -251,7 +279,12 @@ export default function TechnicalAdminPage() {
                                     <td className="px-6 py-4 max-w-[300px]">
                                         <div className="text-sm text-base-content font-bold truncate" title={req.title}>{req.title}</div>
                                         <div className="text-xs text-base-content/70 truncate" title={req.description}>{req.description}</div>
-                                        <div className="text-[10px] text-primary mt-1 font-black uppercase tracking-tighter">{req.location}</div>
+                                        <div className="text-[10px] text-primary mt-1 font-black uppercase tracking-tighter">
+                                            <span className={`mr-1.5 px-1.5 py-0.5 rounded border ${req.category === 'it' ? 'bg-info/10 text-info border-info/30' : 'bg-warning/10 text-warning border-warning/30'}`}>
+                                                {req.category === 'it' ? 'Bilgi İşlem' : 'Teknik'}
+                                            </span>
+                                            {req.location}
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span className={`px-2 py-0.5 rounded text-[10px] font-black border ${req.priority === 'HIGH' ? 'bg-error/20 text-error border-error/30' :

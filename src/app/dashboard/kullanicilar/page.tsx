@@ -15,7 +15,7 @@ interface IUser {
     _id: string;
     name: string;
     email: string;
-    role: 'user' | 'driver' | 'admin' | 'amir' | 'tech' | 'supervisor' | 'techamir' | 'akademik' | 'mali_isler' | 'ogrenci_isleri';
+    role: 'user' | 'driver' | 'admin' | 'amir' | 'tech' | 'supervisor' | 'techamir' | 'akademik' | 'mali_isler' | 'ogrenci_isleri' | 'it' | 'itadmin';
     isActive?: boolean;
     manager?: string | null;
     canCreateMaterialRequest?: boolean;
@@ -184,6 +184,8 @@ export default function UserPage() {
                                 <option value="akademik">Akademik</option>
                                 <option value="mali_isler">Mali İşler</option>
                                 <option value="ogrenci_isleri">Öğrenci İşleri</option>
+                                <option value="it">Bilgi İşlem (IT)</option>
+                                <option value="itadmin">Bilgi İşlem Yöneticisi (IT Admin)</option>
                             </select>
                         </div>
                         <div className="md:col-span-1">
@@ -334,6 +336,8 @@ export default function UserPage() {
                                                 <option value="akademik">Akademik</option>
                                                 <option value="mali_isler">Mali İşler</option>
                                 <option value="ogrenci_isleri">Öğrenci İşleri</option>
+                                <option value="it">Bilgi İşlem (IT)</option>
+                                <option value="itadmin">Bilgi İşlem Yöneticisi (IT Admin)</option>
                                             </select>
                                         </div>
 

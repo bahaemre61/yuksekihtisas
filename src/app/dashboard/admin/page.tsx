@@ -1,7 +1,7 @@
 // src/app/dashboard/admin/page.tsx
 
 import Link from 'next/link';
-import { ArrowUpTrayIcon, CpuChipIcon, TruckIcon } from '@heroicons/react/24/outline';
+import { ArrowUpTrayIcon, ComputerDesktopIcon, CpuChipIcon, TruckIcon } from '@heroicons/react/24/outline';
 
 // HATA BURADAYDI: "export default function" yazmazsak Next.js bu dosyayı tanımaz.
 export default function AdminDashboardHome() {
@@ -33,7 +33,7 @@ export default function AdminDashboardHome() {
 
         {/* 2. TEKNİK DESTEK KARTI (Yeni Eklediğimiz) */}
         <Link 
-          href="/dashboard/admin/teknik-talepler" 
+          href="/dashboard/admin/teknik-talepler?category=technical"
           className="bg-base-100 p-6 rounded-xl shadow-sm border border-base-200 hover:border-warning hover:shadow-md transition-all group cursor-pointer"
         >
           <div className="flex items-center gap-4">
@@ -41,9 +41,27 @@ export default function AdminDashboardHome() {
               <CpuChipIcon className="h-8 w-8" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-base-content">Teknik Destek</h3>
+              <h3 className="text-lg font-bold text-base-content">Teknik Servis</h3>
               <p className="text-sm text-base-content/70 mt-1">
                 Arıza kayıtlarını görüntüle, personel ataması yap ve durumları yönet.
+              </p>
+            </div>
+          </div>
+        </Link>
+
+        {/* 2b. BİLGİ İŞLEM KARTI */}
+        <Link
+          href="/dashboard/admin/teknik-talepler?category=it"
+          className="bg-base-100 p-6 rounded-xl shadow-sm border border-base-200 hover:border-secondary hover:shadow-md transition-all group cursor-pointer"
+        >
+          <div className="flex items-center gap-4">
+            <div className="bg-secondary/10 p-4 rounded-lg group-hover:bg-secondary group-hover:text-secondary-content transition-colors text-secondary">
+              <ComputerDesktopIcon className="h-8 w-8" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-base-content">Bilgi İşlem</h3>
+              <p className="text-sm text-base-content/70 mt-1">
+                Bilgisayar, yazılım ve ağ taleplerini görüntüle, IT personelinin durumunu yönet.
               </p>
             </div>
           </div>

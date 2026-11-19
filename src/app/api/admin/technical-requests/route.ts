@@ -3,24 +3,29 @@ import type { NextRequest } from "next/server";
 import connectToDatabase from "@/src/lib/db";
 import TechnicalRequest from "@/src/lib/models/TechnicalRequest";
 import { getAuthenticatedUser } from "@/src/lib/auth";
-import User, { UserRole } from "@/src/lib/models/User";
+import "@/src/lib/models/User";
+import { categoryFilter, manageableCategories, parseCategory } from "@/src/lib/techAccess";
 
 export async function GET(request: NextRequest) {
     try {
         const { user, error } = getAuthenticatedUser(request);
         if (error) return error;
 
-        if (user.role !== UserRole.ADMIN && user.role !== UserRole.SUPERVISOR && user.role !== UserRole.TECHAMIR) {
+        // admin her iki kategoriyi, supervisor/techamir teknik servisi, itadmin bilgi işlemi görür
+        const allowed = manageableCategories(user.role);
+        if (allowed.length === 0) {
             return NextResponse.json({ msg: "Yasak: Yetkisiz giriş." }, { status: 403 });
         }
 
         const { searchParams } = new URL(request.url);
         const status = searchParams.get('status');
         const showCancelled = searchParams.get('showCancelled');
+        const requested = parseCategory(searchParams.get('category'));
+        const categories = requested && allowed.includes(requested) ? [requested] : allowed;
 
         await connectToDatabase();
 
-        let query: any = {};
+        let query: any = { ...categoryFilter(categories) };
 
         if (status && status !== 'all') {
             query.status = status;

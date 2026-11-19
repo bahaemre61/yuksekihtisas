@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import connectToDatabase from "@/src/lib/db";
 import TechnicalRequest from "@/src/lib/models/TechnicalRequest";
 import { getAuthenticatedUser } from "@/src/lib/auth";
+import { parseCategory } from "@/src/lib/techAccess";
 import path from "path";
 import { writeFile } from 'fs/promises';
 
@@ -23,6 +24,8 @@ export async function POST(request: NextRequest) {
         const title = formData.get('title') as string;
         const location = formData.get('location') as string;
         const priority = formData.get('priority') as string || 'MEDIUM';
+        // Talep türü: Teknik Servis ya da Bilgi İşlem (geçersiz/boş değer teknik servis sayılır)
+        const category = parseCategory(formData.get('category')) ?? 'technical';
 
         let screenshotUrl = '';
 
@@ -60,6 +63,7 @@ export async function POST(request: NextRequest) {
             description,
             location,
             priority,
+            category,
             screenshotUrl: screenshotUrl || null,
         });
 

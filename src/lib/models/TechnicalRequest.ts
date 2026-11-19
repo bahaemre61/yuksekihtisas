@@ -5,6 +5,7 @@ export interface ITechnicalRequest extends Document {
     user: IUser['_id'];
     technicalStaff: mongoose.Types.ObjectId[];
     technicalIssue: string;
+    category: 'technical' | 'it';
     location: string;
     title: string;
     description: string;
@@ -29,7 +30,9 @@ const TechnicalRequestSchema = new Schema<ITechnicalRequest>(
       ref: 'User',
       default: null
     }],
-    location: { type: String, required: true, index: true },    
+    // 'technical' = Teknik Servis, 'it' = Bilgi İşlem (kategorisi olmayan eski kayıtlar technical sayılır)
+    category: { type: String, enum: ['technical', 'it'], default: 'technical', index: true },
+    location: { type: String, required: true, index: true },
     title: { type: String, required: true },
     description: { type: String, required: true },
     screenshotUrl: { type: String },
