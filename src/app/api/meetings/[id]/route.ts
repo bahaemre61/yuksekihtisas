@@ -5,6 +5,9 @@ import Meeting from "@/src/lib/models/MeetingSchema";
 import { MeetingStatus } from "@/src/lib/models/MeetingSchema";
 import { getAuthenticatedUser } from "@/src/lib/auth";
 import { UserRole } from "@/src/lib/models/User";
+import path from "path";
+import { unlink } from "fs/promises";
+import { MEETING_UPLOAD_DIR } from "@/src/lib/meetingFiles";
 
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -57,7 +60,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         const { id } = await params;
         await connectToDatabase();
 
-        const meeting = await Meeting.findById(id).populate('organizer', 'name email role').populate('attendees.user', 'name email role');
+        const meeting = await Meeting.findById(id).select('-attachments.storedName').populate('organizer', 'name email role').populate('attendees.user', 'name email role');
 
         if (!meeting) {
             return NextResponse.json({ msg: 'Toplantı bulunamadı.' }, { status: 404 });
@@ -94,6 +97,11 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
         }
 
         await Meeting.findByIdAndDelete(id);
+
+        // Toplantıya ait ek dosyaları diskten de temizle (hata işlemi bozmaz)
+        await Promise.all((meeting.attachments || []).map((a: { storedName: string }) =>
+            unlink(path.join(MEETING_UPLOAD_DIR, path.basename(a.storedName))).catch(() => undefined)
+        ));
 
         return NextResponse.json({ success: true, msg: 'Toplantı başarıyla silindi.' }, { status: 200 });
     } catch (error: any) {

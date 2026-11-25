@@ -18,7 +18,18 @@ interface IAttendee {
     checkInTime: Date;
 }
 
+// Tutanağa eklenen kanıt dosyası (Word / PDF / ZIP / RAR). Dosya uploads/meetings/<storedName> altında tutulur.
+export interface IMeetingAttachment {
+    _id?: mongoose.Types.ObjectId;
+    originalName: string;
+    storedName: string;
+    size: number;
+    mimeType: string;
+    uploadedAt: Date;
+}
+
 export interface IMeeting extends Document {
+    attachments: IMeetingAttachment[];
     title: string;
     description?: string;
     date: Date;
@@ -79,9 +90,16 @@ const MeetingSchema: Schema<IMeeting> = new Schema({
             default: Date.now 
         }
     }],
-    minutes: { 
-        type: String 
+    minutes: {
+        type: String
     },
+    attachments: [{
+        originalName: { type: String, required: true },
+        storedName: { type: String, required: true },
+        size: { type: Number, default: 0 },
+        mimeType: { type: String, default: '' },
+        uploadedAt: { type: Date, default: Date.now }
+    }],
     isApproved: { 
         type: Boolean, 
         default: false 

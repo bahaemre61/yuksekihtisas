@@ -16,8 +16,26 @@ import {
   ShareIcon,
   TrashIcon,
   LinkIcon,
-  CheckIcon
+  CheckIcon,
+  PaperClipIcon,
+  ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
+
+// Tutanağa eklenebilecek kanıt dosyaları (sunucu da aynı kuralı doğrular)
+const ATTACHMENT_ACCEPT = '.doc,.docx,.pdf,.zip,.rar';
+const ATTACHMENT_EXT = ['.doc', '.docx', '.pdf', '.zip', '.rar'];
+const ATTACHMENT_MAX_MB = 25;
+const ATTACHMENT_MAX_COUNT = 10;
+
+interface IMeetingAttachment {
+  _id: string;
+  originalName: string;
+  size: number;
+  uploadedAt: string;
+}
+
+const formatFileSize = (bytes: number) =>
+  bytes >= 1024 * 1024 ? `${(bytes / (1024 * 1024)).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
 
 // Panoya kopyalar. HTTPS'te modern API, HTTP/iç ağda textarea + execCommand yedeği kullanılır.
 async function copyText(text: string): Promise<boolean> {
@@ -60,6 +78,7 @@ export default function MeetingManagement() {
   const [showMinutesModal, setShowMinutesModal] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<any>(null);
   const [minutesText, setMinutesText] = useState('');
+  const [uploadingFile, setUploadingFile] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -78,6 +97,53 @@ export default function MeetingManagement() {
       console.error("Toplantılar yüklenemedi");
     }
   };
+  // Seçili toplantının eklerini hem modalda hem listede güncel tutar
+  const applyAttachments = (attachments: IMeetingAttachment[]) => {
+    setSelectedMeeting((prev: any) => (prev ? { ...prev, attachments } : prev));
+    fetchMeetings();
+  };
+
+  const handleUploadAttachment = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target;
+    const file = input.files?.[0];
+    if (!file || !selectedMeeting) return;
+
+    const lower = file.name.toLowerCase();
+    if (!ATTACHMENT_EXT.some(ext => lower.endsWith(ext))) {
+      alert('Yalnızca Word (.doc, .docx), PDF ve ZIP/RAR dosyaları yüklenebilir.');
+      input.value = '';
+      return;
+    }
+    if (file.size > ATTACHMENT_MAX_MB * 1024 * 1024) {
+      alert(`Dosya boyutu en fazla ${ATTACHMENT_MAX_MB}MB olabilir.`);
+      input.value = '';
+      return;
+    }
+
+    setUploadingFile(true);
+    try {
+      const body = new FormData();
+      body.append('file', file);
+      const res = await axios.post(`/api/meetings/${selectedMeeting._id}/attachments`, body);
+      applyAttachments(res.data.attachments);
+    } catch (err: any) {
+      alert(err.response?.data?.msg || 'Dosya yüklenemedi.');
+    } finally {
+      setUploadingFile(false);
+      input.value = '';
+    }
+  };
+
+  const handleDeleteAttachment = async (fileId: string) => {
+    if (!selectedMeeting || !confirm('Bu dosya silinsin mi?')) return;
+    try {
+      const res = await axios.delete(`/api/meetings/${selectedMeeting._id}/attachments`, { params: { fileId } });
+      applyAttachments(res.data.attachments);
+    } catch (err: any) {
+      alert(err.response?.data?.msg || 'Dosya silinemedi.');
+    }
+  };
+
   const handleSaveMinutes = async (closeMeeting: boolean = false) => {
     setLoading(true);
     try {
@@ -411,6 +477,67 @@ export default function MeetingManagement() {
                   readOnly={activeTab === 'attended'}
                 />
               </div>
+
+              {/* EK DOSYALAR (KANIT): Word, PDF, ZIP/RAR */}
+              {(activeTab === 'organized' || (selectedMeeting.attachments?.length ?? 0) > 0) && (
+                <div>
+                  <label className="block text-sm font-medium text-base-content/80 mb-1.5">
+                    <PaperClipIcon className="inline h-4 w-4 mr-1 -mt-0.5" />
+                    Ekler / Kanıt Dosyaları
+                  </label>
+
+                  {(selectedMeeting.attachments?.length ?? 0) > 0 ? (
+                    <ul className="divide-y divide-base-200 border border-base-200 rounded-lg mb-3">
+                      {(selectedMeeting.attachments as IMeetingAttachment[]).map(att => (
+                        <li key={att._id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+                          <a
+                            href={`/api/meetings/${selectedMeeting._id}/attachments/${att._id}`}
+                            className="flex items-center gap-2 min-w-0 text-primary hover:underline"
+                            title="İndir"
+                          >
+                            <ArrowDownTrayIcon className="h-4 w-4 shrink-0" />
+                            <span className="truncate">{att.originalName}</span>
+                            <span className="text-xs text-base-content/50 shrink-0">{formatFileSize(att.size)}</span>
+                          </a>
+                          {activeTab === 'organized' && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteAttachment(att._id)}
+                              className="p-1 text-error/70 hover:text-error hover:bg-error/10 rounded transition-colors shrink-0"
+                              title="Sil"
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </button>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-xs text-base-content/50 mb-3">Henüz dosya eklenmedi.</p>
+                  )}
+
+                  {activeTab === 'organized' && (
+                    (selectedMeeting.attachments?.length ?? 0) >= ATTACHMENT_MAX_COUNT ? (
+                      <p className="text-xs text-warning">En fazla {ATTACHMENT_MAX_COUNT} dosya eklenebilir.</p>
+                    ) : (
+                      <>
+                        <input
+                          type="file"
+                          accept={ATTACHMENT_ACCEPT}
+                          onChange={handleUploadAttachment}
+                          disabled={uploadingFile}
+                          className="block w-full text-sm text-base-content/60 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer border border-base-300 rounded-lg disabled:opacity-50"
+                        />
+                        <p className="text-xs text-base-content/50 mt-1.5">
+                          {uploadingFile
+                            ? 'Yükleniyor...'
+                            : `Yalnızca Word (.doc, .docx), PDF ve ZIP/RAR · en fazla ${ATTACHMENT_MAX_MB}MB · dosya seçilince hemen yüklenir.`}
+                        </p>
+                      </>
+                    )
+                  )}
+                </div>
+              )}
 
               <div className="pt-4 border-t border-base-200 mt-6 flex justify-end gap-3">
                 <button

@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
 
         const organizedMeetings = await Meeting.find({ organizer: user.id })
             .populate('attendees.user', 'name surname title') 
+            .select('-attachments.storedName')
             .sort({ createdAt: -1 });
 
         const attendedMeetings = await Meeting.find({ 
@@ -20,6 +21,7 @@ export async function GET(request: NextRequest) {
             organizer: { $ne: user.id } 
         })
             .populate('attendees.user', 'name surname title') 
+            .select('-attachments.storedName')
             .sort({ createdAt: -1 });
 
         return NextResponse.json({ success: true, organizedMeetings, attendedMeetings }, { status: 200 });
