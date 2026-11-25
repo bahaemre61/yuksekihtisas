@@ -1,7 +1,7 @@
 // src/app/dashboard/admin/page.tsx
 
 import Link from 'next/link';
-import { ArrowUpTrayIcon, ComputerDesktopIcon, CpuChipIcon, TruckIcon } from '@heroicons/react/24/outline';
+import { ArrowUpTrayIcon, CodeBracketIcon, ComputerDesktopIcon, CpuChipIcon, TruckIcon } from '@heroicons/react/24/outline';
 
 // HATA BURADAYDI: "export default function" yazmazsak Next.js bu dosyayı tanımaz.
 export default function AdminDashboardHome() {
@@ -84,6 +84,26 @@ export default function AdminDashboardHome() {
             </div>
           </div>
         </Link>
+
+        {/* 4. API DOKÜMANTASYONU */}
+        <a
+          href="/api/docs"
+          target="_blank"
+          rel="noreferrer"
+          className="bg-base-100 p-6 rounded-xl shadow-sm border border-base-200 hover:border-primary hover:shadow-md transition-all group cursor-pointer"
+        >
+          <div className="flex items-center gap-4">
+            <div className="bg-primary/10 p-4 rounded-lg group-hover:bg-primary group-hover:text-primary-content transition-colors text-primary">
+              <CodeBracketIcon className="h-8 w-8" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-base-content">API Dokümantasyonu</h3>
+              <p className="text-sm text-base-content/70 mt-1">
+                Mobil uygulama için Swagger arayüzü (<code>/api/docs</code>).
+              </p>
+            </div>
+          </div>
+        </a>
 
       </div>
     </div>

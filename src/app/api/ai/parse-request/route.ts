@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import { generateGeminiJson } from '@/src/lib/gemini';
+import type { NextRequest } from "next/server";
+import { getAuthenticatedUser } from "@/src/lib/auth";
 
 const MAIN_HUB = "Yüksek İhtisas Üniversitesi - 100. Yıl Yerleşkesi (Tıp Fakültesi)";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  // Gemini kotasını korumak için yalnızca oturumlu kullanıcılar
+  const { error } = getAuthenticatedUser(request);
+  if (error) return error;
+
   try {
     const { text } = await request.json();
 

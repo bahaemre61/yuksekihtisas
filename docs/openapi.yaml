@@ -1,0 +1,2415 @@
+openapi: 3.0.3
+info:
+  title: YİÜ Portal API
+  version: 1.0.0
+  description: |
+    Yüksek İhtisas Üniversitesi idari portalının REST API'si (Next.js route handler'ları).
+
+    ## Kimlik doğrulama
+    1. `POST /api/auth/login` isteğine **`X-Client-Type: mobile`** başlığını ekleyin. Yanıt gövdesinde `token` döner.
+    2. Sonraki tüm isteklerde `Authorization: Bearer <token>` başlığını gönderin.
+    3. Token **6 saat** geçerlidir. Yenileme (refresh) uç noktası yoktur; süre dolunca (401) yeniden giriş yapılır.
+
+    Web arayüzü aynı API'yi `token` adlı httpOnly cookie ile kullanır; mobil için cookie gerekmez.
+    Başlık `security: []` olan uç noktalar oturum istemez.
+
+    ## Genel kurallar
+    - Hata yanıtları çoğunlukla `{ "msg": "açıklama" }` biçimindedir (bazı uçlarda `error` veya `message` alanı).
+    - Tarihler ISO 8601 (UTC). Kimlikler 24 karakterlik MongoDB ObjectId'dir.
+    - Roller: `user, driver, tech, techamir, it, itadmin, admin, amir, supervisor, akademik, kanit_sorumlu, raportor, mali_isler, ogrenci_isleri`.
+    - Rol kısıtı olan uçlarda yetkisiz çağrı `403` döner.
+  contact:
+    name: YİÜ Bilgi İşlem
+servers:
+  - url: /
+    description: Bu sunucu
+
+tags:
+  - name: Auth
+    description: Giriş, şifre işlemleri, oturum bilgisi
+  - name: Araç Talepleri
+    description: Araç talebi oluşturma ve takip (talep sahibi)
+  - name: Şoför
+    description: Şoförün görevleri ve durumu
+  - name: Araç Yönetimi
+    description: Admin/Süpervizör araç talebi yönetimi ve otomatik atama
+  - name: Teknik & Bilgi İşlem
+    description: "`category`: `technical` (Teknik Servis) veya `it` (Bilgi İşlem)"
+  - name: Malzeme Talepleri
+    description: Malzeme talebi, onay zinciri (süpervizör → mali işler)
+  - name: Toplantılar
+    description: Toplantı, QR ile katılım, tutanak ve ek dosyalar
+  - name: Görevler
+    description: Görev panosu
+  - name: Kanıt Sistemi
+    description: Kanıt oturumları, dosyalar ve doküman talepleri
+  - name: Risk Formu
+    description: Kurumsal risk / değişim / iç kontrol formu
+  - name: Duyuru & Yemek
+    description: Duyurular ve yemek menüsü
+  - name: Genel
+    description: Konum listeleri, dosya indirme
+  - name: Bildirim
+    description: Push bildirim aboneliği
+  - name: Yönetim
+    description: Kullanıcı yönetimi ve toplu aktarım (admin)
+  - name: AI & Cron
+    description: Yapay zekâ gruplama ve zamanlanmış atama
+
+security:
+  - bearerAuth: []
+  - cookieAuth: []
+
+paths:
+  # ───────────────────────── AUTH ─────────────────────────
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Giriş yap
+      description: |
+        `X-Client-Type: mobile` başlığı varsa token yanıt gövdesinde döner (cookie set edilmez).
+        Başlık yoksa token httpOnly cookie olarak set edilir (web).
+      security: []
+      parameters:
+        - name: X-Client-Type
+          in: header
+          required: false
+          schema: { type: string, enum: [mobile] }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        '200':
+          description: Giriş başarılı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  msg: { type: string }
+                  token: { type: string, description: "Yalnızca mobil istemcide" }
+                  expiresIn: { type: integer, description: "Saniye (21600)", example: 21600 }
+                  user: { $ref: '#/components/schemas/UserBrief' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Çıkış yap (web cookie'sini temizler)
+      description: Mobilde token'ı cihazdan silmek yeterlidir; sunucuda oturum tutulmaz.
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/auth/forget-password:
+    post:
+      tags: [Auth]
+      summary: Şifre sıfırlama e-postası gönder
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '200': { $ref: '#/components/responses/Message' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/ServerError' }
+  /api/auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: E-postadaki token ile yeni şifre belirle
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, newPassword]
+              properties:
+                token: { type: string }
+                newPassword: { type: string, format: password }
+      responses:
+        '200': { $ref: '#/components/responses/Message' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /api/user/change-password:
+    post:
+      tags: [Auth]
+      summary: Şifre değiştir
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword: { type: string, format: password }
+                newPassword: { type: string, format: password }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/me:
+    get:
+      tags: [Auth]
+      summary: Oturumdaki kullanıcı bilgisi
+      responses:
+        '200':
+          description: Kullanıcı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _id: { type: string }
+                  name: { type: string }
+                  role: { $ref: '#/components/schemas/Role' }
+                  driverStatus: { type: string, enum: [available, busy] }
+                  canCreateMaterialRequest: { type: boolean }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ───────────────────────── ARAÇ TALEPLERİ ─────────────────────────
+  /api/requests:
+    post:
+      tags: [Araç Talepleri]
+      summary: Araç talebi oluştur
+      description: "`akademik` rolü araç talebi oluşturamaz (403). Gidiş geçmişte olamaz, 12:00-13:00 arası hizmet yoktur. `priority: high` ise acil dağıtım botu hemen çalışır."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fromLocation, toLocation, purpose, startTime, endTime]
+              properties:
+                willCarryItems: { type: boolean }
+                fromLocation: { type: string }
+                toLocation: { type: string }
+                purpose: { type: string }
+                startTime: { type: string, format: date-time }
+                endTime: { type: string, format: date-time }
+                priority: { type: string, enum: [normal, high], default: normal }
+      responses:
+        '201':
+          description: Oluşturuldu
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VehicleRequest' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/requests/my:
+    get:
+      tags: [Araç Talepleri]
+      summary: Kendi araç taleplerim
+      responses:
+        '200':
+          description: Talepler (en yeni üstte; atanan şoför ve varsa iptal nedeni dahil)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/VehicleRequest' }
+  /api/requests/pending:
+    get:
+      tags: [Şoför]
+      summary: Bekleyen (atanmamış) araç talepleri
+      description: "Roller: `driver`, `admin`."
+      responses:
+        '200':
+          description: Bekleyen talepler
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/VehicleRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/requests/{id}:
+    put:
+      tags: [Araç Yönetimi]
+      summary: Araç talebini güncelle (genel)
+      description: |
+        Yetkiye göre yalnızca belirli alanlar uygulanır, diğerleri yok sayılır:
+        - **admin / supervisor:** içerik alanları, `priority`, `status`, `assignedDriver`.
+        - **Talebe atanmış şoför:** yalnızca `{ "status": "completed" }`.
+        - **Talep sahibi:** talep `pending` iken yalnızca içerik alanları (`willCarryItems, fromLocation, toLocation, purpose, startTime, endTime`).
+        Diğer durumlarda `403`; geçerli alan yoksa `400`. Mobil için `cancel`, `assign`, `complete` uçları daha açıktır.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Güncellenen talep
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VehicleRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/requests/{id}/cancel:
+    put:
+      tags: [Araç Talepleri]
+      summary: Kendi bekleyen talebimi iptal et
+      description: Yalnızca talep sahibi (veya admin) ve yalnızca `pending` durumundaki talep.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Message' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/requests/{id}/assign:
+    put:
+      tags: [Şoför]
+      summary: Bekleyen talebi üzerime al
+      description: "Rol: `driver`. Talep başka şoför tarafından alınmışsa 400."
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Kabul edildi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg: { type: string }
+                  request: { $ref: '#/components/schemas/VehicleRequest' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/requests/{id}/complete:
+    put:
+      tags: [Şoför]
+      summary: Talebi tamamla
+      description: "Rol: `driver`. Şoförün başka aktif işi kalmazsa durumu `available` olur."
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Tamamlandı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg: { type: string }
+                  updatedRequest: { $ref: '#/components/schemas/VehicleRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ───────────────────────── ŞOFÖR ─────────────────────────
+  /api/driver/assignments:
+    get:
+      tags: [Şoför]
+      summary: Bana atanmış aktif işler
+      description: "Rol: `driver`. Başlangıç saatine göre artan sıralı."
+      responses:
+        '200':
+          description: Atanmış talepler
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/VehicleRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/driver/my-tasks:
+    get:
+      tags: [Şoför]
+      summary: Aktif işlerim (seferlere gruplanmış)
+      responses:
+        '200':
+          description: Sefer grupları
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    title: { type: string, example: "Keçiören Seferi" }
+                    requests:
+                      type: array
+                      items: { $ref: '#/components/schemas/VehicleRequest' }
+  /api/driver/accept-group:
+    post:
+      tags: [Şoför]
+      summary: Bir grup talebi birlikte üstlen
+      description: "Rol: `driver`."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [requestIds]
+              properties:
+                requestIds: { type: array, items: { type: string } }
+      responses:
+        '200': { $ref: '#/components/responses/Message' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/driver/start-task:
+    post:
+      tags: [Şoför]
+      summary: Görevi başlat (durum → busy)
+      description: "Rol: `driver`."
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/driver/complete-task:
+    post:
+      tags: [Şoför]
+      summary: Üzerimdeki tüm aktif işleri tamamla (durum → available)
+      description: "Rol: `driver`."
+      responses:
+        '200':
+          description: Tamamlandı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  msg: { type: string }
+                  completedCount: { type: integer }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/driver/status:
+    put:
+      tags: [Şoför]
+      summary: Müsaitlik durumunu güncelle
+      description: "Rol: `driver`."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [available, busy] }
+      responses:
+        '200':
+          description: Güncel kullanıcı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _id: { type: string }
+                  name: { type: string }
+                  role: { type: string }
+                  driverStatus: { type: string, enum: [available, busy] }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/driver/update-status:
+    patch:
+      tags: [Şoför]
+      summary: Müsaitlik durumunu güncelle (alternatif)
+      description: "`PUT /api/driver/status` ile aynı işi yapar; rol kontrolü yoktur."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [available, busy] }
+      responses:
+        '200':
+          description: Güncellendi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+                  status: { type: string }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /api/driver/push/subscribe:
+    post:
+      tags: [Bildirim]
+      summary: Web-push aboneliğini kaydet (şoför)
+      description: Web-push (VAPID) aboneliğidir. Mobilde Expo/FCM için ayrı bir uç henüz yoktur.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PushSubscription' }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  # ───────────────────────── ARAÇ YÖNETİMİ (ADMIN) ─────────────────────────
+  /api/admin/requests:
+    get:
+      tags: [Araç Yönetimi]
+      summary: Tüm araç talepleri
+      description: "Roller: `admin`, `supervisor`."
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [all, pending, assigned, completed, cancelled] }
+        - name: showCancelled
+          in: query
+          description: "`status` verilmediyse iptalleri de getirir"
+          schema: { type: boolean }
+      responses:
+        '200':
+          description: Talepler
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/VehicleRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/admin/requests/{id}/cancel:
+    put:
+      tags: [Araç Yönetimi]
+      summary: Talebi iptal et / reddet (neden zorunlu)
+      description: "Roller: `admin`, `supervisor`. Neden talep sahibine gösterilir."
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, maxLength: 500 }
+      responses:
+        '200': { $ref: '#/components/responses/Message' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/admin/requests/{id}/unassign:
+    put:
+      tags: [Araç Yönetimi]
+      summary: Şoför atamasını kaldır (talep → pending)
+      description: "Roller: `admin`, `supervisor`."
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Message' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/admin/assign-group:
+    post:
+      tags: [Araç Yönetimi]
+      summary: Bir grup talebi şoföre ata
+      description: Şoföre push bildirimi gider. Yetki kontrolü yalnızca oturumdur; yönetim ekranlarından çağrılır.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [requestIds, driverId]
+              properties:
+                requestIds: { type: array, items: { type: string } }
+                driverId: { type: string }
+      responses:
+        '200': { $ref: '#/components/responses/Message' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/admin/all-drivers:
+    get:
+      tags: [Araç Yönetimi]
+      summary: Aktif şoför listesi
+      description: "Roller: `admin`, `supervisor`."
+      responses:
+        '200':
+          description: Şoförler
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    _id: { type: string }
+                    name: { type: string }
+                    email: { type: string }
+                    driverStatus: { type: string, enum: [available, busy] }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ───────────────────────── TEKNİK & BİLGİ İŞLEM ─────────────────────────
+  /api/technicalrequests:
+    post:
+      tags: [Teknik & Bilgi İşlem]
+      summary: Teknik / Bilgi İşlem talebi oluştur
+      description: Ekran görüntüsü en fazla 5MB, JPG/PNG/WEBP. Geçersiz veya boş `category` → `technical`.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [title, description, location]
+              properties:
+                title: { type: string }
+                description: { type: string }
+                location: { type: string }
+                priority: { type: string, enum: [LOW, MEDIUM, HIGH], default: MEDIUM }
+                category: { type: string, enum: [technical, it], default: technical }
+                screenshot: { type: string, format: binary }
+      responses:
+        '201': { $ref: '#/components/responses/Message' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /api/technicalrequests/my:
+    get:
+      tags: [Teknik & Bilgi İşlem]
+      summary: Kendi teknik/bilgi işlem taleplerim
+      responses:
+        '200':
+          description: Talepler
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/TechnicalRequest' }
+  /api/technicalrequests/{id}:
+    put:
+      tags: [Teknik & Bilgi İşlem]
+      summary: Talebi güncelle (genel)
+      description: |
+        Yalnızca `title`, `description`, `location`, `priority` değiştirilebilir (durum, atama ve değerlendirme bu uçtan değişmez).
+        Yetki: talebin sahibi (talep `pending` iken) veya kategorinin yöneticisi (`techamir` → teknik, `itadmin` → bilgi işlem, `admin`).
+        `HIGH` önceliği yalnızca admin, amir, supervisor, techamir, itadmin seçebilir.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Güncellendi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: '#/components/schemas/TechnicalRequest' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/technicalrequests/{id}/rating:
+    post:
+      tags: [Teknik & Bilgi İşlem]
+      summary: Tamamlanan talebi değerlendir (1-5)
+      description: Yalnızca talep sahibi, yalnızca tamamlanmış ve daha önce değerlendirilmemiş talep. Değerlendirme sistemi öncesi talepler değerlendirilemez.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [score]
+              properties:
+                score: { type: integer, minimum: 1, maximum: 5 }
+                comment: { type: string, maxLength: 500 }
+      responses:
+        '201':
+          description: Kaydedildi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  rating: { $ref: '#/components/schemas/Rating' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: Zaten değerlendirilmiş
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /api/technicalrequests/pending-rating:
+    get:
+      tags: [Teknik & Bilgi İşlem]
+      summary: Değerlendirmemi bekleyen tamamlanmış talepler (en yeni 5)
+      responses:
+        '200':
+          description: Talepler
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/TechnicalRequest' }
+  /api/technicalrequests/cancel:
+    put:
+      tags: [Teknik & Bilgi İşlem]
+      summary: Kendi bekleyen talebimi iptal et
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [requestId]
+              properties:
+                requestId: { type: string }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/technicalrequests/my-tasks:
+    get:
+      tags: [Teknik & Bilgi İşlem]
+      summary: Bana atanan aktif işler
+      description: "Roller: `tech` (teknik servis), `it` (bilgi işlem), `admin` (ikisi). Her rol yalnızca kendi kategorisini görür."
+      responses:
+        '200':
+          description: İşler
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/TechnicalRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    put:
+      tags: [Teknik & Bilgi İşlem]
+      summary: Atanan işi tamamla
+      description: Talep sahibine push bildirimi gider. `tech`/`it` yalnızca kendisine atanan işi kapatabilir.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [requestId]
+              properties:
+                requestId: { type: string }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/technicalrequests/pool:
+    get:
+      tags: [Teknik & Bilgi İşlem]
+      summary: Atama bekleyen talepler (havuz)
+      description: "Roller: `techamir` (teknik), `itadmin` (bilgi işlem), `admin` (`category` ile seçer)."
+      parameters:
+        - $ref: '#/components/parameters/Category'
+      responses:
+        '200':
+          description: Bekleyen talepler
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/TechnicalRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/technicalrequests/assign:
+    put:
+      tags: [Teknik & Bilgi İşlem]
+      summary: Talebe personel ata
+      description: |
+        Roller: `techamir` (teknik), `itadmin` (bilgi işlem), `admin`. Teknik talebe yalnızca `tech`,
+        bilgi işlem talebine yalnızca `it` rolündeki aktif kullanıcılar atanabilir. Personele push + talep sahibine e-posta gider.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [requestId, technicianIds]
+              properties:
+                requestId: { type: string }
+                technicianIds: { type: array, minItems: 1, items: { type: string } }
+      responses:
+        '200':
+          description: Atandı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: '#/components/schemas/TechnicalRequest' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/technicalrequests/push/subscribe:
+    post:
+      tags: [Bildirim]
+      summary: Web-push aboneliğini kaydet (teknik/bilgi işlem personeli)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PushSubscription' }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/users/technicians:
+    get:
+      tags: [Teknik & Bilgi İşlem]
+      summary: Atanabilecek personel listesi
+      description: "Roller: `techamir`, `itadmin`, `admin`. Teknik için `tech`, bilgi işlem için `it` rolündekiler."
+      parameters:
+        - $ref: '#/components/parameters/Category'
+      responses:
+        '200':
+          description: Personel
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id: { type: string }
+                        name: { type: string }
+                        email: { type: string }
+                        title: { type: string }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/admin/technical-requests:
+    get:
+      tags: [Teknik & Bilgi İşlem]
+      summary: Tüm teknik/bilgi işlem talepleri (yönetim)
+      description: "Roller: `admin` (ikisi), `supervisor`/`techamir` (teknik), `itadmin` (bilgi işlem)."
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [all, pending, assigned, in_progress, completed, cancelled] }
+        - name: showCancelled
+          in: query
+          schema: { type: boolean }
+        - name: category
+          in: query
+          description: Boş = rolün görebildiği tüm kategoriler
+          schema: { type: string, enum: [technical, it] }
+      responses:
+        '200':
+          description: Talepler
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/TechnicalRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/admin/technical-requests/{id}/cancel:
+    put:
+      tags: [Teknik & Bilgi İşlem]
+      summary: Talebi iptal et (yönetim)
+      description: "Roller: `admin`, `supervisor` (teknik), `itadmin` (bilgi işlem)."
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Message' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/admin/technical-requests/{id}/unassign:
+    put:
+      tags: [Teknik & Bilgi İşlem]
+      summary: Personel atamasını kaldır (talep → pending)
+      description: "Roller: `admin`, `supervisor` (teknik), `itadmin` (bilgi işlem)."
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Message' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ───────────────────────── MALZEME TALEPLERİ ─────────────────────────
+  /api/material-requests:
+    get:
+      tags: [Malzeme Talepleri]
+      summary: Malzeme talepleri
+      description: "Roller: `admin`, `supervisor`, `amir`, `kanit_sorumlu`, `mali_isler`."
+      responses:
+        '200':
+          description: Talepler
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/MaterialRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Malzeme Talepleri]
+      summary: Malzeme talebi oluştur
+      description: Yalnızca admin tarafından yetkilendirilmiş kullanıcılar (`/api/me` → `canCreateMaterialRequest`) veya admin.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [materialType, materialName, quantity, unit]
+              properties:
+                materialType: { type: string }
+                materialName: { type: string }
+                quantity: { type: number, minimum: 1 }
+                unit: { type: string }
+                description: { type: string }
+                specification: { type: string }
+                specificationFileUrl: { type: string, description: "upload-spec yanıtındaki url" }
+                specificationFileName: { type: string }
+                location: { type: string, example: Balgat Yerleşkesi }
+      responses:
+        '201':
+          description: Oluşturuldu
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MaterialRequest' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/material-requests/upload-spec:
+    post:
+      tags: [Malzeme Talepleri]
+      summary: Şartname dosyası yükle (PDF/DOCX)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '201':
+          description: Yüklendi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fileUrl: { type: string }
+                  fileName: { type: string }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/material-requests/{id}:
+    put:
+      tags: [Malzeme Talepleri]
+      summary: Malzeme talebini düzenle
+      description: "Talep sahibi, `admin` veya `mali_isler`."
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                materialName: { type: string }
+                materialType: { type: string }
+                quantity: { type: number }
+                unit: { type: string }
+                description: { type: string }
+                specification: { type: string }
+      responses:
+        '200':
+          description: Güncellendi
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MaterialRequest' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Malzeme Talepleri]
+      summary: Malzeme talebini sil
+      description: Talep sahibi veya `admin`.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Message' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/material-requests/{id}/status:
+    put:
+      tags: [Malzeme Talepleri]
+      summary: Onay adımı (süpervizör veya mali işler)
+      description: |
+        Aşama 1 (`pending_supervisor`): `admin`, `supervisor`, `amir`, `kanit_sorumlu`, `raportor`.
+        Aşama 2 (`pending_mali_isler`): `admin`, `mali_isler`. `givenQuantity` ile kısmi teslimat yapılabilir.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action: { type: string, description: "Onay/ret eylemi (arayüzdeki değerlerle aynı)", example: approve }
+                note: { type: string }
+                givenQuantity: { type: number, minimum: 0 }
+      responses:
+        '200':
+          description: Güncellendi
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MaterialRequest' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/material-requests/bulk-status:
+    post:
+      tags: [Malzeme Talepleri]
+      summary: Aynı gruptaki (batch) talepleri toplu onayla/reddet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [batchId, action]
+              properties:
+                batchId: { type: string }
+                action: { type: string }
+                note: { type: string }
+                itemsData:
+                  type: array
+                  description: Kalem bazlı teslim miktarı vb.
+                  items: { type: object, additionalProperties: true }
+      responses:
+        '200': { $ref: '#/components/responses/Message' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/material-requests/log:
+    get:
+      tags: [Malzeme Talepleri]
+      summary: Denetim kayıtları
+      parameters:
+        - name: batchId
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Kayıtlar
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    batchId: { type: string }
+                    requestId: { type: string }
+                    userName: { type: string }
+                    userRole: { type: string }
+                    action: { type: string, enum: [INSPECT, DOWNLOAD, REVIEW_APPROVE, REVIEW_REJECT, RELEASE_INSPECT] }
+                    actionDetails: { type: string }
+                    createdAt: { type: string, format: date-time }
+    post:
+      tags: [Malzeme Talepleri]
+      summary: Denetim kaydı ekle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                batchId: { type: string }
+                requestId: { type: string }
+                action: { type: string, enum: [INSPECT, DOWNLOAD, REVIEW_APPROVE, REVIEW_REJECT, RELEASE_INSPECT] }
+                actionDetails: { type: string }
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  # ───────────────────────── TOPLANTILAR ─────────────────────────
+  /api/meetings:
+    get:
+      tags: [Toplantılar]
+      summary: Düzenlediğim ve katıldığım toplantılar
+      responses:
+        '200':
+          description: Toplantılar
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  organizedMeetings:
+                    type: array
+                    items: { $ref: '#/components/schemas/Meeting' }
+                  attendedMeetings:
+                    type: array
+                    items: { $ref: '#/components/schemas/Meeting' }
+  /api/meetings/create:
+    post:
+      tags: [Toplantılar]
+      summary: Toplantı oluştur (QR kodu üretilir)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, location, date]
+              properties:
+                title: { type: string }
+                description: { type: string }
+                location: { type: string }
+                date: { type: string, format: date-time }
+      responses:
+        '201':
+          description: Oluşturuldu
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Meeting' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /api/meetings/join:
+    post:
+      tags: [Toplantılar]
+      summary: QR ile toplantıya katıl
+      description: |
+        Oturum varsa kayıtlı kullanıcı olarak katılır. Oturum yoksa `guestName` zorunludur (misafir katılımı);
+        bu durumda `Authorization` başlığı gönderilmez.
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [qrSecret]
+              properties:
+                qrSecret: { type: string }
+                guestName: { type: string }
+      responses:
+        '200':
+          description: Katıldı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  msg: { type: string }
+                  meetingTitle: { type: string }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401':
+          description: "Giriş yapın veya `guestName` verin (yanıtta `requireGuestName: true` döner)"
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/meetings/{id}:
+    get:
+      tags: [Toplantılar]
+      summary: Toplantı detayı
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Toplantı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  meeting: { $ref: '#/components/schemas/Meeting' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Toplantılar]
+      summary: Tutanağı kaydet / toplantıyı kapat
+      description: Yalnızca toplantıyı düzenleyen.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                minutes: { type: string }
+                closeMeeting: { type: boolean }
+      responses:
+        '200': { $ref: '#/components/responses/Message' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Toplantılar]
+      summary: Toplantıyı sil (ek dosyalarıyla birlikte)
+      description: Düzenleyen veya `admin`.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Message' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/meetings/{id}/attachments:
+    post:
+      tags: [Toplantılar]
+      summary: Tutanağa ek dosya yükle
+      description: |
+        Yalnızca toplantıyı düzenleyen. **Word (.doc, .docx), PDF, ZIP, RAR**; dosya başına en fazla 25MB,
+        toplantı başına en fazla 10 dosya. Dosya içeriği uzantıyla doğrulanır.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '201':
+          description: Yüklendi (güncel dosya listesi)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  attachments:
+                    type: array
+                    items: { $ref: '#/components/schemas/MeetingAttachment' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Toplantılar]
+      summary: Ek dosyayı sil
+      description: Düzenleyen veya `admin`.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - name: fileId
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Silindi (güncel dosya listesi)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  attachments:
+                    type: array
+                    items: { $ref: '#/components/schemas/MeetingAttachment' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/meetings/{id}/attachments/{fileId}:
+    get:
+      tags: [Toplantılar]
+      summary: Ek dosyayı indir
+      description: Toplantıyı düzenleyen, toplantıya katılan kayıtlı kullanıcılar ve `admin`.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - name: fileId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Dosya (attachment)
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ───────────────────────── GÖREVLER ─────────────────────────
+  /api/tasks:
+    get:
+      tags: [Görevler]
+      summary: Görev panosu
+      description: Admin hepsini, diğerleri kendilerine/astlarına atanan ve kendi oluşturdukları görevleri görür. Her kayıtta `canManage`/`canMove` yetki bayrakları döner.
+      responses:
+        '200':
+          description: Görevler
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Task' }
+    post:
+      tags: [Görevler]
+      summary: Görev oluştur
+      description: Kendinize veya altınızdaki kişilere atayabilirsiniz. Pano salt-okunur modundaysa 403.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string, maxLength: 200 }
+                description: { type: string, maxLength: 2000 }
+                priority: { type: string, enum: [low, medium, high], default: medium }
+                assignee: { type: string, description: "Varsayılan: kendiniz" }
+                dueDate: { type: string, format: date-time, nullable: true }
+      responses:
+        '201':
+          description: Oluşturuldu
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Task' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/tasks/assignable:
+    get:
+      tags: [Görevler]
+      summary: Görev atayabileceğim kişiler
+      responses:
+        '200':
+          description: Kişiler
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    _id: { type: string }
+                    name: { type: string }
+                    role: { type: string }
+                    isMe: { type: boolean }
+  /api/tasks/{id}:
+    put:
+      tags: [Görevler]
+      summary: Görevi güncelle / durum değiştir
+      description: "`status` için taşıma yetkisi, diğer alanlar için düzenleme yetkisi gerekir."
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string, enum: [todo, in_progress, completed] }
+                title: { type: string }
+                description: { type: string }
+                priority: { type: string, enum: [low, medium, high] }
+                dueDate: { type: string, format: date-time, nullable: true }
+                assignee: { type: string }
+      responses:
+        '200':
+          description: Güncellendi
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Task' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Görevler]
+      summary: Görevi sil
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Message' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ───────────────────────── KANIT SİSTEMİ ─────────────────────────
+  /api/evidence/sessions:
+    get:
+      tags: [Kanıt Sistemi]
+      summary: Erişebildiğim kanıt oturumları
+      responses:
+        '200':
+          description: Oturumlar
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/EvidenceSession' }
+    post:
+      tags: [Kanıt Sistemi]
+      summary: Kanıt oturumu oluştur
+      description: "Roller: `admin`, `kanit_sorumlu`, `supervisor`, `amir`."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string }
+                description: { type: string }
+                reporters: { type: array, items: { type: string } }
+                dataEntryUsers: { type: array, items: { type: string } }
+      responses:
+        '201':
+          description: Oluşturuldu
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EvidenceSession' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/evidence/sessions/{id}/assign:
+    put:
+      tags: [Kanıt Sistemi]
+      summary: Oturuma raportör / veri girişi kullanıcısı ata
+      description: Admin veya oturumu oluşturan tüm listeleri; raportör yalnızca veri girişi listesini değiştirebilir.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reporters: { type: array, items: { type: string } }
+                dataEntryUsers: { type: array, items: { type: string } }
+      responses:
+        '200':
+          description: Güncellendi
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EvidenceSession' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/evidence:
+    get:
+      tags: [Kanıt Sistemi]
+      summary: Oturumdaki kanıtlar
+      description: Yönetici roller/raportör/oluşturan hepsini, diğerleri yalnızca kendi yüklediklerini görür.
+      parameters:
+        - name: sessionId
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Kanıtlar
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Evidence' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/evidence/upload:
+    post:
+      tags: [Kanıt Sistemi]
+      summary: Kanıt dosyası yükle
+      description: Yalnızca Word (.doc, .docx), en fazla 25MB. Oturum yöneticisi/raportör/veri girişi kullanıcısı olmak gerekir.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [sessionId, title, file]
+              properties:
+                sessionId: { type: string }
+                title: { type: string }
+                description: { type: string }
+                file: { type: string, format: binary }
+      responses:
+        '201':
+          description: Yüklendi
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Evidence' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/evidence/{id}:
+    put:
+      tags: [Kanıt Sistemi]
+      summary: Kanıtı güncelle / dosyayı değiştir
+      description: Yükleyen veya `admin`.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                description: { type: string }
+                file: { type: string, format: binary }
+      responses:
+        '200':
+          description: Güncellendi
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Evidence' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/evidence/{id}/status:
+    put:
+      tags: [Kanıt Sistemi]
+      summary: Kanıtı onayla / reddet / revizyon iste
+      description: "Roller: `admin`, oturumu oluşturan, raportör, `kanit_sorumlu`, `supervisor`, `amir`."
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [pending, approved, rejected, revision_requested] }
+                reporterNote: { type: string }
+      responses:
+        '200':
+          description: Güncellendi
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Evidence' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/evidence/requests:
+    get:
+      tags: [Kanıt Sistemi]
+      summary: Oturumdaki doküman talepleri
+      parameters:
+        - name: sessionId
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Talepler
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/DocumentRequest' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [Kanıt Sistemi]
+      summary: Doküman talebi oluştur
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sessionId, requestType, documentName]
+              properties:
+                sessionId: { type: string }
+                requestType: { type: string, enum: [NEW_DOCUMENT, REVISION, REVOCATION] }
+                documentName: { type: string }
+                documentNo: { type: string }
+                reason: { type: string }
+                feedback: { type: string }
+                evidenceId: { type: string }
+      responses:
+        '201':
+          description: Oluşturuldu
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DocumentRequest' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /api/evidence/users:
+    get:
+      tags: [Kanıt Sistemi]
+      summary: Kanıt sisteminde atanabilir kullanıcılar
+      responses:
+        '200':
+          description: Kullanıcılar
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    _id: { type: string }
+                    name: { type: string }
+                    email: { type: string }
+                    role: { type: string }
+    post:
+      tags: [Kanıt Sistemi]
+      summary: Kullanıcının kanıt rolünü değiştir
+      description: "Roller: `admin`, `kanit_sorumlu`, `supervisor`."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [targetUserId, newRole]
+              properties:
+                targetUserId: { type: string }
+                newRole: { $ref: '#/components/schemas/Role' }
+      responses:
+        '200': { $ref: '#/components/responses/Message' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/evidence/templates:
+    get:
+      tags: [Kanıt Sistemi]
+      summary: Doküman şablonu listesi
+      security: []
+      responses:
+        '200':
+          description: Şablon dosya yolları
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+  /api/evidence/templates/{type}:
+    get:
+      tags: [Kanıt Sistemi]
+      summary: Doküman şablonunu indir (.docx)
+      description: "`type`: `0`/`is-akis`, `1`/`gorev-yetki`, `2`/`rapor`, `3`/`prosedur`."
+      security: []
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema: { type: string, enum: ['0', '1', '2', '3', is-akis, gorev-yetki, rapor, prosedur] }
+      responses:
+        '200':
+          description: Word dosyası
+          content:
+            application/vnd.openxmlformats-officedocument.wordprocessingml.document:
+              schema: { type: string, format: binary }
+
+  # ───────────────────────── RİSK FORMU ─────────────────────────
+  /api/risk-forms:
+    get:
+      tags: [Risk Formu]
+      summary: Risk formu kayıtları (özet liste, en fazla 500)
+      description: Değerlendirme rolleri hepsini, diğerleri yalnızca kendi kayıtlarını görür.
+      responses:
+        '200':
+          description: Kayıtlar
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/RiskForm' }
+    post:
+      tags: [Risk Formu]
+      summary: Yeni risk kaydı oluştur (bölüm A ve 1-6)
+      description: Zorunlu alanlar sunucuda doğrulanır; hatada `400` ve eksik alan mesajı döner. Alan listesi için `RiskForm` şemasına bakın.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RiskForm' }
+      responses:
+        '201':
+          description: Oluşturuldu
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  id: { type: string }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /api/risk-forms/people:
+    get:
+      tags: [Risk Formu]
+      summary: Süreç sorumlusu seçimi için kişi adları
+      responses:
+        '200':
+          description: İsim listesi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { type: array, items: { type: string } }
+  /api/risk-forms/{id}:
+    get:
+      tags: [Risk Formu]
+      summary: Risk kaydı detayı ve düzenleme yetkileri
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Kayıt
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: '#/components/schemas/RiskForm' }
+                  permissions:
+                    type: object
+                    properties:
+                      editMain: { type: boolean }
+                      editKomisyon: { type: boolean }
+                      editIzleme: { type: boolean }
+                      editIcKontrol: { type: boolean }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Risk Formu]
+      summary: Bir bölümü kaydet
+      description: |
+        Gövdede `section` ile hangi bölümün güncelleneceği seçilir; alanlar o bölümün alanlarıdır.
+        Bölüm yetkisi yoksa `403`.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [section]
+              additionalProperties: true
+              properties:
+                section:
+                  type: string
+                  enum: [main, komisyon, izleme, icKontrol]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ───────────────────────── DUYURU & YEMEK ─────────────────────────
+  /api/announcements:
+    get:
+      tags: [Duyuru & Yemek]
+      summary: Son 20 duyuru
+      responses:
+        '200':
+          description: Duyurular
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Announcement' }
+    post:
+      tags: [Duyuru & Yemek]
+      summary: Duyuru yayınla
+      description: "Roller: `admin`, `supervisor`."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, content]
+              properties:
+                title: { type: string }
+                content: { type: string }
+                priority: { type: string, enum: [normal, urgent] }
+                link: { type: string }
+      responses:
+        '201':
+          description: Yayınlandı
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Announcement' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/announcements/{id}:
+    delete:
+      tags: [Duyuru & Yemek]
+      summary: Duyuruyu sil
+      description: "Roller: `admin`, `supervisor`."
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Message' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/menu:
+    get:
+      tags: [Duyuru & Yemek]
+      summary: Aylık yemek menüsü
+      parameters:
+        - name: month
+          in: query
+          description: "0-11 (Ocak = 0)"
+          schema: { type: integer, minimum: 0, maximum: 11 }
+        - name: year
+          in: query
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Günlük menüler
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Menu' }
+    post:
+      tags: [Duyuru & Yemek]
+      summary: Günün menüsünü kaydet (varsa günceller)
+      description: "Rol: `admin`."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [date, items]
+              properties:
+                date: { type: string, format: date-time }
+                items: { type: array, items: { type: string } }
+                calories: { type: number }
+      responses:
+        '200':
+          description: Kaydedildi
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Menu' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ───────────────────────── GENEL ─────────────────────────
+  /api/districts:
+    get:
+      tags: [Genel]
+      summary: Ankara ilçe listesi
+      security: []
+      responses:
+        '200':
+          description: İlçeler
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg: { type: string }
+                  data: { type: array, items: { type: string } }
+  /api/locations:
+    get:
+      tags: [Genel]
+      summary: Yerleşke / konum listesi
+      security: []
+      responses:
+        '200':
+          description: Konumlar
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { type: array, items: { type: string } }
+  /api/display-image/{filename}:
+    get:
+      tags: [Genel]
+      summary: Yüklenen dosyayı göster / indir
+      description: |
+        Teknik talep ekran görüntüleri, malzeme şartnameleri ve kanıt dosyaları için. **Oturum gerekir**:
+        web'de cookie otomatik gider; mobilde `Authorization: Bearer <token>` başlığı eklenmelidir
+        (React Native `Image` için `source={{ uri, headers: { Authorization } }}`).
+        Word/ZIP/RAR dosyaları her zaman indirme olarak döner.
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          schema: { type: string }
+        - name: download
+          in: query
+          schema: { type: boolean }
+        - name: name
+          in: query
+          description: İndirilen dosyanın görünen adı
+          schema: { type: string }
+      responses:
+        '200':
+          description: Dosya
+          content:
+            '*/*':
+              schema: { type: string, format: binary }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ───────────────────────── YÖNETİM ─────────────────────────
+  /api/admin/users:
+    get:
+      tags: [Yönetim]
+      summary: Kullanıcı listesi
+      description: "Rol: `admin`."
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Kullanıcılar
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/UserAdmin' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Yönetim]
+      summary: Kullanıcı oluştur
+      description: "Rol: `admin`."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+                role: { $ref: '#/components/schemas/Role' }
+                manager: { type: string, nullable: true }
+                canCreateMaterialRequest: { type: boolean }
+      responses:
+        '201':
+          description: Oluşturuldu
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserAdmin' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/admin/users/{id}:
+    put:
+      tags: [Yönetim]
+      summary: Kullanıcıyı güncelle
+      description: "Rol: `admin`."
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                role: { $ref: '#/components/schemas/Role' }
+                isActive: { type: boolean }
+                manager: { type: string, nullable: true }
+                canCreateMaterialRequest: { type: boolean }
+      responses:
+        '200':
+          description: Güncellendi
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserAdmin' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/admin/bulk-import:
+    get:
+      tags: [Yönetim]
+      summary: Toplu aktarım tipleri ve alanları
+      description: "Rol: `admin`."
+      responses:
+        '200':
+          description: Aktarılabilir tipler
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  maxRows: { type: integer }
+                  types:
+                    type: array
+                    items: { type: object, additionalProperties: true }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Yönetim]
+      summary: JSON satırlarını toplu aktar
+      description: "Rol: `admin`. `dryRun` varsayılan **true**'dur (sadece doğrular, yazmaz); gerçek yazım için `false` gönderin."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, rows]
+              properties:
+                type: { type: string }
+                rows: { type: array, items: { type: object, additionalProperties: true } }
+                dryRun: { type: boolean, default: true }
+                skipInvalid: { type: boolean, default: false }
+      responses:
+        '200':
+          description: Aktarım raporu
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ───────────────────────── AI & CRON ─────────────────────────
+  /api/ai/parse-request:
+    post:
+      tags: [AI & Cron]
+      summary: Talep listesini coğrafi rotalara grupla (Gemini)
+      description: Araç talep formundaki "AI ile doldur" özelliği için; oturum gerekir.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text: { description: Gruplanacak talep listesi, type: array, items: { type: object, additionalProperties: true } }
+      responses:
+        '200':
+          description: Gruplar
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+  /api/ai/smart-group:
+    get:
+      tags: [AI & Cron]
+      summary: Bekleyen talepler için akıllı gruplama önerisi
+      description: "Roller: `admin`, `supervisor`."
+      responses:
+        '200':
+          description: Öneri grupları
+          content:
+            application/json:
+              schema: { type: array, items: { type: object, additionalProperties: true } }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/ai/driver-group:
+    get:
+      tags: [AI & Cron]
+      summary: Şoförün işleri için sefer gruplama önerisi
+      description: "Rol: `driver`."
+      responses:
+        '200':
+          description: Seferler
+          content:
+            application/json:
+              schema: { type: array, items: { type: object, additionalProperties: true } }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/cron/auto-assign:
+    get:
+      tags: [AI & Cron]
+      summary: Otomatik şoför atamasını çalıştır
+      description: |
+        Zamanlanmış çağrı `Authorization: Bearer <CRON_SECRET>` ile yapılır; ayrıca `admin`/`supervisor` oturumuyla elle tetiklenebilir.
+        **Mobil istemci için değildir.**
+      parameters:
+        - name: slot
+          in: query
+          schema: { type: string, enum: [morning, afternoon, all] }
+        - name: force
+          in: query
+          schema: { type: boolean }
+      responses:
+        '200':
+          description: Atama sonucu
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [AI & Cron]
+      summary: Otomatik şoför atamasını çalıştır (GET ile aynı)
+      parameters:
+        - name: slot
+          in: query
+          schema: { type: string, enum: [morning, afternoon, all] }
+        - name: force
+          in: query
+          schema: { type: boolean }
+      responses:
+        '200':
+          description: Atama sonucu
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "`POST /api/auth/login` (X-Client-Type: mobile) yanıtındaki `token`."
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: token
+      description: Web arayüzü için httpOnly cookie.
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      description: MongoDB ObjectId
+      schema: { type: string, example: 65f1c0a2b3d4e5f607182930 }
+    Category:
+      name: category
+      in: query
+      description: "`admin` için gereklidir; `techamir`/`itadmin` kendi kategorisine sabittir."
+      schema: { type: string, enum: [technical, it] }
+
+  responses:
+    Success:
+      description: Başarılı
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success: { type: boolean }
+              msg: { type: string }
+    Message:
+      description: Başarılı
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              msg: { type: string }
+    BadRequest:
+      description: Eksik veya geçersiz istek
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthorized:
+      description: Token yok, geçersiz veya süresi dolmuş
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: Bu işlem için yetkiniz yok
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Kayıt bulunamadı
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    ServerError:
+      description: Sunucu hatası
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        msg: { type: string }
+        error: { type: string }
+        message: { type: string }
+    Role:
+      type: string
+      enum: [user, driver, tech, techamir, it, itadmin, admin, amir, supervisor, akademik, kanit_sorumlu, raportor, mali_isler, ogrenci_isleri]
+    UserBrief:
+      type: object
+      properties:
+        _id: { type: string }
+        name: { type: string }
+        role: { $ref: '#/components/schemas/Role' }
+    UserAdmin:
+      type: object
+      properties:
+        _id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        role: { $ref: '#/components/schemas/Role' }
+        isActive: { type: boolean }
+        manager: { type: string, nullable: true }
+        canCreateMaterialRequest: { type: boolean }
+        driverStatus: { type: string, enum: [available, busy] }
+    PushSubscription:
+      type: object
+      description: Tarayıcı Push API abonelik nesnesi
+      properties:
+        endpoint: { type: string }
+        keys:
+          type: object
+          properties:
+            p256dh: { type: string }
+            auth: { type: string }
+    Rating:
+      type: object
+      properties:
+        score: { type: integer, minimum: 1, maximum: 5 }
+        comment: { type: string }
+        ratedAt: { type: string, format: date-time }
+    VehicleRequest:
+      type: object
+      properties:
+        _id: { type: string }
+        requestingUser:
+          description: Kimlik ya da `{ _id, name, email }` (uca göre)
+          oneOf:
+            - type: string
+            - $ref: '#/components/schemas/UserBrief'
+        assignedDriver:
+          nullable: true
+          oneOf:
+            - type: string
+            - $ref: '#/components/schemas/UserBrief'
+        status: { type: string, enum: [pending, assigned, completed, cancelled] }
+        willCarryItems: { type: boolean }
+        fromLocation: { type: string }
+        toLocation: { type: string }
+        purpose: { type: string }
+        startTime: { type: string, format: date-time }
+        endTime: { type: string, format: date-time }
+        priority: { type: string, enum: [normal, high] }
+        cancelReason: { type: string, description: "Yönetici iptal/ret nedeni; talep sahibine gösterilir" }
+        cancelledBy: { type: string }
+        cancelledAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    TechnicalRequest:
+      type: object
+      properties:
+        _id: { type: string }
+        user:
+          oneOf:
+            - type: string
+            - type: object
+              properties:
+                _id: { type: string }
+                name: { type: string }
+                email: { type: string }
+        technicalStaff:
+          type: array
+          items:
+            oneOf:
+              - type: string
+              - type: object
+                properties:
+                  _id: { type: string }
+                  name: { type: string }
+        category: { type: string, enum: [technical, it], description: "Kategorisi olmayan eski kayıtlar technical sayılır" }
+        title: { type: string }
+        description: { type: string }
+        location: { type: string }
+        screenshotUrl: { type: string, nullable: true, description: "uploads/... ; /api/display-image/{dosyaAdı} ile açılır" }
+        priority: { type: string, enum: [LOW, MEDIUM, HIGH] }
+        status: { type: string, enum: [pending, assigned, in_progress, completed, cancelled] }
+        completedAt: { type: string, format: date-time, nullable: true }
+        rating: { $ref: '#/components/schemas/Rating' }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    MaterialRequest:
+      type: object
+      properties:
+        _id: { type: string }
+        batchId: { type: string }
+        requester: { type: string }
+        location: { type: string }
+        materialType: { type: string }
+        materialName: { type: string }
+        quantity: { type: number }
+        unit: { type: string }
+        givenQuantity: { type: number }
+        remainingQuantity: { type: number }
+        description: { type: string }
+        specification: { type: string }
+        specificationFileUrl: { type: string }
+        specificationFileName: { type: string }
+        status: { type: string, enum: [pending_supervisor, pending_mali_isler, partially_delivered, approved, rejected] }
+        supervisorNote: { type: string }
+        supervisorReviewedAt: { type: string, format: date-time }
+        maliIslerNote: { type: string }
+        maliIslerReviewedAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    MeetingAttachment:
+      type: object
+      properties:
+        _id: { type: string }
+        originalName: { type: string }
+        size: { type: integer, description: Bayt }
+        mimeType: { type: string }
+        uploadedAt: { type: string, format: date-time }
+    Meeting:
+      type: object
+      properties:
+        _id: { type: string }
+        title: { type: string }
+        description: { type: string }
+        date: { type: string, format: date-time }
+        location: { type: string }
+        organizer: { type: string }
+        qrSecret: { type: string, description: "QR kodun içeriği; /meeting/join/{qrSecret}" }
+        status: { type: string, enum: [open, closed, completed, cancelled] }
+        attendees:
+          type: array
+          items:
+            type: object
+            properties:
+              user: { type: object, nullable: true, properties: { _id: { type: string }, name: { type: string } } }
+              guestName: { type: string }
+              isGuest: { type: boolean }
+              checkInTime: { type: string, format: date-time }
+        minutes: { type: string, description: Tutanak metni }
+        attachments:
+          type: array
+          items: { $ref: '#/components/schemas/MeetingAttachment' }
+        isApproved: { type: boolean }
+    Task:
+      type: object
+      properties:
+        _id: { type: string }
+        title: { type: string }
+        description: { type: string }
+        status: { type: string, enum: [todo, in_progress, completed] }
+        priority: { type: string, enum: [low, medium, high] }
+        dueDate: { type: string, format: date-time, nullable: true }
+        createdBy: { $ref: '#/components/schemas/UserBrief' }
+        assignee: { $ref: '#/components/schemas/UserBrief' }
+        completedAt: { type: string, format: date-time, nullable: true }
+        canManage: { type: boolean, description: Düzenleme/silme yetkisi }
+        canMove: { type: boolean, description: Durum değiştirme yetkisi }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    Announcement:
+      type: object
+      properties:
+        _id: { type: string }
+        title: { type: string }
+        content: { type: string }
+        priority: { type: string, enum: [normal, urgent] }
+        link: { type: string }
+        href: { type: string }
+        createdAt: { type: string, format: date-time }
+    Menu:
+      type: object
+      properties:
+        _id: { type: string }
+        date: { type: string, format: date-time }
+        items: { type: array, items: { type: string } }
+        calories: { type: number }
+    EvidenceSession:
+      type: object
+      properties:
+        _id: { type: string }
+        title: { type: string }
+        description: { type: string }
+        createdBy: { type: string }
+        reporters: { type: array, items: { type: string } }
+        dataEntryUsers: { type: array, items: { type: string } }
+        status: { type: string, enum: [active, completed, archived] }
+        createdAt: { type: string, format: date-time }
+    Evidence:
+      type: object
+      properties:
+        _id: { type: string }
+        sessionId: { type: string }
+        title: { type: string }
+        description: { type: string }
+        fileUrl: { type: string, description: "/api/display-image/{dosyaAdı}" }
+        fileName: { type: string }
+        fileType: { type: string }
+        fileSize: { type: integer }
+        uploadedBy: { type: object, properties: { _id: { type: string }, name: { type: string }, email: { type: string }, role: { type: string } } }
+        status: { type: string, enum: [pending, approved, rejected, revision_requested] }
+        reporterNote: { type: string }
+        reviewedBy: { type: object, nullable: true, properties: { _id: { type: string }, name: { type: string } } }
+        reviewedAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+    DocumentRequest:
+      type: object
+      properties:
+        _id: { type: string }
+        sessionId: { type: string }
+        evidenceId: { type: string }
+        requester: { type: object, properties: { _id: { type: string }, name: { type: string }, email: { type: string }, role: { type: string } } }
+        requestDate: { type: string, format: date-time }
+        requestType: { type: string, enum: [NEW_DOCUMENT, REVISION, REVOCATION] }
+        documentName: { type: string }
+        documentNo: { type: string }
+        reason: { type: string }
+        feedback: { type: string }
+        status: { type: string, enum: [pending, approved, rejected, revision_requested] }
+    RiskForm:
+      type: object
+      description: |
+        Tek kayıt, dört bölüm: birim sorumlusu (A + 1-6), komisyon (7), izleme (8), iç kontrol (9).
+        Alanların tam listesi ve zorunluluk kuralları sunucuda (`riskSanitize`) tanımlıdır; liste ucu özet alanları döner.
+      properties:
+        _id: { type: string }
+        birim: { type: string }
+        altBirim: { type: string }
+        surec: { type: string }
+        surecSorumlusu: { type: string }
+        riskBaslik: { type: string }
+        riskTanim: { type: string }
+        riskNeden: { type: string }
+        riskSonuc: { type: string }
+        riskKategorileri: { type: array, items: { type: string } }
+        riskKategoriDiger: { type: string }
+        olasilik: { type: integer, minimum: 1, maximum: 5 }
+        etki: { type: integer, minimum: 1, maximum: 5 }
+        riskPuani: { type: integer, minimum: 1, maximum: 25 }
+        puanGerekce: { type: string }
+        komisyon: { type: object, additionalProperties: true }
+        izleme: { type: object, additionalProperties: true }
+        icKontrol: { type: object, additionalProperties: true }
+        createdBy: { type: object, properties: { _id: { type: string }, name: { type: string } } }
+        createdAt: { type: string, format: date-time }

@@ -13,24 +13,33 @@ type AuthResult =
 | {user : JwtPayload; error : null}
 | {user: null; error: NextResponse};
 
+const unauthorized = (msg: string): AuthResult => ({
+  user: null,
+  error: NextResponse.json({ msg }, { status: 401 }),
+});
+
+// Token kaynağı: önce mobil istemcinin gönderdiği "Authorization: Bearer <token>",
+// yoksa web için httpOnly "token" cookie'si.
+function extractToken(request: NextRequest): string | null {
+  const authHeader = request.headers.get('authorization');
+  if (authHeader) {
+    const match = /^Bearer\s+(.+)$/i.exec(authHeader.trim());
+    if (match) return match[1];
+  }
+
+  const cookieHeader = request.headers.get('cookie');
+  if (cookieHeader) {
+    return parse(cookieHeader).token || null;
+  }
+  return null;
+}
+
 export function getAuthenticatedUser(request: NextRequest): AuthResult {
   try {
-    const cookieHeader = request.headers.get('cookie');
-    if (!cookieHeader) {
-      return { 
-        user: null, 
-        error: NextResponse.json({ msg: 'Yetkisiz: Cookie bulunamadı' }, { status: 401 }) 
-      };
-    }
-
-    const allCookies = parse(cookieHeader);
-    const token = allCookies.token;
+    const token = extractToken(request);
 
     if (!token) {
-      return { 
-        user: null, 
-        error: NextResponse.json({ msg: 'Yetkisiz: Token bulunamadı' }, { status: 401 }) 
-      };
+      return unauthorized('Yetkisiz: Token bulunamadı');
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
@@ -38,9 +47,6 @@ export function getAuthenticatedUser(request: NextRequest): AuthResult {
     return { user: decoded, error: null };
 
   } catch (error) {
-    return { 
-      user: null, 
-      error: NextResponse.json({ msg: 'Yetkisiz: Geçersiz veya süresi dolmuş token' }, { status: 401 }) 
-    };
+    return unauthorized('Yetkisiz: Geçersiz veya süresi dolmuş token');
   }
 }

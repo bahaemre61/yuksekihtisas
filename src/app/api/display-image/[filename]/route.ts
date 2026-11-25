@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
+import { getAuthenticatedUser } from '@/src/lib/auth';
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ filename: string }> }
 ) {
+  // Yüklenen dosyalar (ekran görüntüsü, şartname, kanıt) yalnızca oturumlu kullanıcılara verilir
+  const { error: authError } = getAuthenticatedUser(req);
+  if (authError) return authError;
+
   try {
     const { filename } = await params;
 
@@ -75,7 +80,7 @@ export async function GET(
       headers: {
         'Content-Type': contentType,
         'Content-Disposition': `${dispositionType}; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(cleanName)}`,
-        'Cache-Control': 'public, max-age=31536000, immutable',
+        'Cache-Control': 'private, max-age=3600',
         'X-Content-Type-Options': 'nosniff'
       }
     });

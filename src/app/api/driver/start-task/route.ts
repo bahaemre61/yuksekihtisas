@@ -8,6 +8,9 @@ export async function POST(request:NextRequest) {
 
     const {user, error} = getAuthenticatedUser(request);
     if(error) return error;
+        if (user.role !== "driver") {
+            return NextResponse.json({ msg: "Yasak: Bu işlem yalnızca şoförler içindir." }, { status: 403 });
+        }
 
     await connectToDatabase();
 

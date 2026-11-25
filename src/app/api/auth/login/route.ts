@@ -46,6 +46,19 @@ export async function POST(request: Request) {
       path: '/', 
     });
 
+    // Mobil istemci (X-Client-Type: mobile) cookie yerine token'ı yanıt gövdesinde alır ve
+    // sonraki isteklerde "Authorization: Bearer <token>" gönderir. Web tarafı değişmez:
+    // token yalnızca httpOnly cookie'de kalır, JS'e hiç görünmez.
+    if (request.headers.get('x-client-type') === 'mobile') {
+      return NextResponse.json({
+        success: true,
+        msg: 'Giriş başarılı',
+        token,
+        expiresIn: 6 * 60 * 60,
+        user: { _id: user.id, name: user.name, role: user.role },
+      });
+    }
+
     return NextResponse.json(
       { success: true, msg: 'Giriş başarılı' },
       {
