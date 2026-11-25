@@ -1,3 +1,4 @@
+import { publicUrl } from "@/src/lib/baseUrl";
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getAuthenticatedUser } from '@/src/lib/auth';
@@ -8,7 +9,7 @@ import { UserRole } from '@/src/lib/models/User';
 export async function GET(request: NextRequest) {
   const { user, error } = getAuthenticatedUser(request);
   if (error || !user) {
-    const loginUrl = new URL('/login', request.url);
+    const loginUrl = publicUrl('/login', request.url);
     loginUrl.searchParams.set('callbackUrl', '/api/docs');
     return NextResponse.redirect(loginUrl);
   }

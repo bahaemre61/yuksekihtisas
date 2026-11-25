@@ -1,3 +1,4 @@
+import { publicUrl } from "@/src/lib/baseUrl";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -9,7 +10,7 @@ export function middleware(request: NextRequest) {
     // Misafirlerin toplantıya katılabilmesi için /meeting/join/ yollarını serbest bırakıyoruz
     if (!token && (pathname.startsWith('/dashboard') || (pathname.startsWith('/meeting') && !pathname.startsWith('/meeting/join')))) {
         // Gidilmek istenen orijinal adresi alıyoruz
-        const loginUrl = new URL('/login', request.url);
+        const loginUrl = publicUrl('/login', request.url);
         // "callbackUrl" parametresi olarak ekliyoruz
         loginUrl.searchParams.set('callbackUrl', pathname);
 
